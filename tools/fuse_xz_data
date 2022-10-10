@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+from typing import List
+
+import sinter
+
+
+def get_basis(stat: sinter.TaskStats) -> str | None:
+    metadata = dict(sorted(stat.json_metadata.items()))
+    if 'b' in metadata:
+        return metadata['b']
+    if 'c' in metadata and metadata['c'][-2:] in ['_X', '_Z']:
+        return metadata['c'][:-1]
+    return None
+
+
+def sort_by_all_except_basis(stat: sinter.TaskStats) -> str:
+    metadata = dict(sorted(stat.json_metadata.items()))
+    if 'b' in metadata:
+        del metadata['b']
+    if 'c' in metadata and metadata['c'][-2:] in ['_X', '_Z']:
+        metadata['c'] = metadata['c'][:-2]
+    return repr(metadata) + ":" + stat.decoder
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--stats",
+        type=str,
+        required=True,
+    )
+    args = parser.parse_args()
+
+    stats: List[sinter.TaskStats] = sinter.stats_from_csv_files(args.stats)
+
+    print(sinter.CSV_HEADER)
+    for _, pair in sinter.group_by(stats, key=sort_by_all_except_basis).items():
+        for e in pair:
+            print(e)
+        if len(pair) > 2:
+            raise ValueError(f"More than two bases:\n    " + '\n    '.join(repr(e) for e in pair))
+        if len(pair) == 1:
+            if get_basis(pair[0]) is None:
+                continue
+            print("WARNING: duplicating unpaired value with metadata ", pair[0].json_metadata, "and decoder", pair[0].decoder, file=sys.stderr)
+            a, b = pair[0], pair[0]
+        else:
+            a, b = pair
+        if a.shots > b.shots:
+            a, b = b, a
+        assert a.discards == b.discards == 0
+        new_errors = round((1 - (1 - a.errors / a.shots) * (1 - b.errors / b.shots)) * a.shots)
+
+        new_metadata = dict(a.json_metadata)
+        if 'b' in a.json_metadata:
+            new_metadata['b'] = 'XZ'
+        elif 'c' in a.json_metadata and a.json_metadata['c'][-2:] in ['_X', '_Z']:
+            new_metadata['c'] = a.json_metadata['c'][:-2] + '_XZ'
+        else:
+            raise NotImplementedError(f"Missed basis:\n    " + '\n    '.join(repr(e) for e in pair))
+        combo = sinter.TaskStats(
+            strong_id=a.strong_id + '*' + b.strong_id,
+            decoder=a.decoder,
+            json_metadata=new_metadata,
+            shots=a.shots,
+            errors=new_errors,
+            discards=0,
+            seconds=a.seconds + b.seconds,
+        )
+        print(combo)
+
+
+if __name__ == '__main__':
+    main()

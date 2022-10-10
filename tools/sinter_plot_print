@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+
+import pathlib
+import subprocess
+import sys
+
+try:
+    subprocess.check_output([
+        'sinter',
+        'plot',
+        *sys.argv[1:],
+    ], stderr=sys.stderr)
+except:
+    sys.exit(1)
+
+if '--out' in sys.argv:
+    path = sys.argv[sys.argv.index('--out') + 1]
+    print(f'wrote file://{pathlib.Path(path).absolute()}')

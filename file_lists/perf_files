@@ -1,0 +1,5 @@
+src/chromobius/datatypes/atomic_error.perf.cc
+src/chromobius/decode/decoder.perf.cc
+src/chromobius/graph/euler_tours.perf.cc
+src/chromobius/util.perf.h
+src/main.perf.cc

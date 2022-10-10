@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+
+import pathlib
+from typing import Any
+from typing import Literal
+
+import matplotlib.pyplot as plt
+from sinter._plotting import plot_custom
+
+import sinter
+
+
+def plot_per_detection_event(
+    *,
+    stats: list[sinter.TaskStats],
+    per: Literal['r', 'rq', 'd'],
+    full_data: bool,
+) -> tuple[plt.Figure, plt.Axes]:
+    fig: plt.Figure
+    ax: plt.Axes
+    fig, ax = plt.subplots(1, 1)
+
+    c2c = {
+        'superdense_color_code_X': 'C0',
+        'midout_color_code_X': 'C1',
+        'phenom_color_code': 'C2',
+        'surface_code_X': 'C3',
+    }
+    if full_data:
+        c2c['transit_color_code'] = 'C4'
+        distances = [3, 5, 7, 9, 11, 13]
+    else:
+        distances = [5, 9, 13]
+        stats = [
+            stat
+            for stat in stats
+            if 'transit' not in stat.json_metadata['c']
+        ]
+    stats = [
+        stat
+        for stat in stats
+        if stat.json_metadata['d'] in distances
+    ]
+
+    markers = '>|x*pos^+8PhH<vXDd'
+    if per == 'r':
+        y_func = lambda stat: stat.seconds / stat.shots / stat.json_metadata['r']
+    elif per == 'rq':
+        y_func = lambda stat: stat.seconds / stat.shots / stat.json_metadata['r'] / stat.json_metadata['q']
+    elif per == 'd':
+        y_func = lambda stat: stat.seconds / stat.custom_counts['detection_events'] * 1e6
+    else:
+        raise NotImplementedError()
+    plot_custom(
+        ax=ax,
+        stats=stats,
+        x_func=lambda stat: stat.json_metadata['p'],
+        y_func=y_func,
+        group_func=lambda stat: f'''base_width={stat.json_metadata['d']} decoder={stat.decoder} circuit={stat.json_metadata['c']}''',
+        plot_args_func=lambda index, curve_id, stat: {
+            'color': c2c[stat[0].json_metadata['c']],
+            'marker': markers[stat[0].json_metadata['d'] // 2],
+            'linestyle': '--' if stat[0].decoder == 'pymatching' else '-',
+        },
+    )
+
+    ax.grid(which='major', color='#000000')
+    ax.grid(which='minor', color='#DDDDDD')
+
+    blank = plt.Line2D([0], [0], marker='', color='black', label="", linewidth=0, linestyle='-')
+    ax.legend(handles=[
+        plt.Line2D([0], [0], marker='', color=v, label="circuit=" + k, linewidth=7)
+        for k, v in c2c.items()
+    ] + [blank] + [
+        plt.Line2D([0], [0], marker=markers[d // 2], color='black', label=f"base_width={d}")
+        for d in distances[::-1]
+    ] + [blank] + [
+        plt.Line2D([0], [0], marker='', color='black', label="decoder=chromobius", linewidth=1, linestyle='-'),
+        plt.Line2D([0], [0], marker='', color='black', label="decoder=pymatching", linewidth=1, linestyle='--'),
+    ])
+
+    subtitle = "gates=all,noise=uniform"
+    if per == 'r':
+        ax.set_ylim(1e-8, 1e-3)
+        ax.set_ylabel("Seconds per round")
+        ax.set_title("Decoding time per round\n" + subtitle)
+        ax.set_xlim(1e-4, 1e-2)
+        ax.loglog()
+    elif per == 'd':
+        ax.set_ylim(0, 10)
+        ax.set_yticks(range(11))
+        ax.set_ylabel("Microseconds per detection event")
+        ax.set_title("Decoding time per detection event\n" + subtitle)
+        ax.set_xlim(1e-4, 1e-2)
+        ax.semilogx()
+    elif per == 'rq':
+        ax.set_ylim(1e-10, 1e-5)
+        ax.set_ylabel("Seconds per (rounds*qubits)")
+        ax.set_title("Decoding time per rounds*qubits\n" + subtitle)
+        ax.set_xlim(1e-4, 1e-2)
+        ax.loglog()
+    else:
+        raise NotImplementedError()
+    ax.set_xlabel("Noise Strength (p)")
+
+    return fig, ax
+
+
+def main():
+    assets = pathlib.Path(__file__).parent.parent / 'assets'
+    stats = sinter.read_stats_from_csv_files(assets / 'timing_stats.csv')
+
+    per: Any
+    for full in [False, True]:
+        for per in ['d', 'r', 'rq']:
+            fig, ax = plot_per_detection_event(stats=stats, per=per, full_data=full)
+            fig.set_size_inches(10, 10)
+            fig.set_dpi(100)
+            fig.tight_layout()
+            full_text = '_full' if full else ''
+            f = assets / 'generated' / f'timing_{per}{full_text}.png'
+            fig.savefig(f)
+            print(f'wrote file://{f.absolute()}')
+
+
+if __name__ == '__main__':
+    main()

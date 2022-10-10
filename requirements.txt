@@ -1,0 +1,9 @@
+# These are development requirements, not install requirements.
+matplotlib ~= 3.5
+numpy
+pymatching ~= 2.0
+pytest
+scipy
+sinter ~= 1.12.0
+stim ~= 1.12.0
+pygltflib

@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+
+import argparse
+import itertools
+import pathlib
+
+import sys
+src_path = pathlib.Path(__file__).parent.parent / 'src'
+assert src_path.exists()
+sys.path.append(str(src_path))
+
+import gen
+from clorco._make_circuit import make_circuit
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--out_dir",
+        type=str,
+        required=True,
+    )
+    parser.add_argument("--diameter", nargs='+', required=True, type=int)
+    parser.add_argument("--rounds", nargs='+', required=True, type=str)
+    parser.add_argument("--noise_strength", nargs='+', default=(None,), type=float)
+    parser.add_argument("--noise_model", nargs='+', required=True, choices=['si1000', 'uniform', 'none', 'bitflip'])
+    parser.add_argument("--style", nargs='+', required=True, type=str)
+    parser.add_argument("--extra", nargs='+', default=(None,))
+    parser.add_argument("--extra2", nargs='+', default=(None,))
+    parser.add_argument("--extra3", nargs='+', default=(None,))
+    parser.add_argument("--convert_to_cz", nargs='+', default=('auto',))
+    parser.add_argument("--debug_out_dir", default=None, type=str)
+    parser.add_argument(
+        "--stdout",
+        action="store_true",
+    )
+    args = parser.parse_args()
+
+    out_dir = pathlib.Path(args.out_dir)
+    out_dir.mkdir(exist_ok=True, parents=True)
+    debug_out_dir = None
+    if args.debug_out_dir is not None:
+        debug_out_dir = pathlib.Path(args.debug_out_dir)
+        debug_out_dir.mkdir(exist_ok=True, parents=True)
+
+    for (diameter,
+         noise_strength,
+         rounds_func,
+         noise_model_name,
+         style,
+         extra,
+         extra2,
+         extra3,
+         convert_to_cz_arg) in itertools.product(
+            args.diameter,
+            args.noise_strength,
+            args.rounds,
+            args.noise_model,
+            args.style,
+            args.extra,
+            args.extra2,
+            args.extra3,
+            args.convert_to_cz):
+        if noise_model_name != "None" and noise_strength is None:
+            raise ValueError("Must specify --noise_strength")
+        if noise_model_name == 'si1000':
+            noise_model = gen.NoiseModel.si1000(noise_strength)
+        elif noise_model_name == "uniform":
+            noise_model = gen.NoiseModel.uniform_depolarizing(noise_strength)
+        elif noise_model_name == "none":
+            noise_model = None
+        elif noise_model_name == "bitflip":
+            noise_model_name = 'bitflip'
+            noise_model = gen.NoiseModel(
+                idle_noise=gen.NoiseRule(after={"X_ERROR": noise_strength}),
+                any_clifford_1q_rule=gen.NoiseRule(after={"X_ERROR": noise_strength}),
+                any_clifford_2q_rule=gen.NoiseRule(after={"X_ERROR": noise_strength}),
+                any_measurement_rule=gen.NoiseRule(after={"X_ERROR": noise_strength}, flip_result=noise_strength),
+                gate_rules={
+                    "R": gen.NoiseRule(after={"X_ERROR": noise_strength}),
+                },
+            )
+        else:
+            raise NotImplementedError(f'{noise_model_name=}')
+
+        rounds = eval(rounds_func, {'d': diameter})
+        if convert_to_cz_arg == 'auto':
+            convert_to_cz = noise_model_name == 'si1000'
+        else:
+            convert_to_cz = bool(int(convert_to_cz_arg))
+        editable_extras = {}
+        circuit = make_circuit(
+            style=style,
+            diameter=diameter,
+            noise_model=noise_model,
+            noise_strength=noise_strength,
+            debug_out_dir=debug_out_dir,
+            rounds=rounds,
+            convert_to_cz=convert_to_cz,
+            editable_extras=editable_extras,
+        )
+        q = circuit.num_qubits
+        extra_tags = ''
+        for ex in [extra, extra2, extra3]:
+            if ex is not None:
+                extra_dict = eval(ex)
+                assert isinstance(extra_dict, dict)
+                for k, v in extra_dict.items():
+                    extra_tags += f',{k}={v}'
+        for k, v in editable_extras.items():
+            extra_tags += f',{k}={v}'
+        if convert_to_cz:
+            extra_tags += ',gates=cz'
+        else:
+            extra_tags += ',gates=all'
+        path = out_dir / f'r={rounds},d={diameter},p={noise_strength},noise={noise_model_name},c={style},q={q}{extra_tags}.stim'
+        if args.stdout:
+            print(circuit)
+        else:
+            with open(path, 'w') as f:
+                print(circuit, file=f)
+            print(f'wrote file://{path.absolute()}')
+
+
+if __name__ == '__main__':
+    main()

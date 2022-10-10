@@ -1,0 +1,3 @@
+src/chromobius/pybind/chromobius.pybind.cc
+src/chromobius/pybind/sinter_compat.pybind.cc
+src/chromobius/pybind/sinter_compat.pybind.h
