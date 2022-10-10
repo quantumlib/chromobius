@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+import collections
+import pathlib
+
+import sys
+import time
+from typing import Any
+
+import numpy as np
+
+import chromobius
+import sinter
+import stim
+
+src_path = pathlib.Path(__file__).parent.parent / 'src'
+assert src_path.exists()
+sys.path.append(str(src_path))
+
+import gen
+from clorco._make_circuit import make_circuit
+from sinter._decoding_all_built_in_decoders import (
+    BUILT_IN_DECODERS,
+)
+
+
+def time_batch(
+    *,
+    shots: int,
+    sampler: stim.CompiledDetectorSampler,
+    compiled_decoder: sinter.CompiledDecoder,
+) -> sinter.AnonTaskStats:
+    dets, obs = sampler.sample(
+        shots=shots, separate_observables=True, bit_packed=True
+    )
+
+    num_detection_events = 0
+    for k in range(8):
+        num_detection_events += np.count_nonzero(dets & (1 << k))
+
+    t0 = time.monotonic()
+    predictions = compiled_decoder.decode_shots_bit_packed(bit_packed_detection_event_data=dets)
+    t1 = time.monotonic()
+
+    errors = np.count_nonzero(np.any(predictions != obs, axis=1))
+    return sinter.AnonTaskStats(
+        shots=shots,
+        errors=errors,
+        seconds=t1 - t0,
+        custom_counts=collections.Counter({'detection_events': num_detection_events}),
+    )
+
+
+def time_circuit(
+    *,
+    circuit: stim.Circuit,
+    json_metadata: dict[str, Any],
+    decoder_name: str,
+    target_seconds: float = 1,
+    max_batch_size: int = 2**12,
+    decoder: sinter.Decoder,
+) -> sinter.TaskStats:
+    dem = circuit.detector_error_model()
+    compiled_decoder: sinter.CompiledDecoder = decoder.compile_decoder_for_dem(dem=dem)
+    sampler = circuit.compile_detector_sampler()
+
+    batch_size = 1
+    while True:
+        base_stat = time_batch(
+            shots=batch_size,
+            sampler=sampler,
+            compiled_decoder=compiled_decoder,
+        )
+        if base_stat.seconds > 0.1:
+            break
+        batch_size *= 2
+        if batch_size >= max_batch_size:
+            break
+
+    total = sinter.AnonTaskStats()
+    while total.seconds < target_seconds:
+        time_left = target_seconds - total.seconds
+        expected_size = round(1.1 * time_left * base_stat.shots / base_stat.seconds)
+        total += time_batch(
+            shots=min(max_batch_size, max(1, expected_size)),
+            sampler=sampler,
+            compiled_decoder=compiled_decoder,
+        )
+
+    strong_id = sinter.Task(
+        circuit=circuit,
+        decoder=decoder_name,
+        detector_error_model=dem,
+        json_metadata=json_metadata,
+    ).strong_id()
+
+    return sinter.TaskStats(
+        shots=total.shots,
+        errors=total.errors,
+        strong_id=strong_id,
+        decoder=decoder_name,
+        seconds=total.seconds,
+        json_metadata=json_metadata,
+        custom_counts=total.custom_counts,
+    )
+
+
+def main():
+    chromobius_decoder: sinter.Decoder = chromobius.sinter_decoders()['chromobius']
+    pymatching_decoder = BUILT_IN_DECODERS['pymatching']
+    target_seconds = 1
+
+    print(sinter.CSV_HEADER, flush=True)
+    for d in [3, 5, 7, 9, 11, 13]:
+        for p in [1e-4, 2e-4, 3e-4, 5e-4, 7e-4, 1e-3, 2e-3, 3e-3, 5e-3, 7e-3, 1e-2]:
+            for style in ['midout_color_code_X', 'superdense_color_code_X', 'surface_code_X', 'transit_color_code', 'phenom_color_code']:
+                noise_strength = p
+                rounds = 1 if 'transit' in style else d * 4
+                noise_model = gen.NoiseModel.uniform_depolarizing(noise_strength)
+                circuit = make_circuit(
+                    style=style,
+                    diameter=d,
+                    noise_model=noise_model,
+                    noise_strength=noise_strength,
+                    rounds=rounds,
+                    convert_to_cz=False,
+                    editable_extras={},
+                )
+                json_metadata = {
+                    'd': d,
+                    'r': rounds,
+                    'p': noise_strength,
+                    'c': style,
+                    'noise': 'uniform',
+                    'q': circuit.num_qubits,
+                }
+                stats = time_circuit(
+                    circuit=circuit,
+                    json_metadata=json_metadata,
+                    decoder=pymatching_decoder if 'surface' in style else chromobius_decoder,
+                    decoder_name='pymatching' if 'surface' in style else 'chromobius',
+                    target_seconds=target_seconds,
+                )
+                print(stats, flush=True)
+
+
+if __name__ == '__main__':
+    main()

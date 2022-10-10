@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+
+import pathlib
+
+import matplotlib.pyplot as plt
+from sinter._main_plot import _sqrt_ticks
+
+import sinter
+
+
+def get_stats() -> list[sinter.TaskStats]:
+    assets = pathlib.Path(__file__).parent.parent / 'assets'
+    stats = sinter.read_stats_from_csv_files(assets / 'stats.csv')
+    stats = [
+        stat
+        for stat in stats
+        if stat.json_metadata['c'] in [
+            'midout_color_code_X',
+            'superdense_color_code_X',
+        ]
+    ]
+
+    cur_id = 0
+
+    def new_id() -> str:
+        nonlocal cur_id
+        cur_id += 1
+        return 'arbitrary' + str(cur_id)
+
+    nn_data = [
+        {"d": 3, "p": 1e-3, "L": 3e-4},
+        {"d": 5, "p": 1e-3, "L": 1.3e-4},
+        {"d": 7, "p": 1e-3, "L": 1e-4},
+
+        # Interpolated
+        {"d": 3, "p": 2e-3, "L": 1.2e-3},
+        {"d": 5, "p": 2e-3, "L": 1e-3},
+        {"d": 7, "p": 2e-3, "L": 1.4e-3},
+        # Interpolated
+        {"d": 3, "p": 2e-4, "L": 1.1e-5},
+        {"d": 5, "p": 2e-4, "L": 1e-6},
+        {"d": 7, "p": 2e-4, "L": 1.3e-7},
+        # Interpolated
+        {"d": 3, "p": 3e-4, "L": 2.5e-5},
+        {"d": 5, "p": 3e-4, "L": 3e-6},
+        {"d": 7, "p": 3e-4, "L": 7e-7},
+        # Interpolated
+        {"d": 3, "p": 5e-4, "L": 7e-5},
+        {"d": 5, "p": 5e-4, "L": 1.5e-5},
+        {"d": 7, "p": 5e-4, "L": 5e-6},
+
+        {"d": 3, "p": 2.5e-3, "L": 1.7e-3},
+        {"d": 3, "p": 4e-4, "L": 5e-5},
+        {"d": 3, "p": 1e-4, "L": 3e-6},
+        {"d": 5, "p": 2.5e-3, "L": 1.5e-3},
+        {"d": 5, "p": 4e-4, "L": 1e-5},
+        {"d": 5, "p": 1e-4, "L": 1.1e-7},
+        {"d": 7, "p": 2.5e-3, "L": 2e-3},
+        {"d": 7, "p": 4e-4, "L": 3e-6},
+        {"d": 7, "p": 1.7e-4, "L": 6e-8},
+    ]
+    for e in nn_data:
+        stats.append(sinter.TaskStats(
+            strong_id=new_id(),
+            decoder='neural_net',
+            shots=10**9,
+            errors=round(10**9 * e["L"]),
+            json_metadata={
+                "d": e["d"],
+                "p": e["p"],
+                "noise": "~uniform",
+                "src": "(2018) Baireuther et al",
+                "c": "bell_flagged",
+                "r": 1 / 20,  # Paper says there are 20 steps per cycle.
+                "q": e["d"] * e["d"] * 1.5 - 0.5,
+            }
+        ))
+
+    ff_data = [
+        {"d": 5, "p": 1e-3, "L": 9e-3},
+        {"d": 7, "p": 1e-3, "L": 5e-3},
+        {"d": 9, "p": 1e-3, "L": 3e-3},
+        {"d": 11, "p": 1e-3, "L": 1.4e-3},
+        {"d": 13, "p": 1e-3, "L": 8e-4},
+        {"d": 15, "p": 1e-3, "L": 3.5e-4},
+
+        {"d": 5, "p": 2e-3, "L": 4e-2},
+        {"d": 7, "p": 2e-3, "L": 4e-2},
+        {"d": 9, "p": 2e-3, "L": 4e-2},
+        {"d": 11, "p": 2e-3, "L": 4e-2},
+        {"d": 13, "p": 2e-3, "L": 4e-2},
+        {"d": 15, "p": 2e-3, "L": 4e-2},
+
+        {"d": 5, "p": 5e-4, "L": 1e-3},
+        {"d": 7, "p": 5e-4, "L": 4e-4},
+        {"d": 9, "p": 5e-4, "L": 1e-4},
+        {"d": 11, "p": 5e-4, "L": 3e-5},
+        {"d": 13, "p": 5e-4, "L": 8e-6},
+
+        {"d": 5, "p": 3e-4, "L": 2.8e-4},
+        {"d": 7, "p": 3e-4, "L": 5e-5},
+        {"d": 9, "p": 3e-4, "L": 9e-6},
+        {"d": 11, "p": 3e-4, "L": 1.2e-6},
+        {"d": 13, "p": 3e-4, "L": 1e-7},
+
+        # Just a fake data point to get the entry in the legend.
+        {"d": 3, "p": 1e-4, "L": 1e-15},
+        {"d": 3, "p": 2e-4, "L": 1e-15},
+    ]
+
+    def chamberland_qubit_count(d: int) -> int:
+        return sum(range(1, d*3, 2))
+
+    assert chamberland_qubit_count(3) == 16
+    assert chamberland_qubit_count(5) == 49
+
+    for e in ff_data:
+        stats.append(sinter.TaskStats(
+            strong_id=new_id(),
+            decoder='restriction_flag',
+            shots=10**9,
+            errors=round(10**9 * e["L"]),
+            json_metadata={
+                "d": e["d"],
+                "p": e["p"],
+                "noise": "~uniform",
+                "src": "(2019) Chamberland et al",
+                "c": "triple_flagged",
+                "r": e["d"],  # page 13 says T=d+1 but last round is noiseless. Assumes error rates from plot are per-shot.
+                "q": chamberland_qubit_count(int(e["d"])),
+            }
+        ))
+
+    return stats
+
+
+def main():
+    assets = pathlib.Path(__file__).parent.parent / 'assets'
+    ps = [2e-3, 1e-3, 5e-4, 3e-4, 2e-4, 1e-4]
+    for p in ps:
+        stats = get_stats()
+        stats = [stat for stat in stats if stat.json_metadata["p"] == p]
+
+        fig: plt.Figure
+        ax: plt.Axes
+        fig, ax = plt.subplots(1, 1)
+
+        sinter.plot_error_rate(
+            ax=ax,
+            stats=stats,
+            x_func=lambda stat: stat.json_metadata["q"],
+            group_func=lambda stat: f'''{stat.json_metadata.get("src", "(2023) this paper")} c={stat.json_metadata["c"]} p={stat.json_metadata["p"]} noise={stat.json_metadata["noise"]} decoder={stat.decoder}''',
+            highlight_max_likelihood_factor=None,
+            failure_units_per_shot_func=lambda stat: stat.json_metadata['r'],
+        )
+
+        ax.legend()
+        ax.set_ylim(1e-12, 1)
+        ax.set_xlim(1e-4, 1e-2)
+        ax.semilogy()
+        from matplotlib.scale import FuncScale
+        min_v, max_v, major_ticks, minor_ticks = _sqrt_ticks(0, 500)
+        ax.set_xlim(min_v, max_v)
+        ax.set_xscale(FuncScale(ax, (lambda e: e**0.5, lambda e: e**2)))
+        ax.set_xticks(major_ticks)
+        ax.set_xticks(minor_ticks, minor=True)
+        ax.grid(which='major', color='#000000')
+        ax.grid(which='minor', color='#DDDDDD')
+        ax.set_yticks([10**-k for k in range(13)])
+        ax.set_yticks([b*10**-k for k in range(1, 13) for b in range(1, 10)], minor=True)
+        ax.set_xlabel("Total Qubit Count (sqrt scale)")
+        ax.set_ylabel("Logical Error Rate (per round)")
+        ax.set_title(f"Comparing to previous work with uniform circuit noise at p={p}")
+
+        fig.set_size_inches(10, 10)
+        fig.set_dpi(100)
+        fig.tight_layout()
+        f = assets / 'generated' / f'prev_work_comparison_{p}.png'
+        fig.savefig(f)
+        print(f'wrote file://{f.absolute()}')
+
+
+if __name__ == '__main__':
+    main()

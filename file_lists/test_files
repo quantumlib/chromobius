@@ -1,0 +1,16 @@
+src/chromobius/commands/main_all.test.cc
+src/chromobius/commands/main_all.test.h
+src/chromobius/commands/main_benchmark.test.cc
+src/chromobius/commands/main_describe_decoder.test.cc
+src/chromobius/commands/main_predict.test.cc
+src/chromobius/datatypes/atomic_error.test.cc
+src/chromobius/datatypes/color_basis.test.cc
+src/chromobius/datatypes/rgb_edge.test.cc
+src/chromobius/decode/decoder.test.cc
+src/chromobius/decode/decoder_integration.test.cc
+src/chromobius/graph/charge_graph.test.cc
+src/chromobius/graph/choose_rgb_reps.test.cc
+src/chromobius/graph/drag_graph.test.cc
+src/chromobius/graph/euler_tours.test.cc
+src/chromobius/test_util.test.cc
+src/chromobius/test_util.test.h
