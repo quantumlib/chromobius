@@ -49,7 +49,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         ], cwd=build_temp, env=build_env)
 
 
-version = '0.0.dev0'
+__version__ = '0.0.dev0'
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
@@ -64,7 +64,7 @@ shutil.copyfile(
 
 setuptools.setup(
     name="chromobius",
-    version=version,
+    version=__version__,
     author="Craig Gidney",
     url="https://github.com/quantumlib/chromobius",
     description="A fast implementation of the mobius color code decoder.",
