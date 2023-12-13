@@ -115,7 +115,10 @@ genrule(
 py_wheel(
     name = "chromobius_dev_wheel",
     distribution = "chromobius",
-    requires = ["numpy"],
+    requires = [
+        "numpy",
+        "stim",
+    ],
     version = "0.0.dev0",
     deps = [
         ":chromobius.so",
