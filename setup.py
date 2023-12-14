@@ -71,7 +71,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         ], cwd=build_temp, env=build_env)
 
 
-__version__ = '0.0.dev0'
+__version__ = '1.0.dev0'
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
