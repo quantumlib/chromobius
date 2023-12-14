@@ -39,6 +39,7 @@ file(STRINGS file_lists/test_files TEST_FILES)
 file(STRINGS file_lists/perf_files PERF_FILES)
 file(STRINGS file_lists/pybind_files PYBIND_FILES)
 
+set(SIMD_WIDTH 128)
 include(FetchContent)
 FetchContent_Declare(stim
         GIT_REPOSITORY https://github.com/quantumlib/stim.git
