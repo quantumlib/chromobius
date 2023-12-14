@@ -136,7 +136,7 @@ PYBIND11_MODULE(chromobius, m) {
                 >>> import stim
                 >>> import chromobius
                 >>>
-                >>> dem = stim.Circuit("""
+                >>> dem = stim.Circuit('''
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
                 ...     MPP Z0*Z1*Z2 Z1*Z2*Z3 Z2*Z3*Z4 Z3*Z4*Z5
                 ...     DETECTOR(0, 0, 0, 1) rec[-4]
@@ -145,7 +145,7 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     DETECTOR(3, 0, 0, 1) rec[-1]
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
-                ... """).detector_error_model()
+                ... ''').detector_error_model()
                 ...
                 ... decoder = chromobius.CompiledDecoder.from_dem(dem)
         )DOC")
@@ -192,7 +192,7 @@ PYBIND11_MODULE(chromobius, m) {
                 >>> import chromobius
                 >>> import numpy as np
                 >>>
-                >>> repetition_color_code = stim.Circuit("""
+                >>> repetition_color_code = stim.Circuit('''
                 ...     # Apply noise.
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
                 ...     # Measure three-body stabilizers to catch errors.
@@ -209,7 +209,7 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     # Check on the message.
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
-                ... """)
+                ... ''')
                 ...
                 ... # Sample the circuit.
                 ... shots = 4096
@@ -275,7 +275,7 @@ PYBIND11_MODULE(chromobius, m) {
                 >>> import stim
                 >>> import chromobius
                 >>>
-                >>> dem = stim.Circuit("""
+                >>> dem = stim.Circuit('''
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
                 ...     MPP Z0*Z1*Z2 Z1*Z2*Z3 Z2*Z3*Z4 Z3*Z4*Z5
                 ...     DETECTOR(0, 0, 0, 1) rec[-4]
@@ -284,7 +284,7 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     DETECTOR(3, 0, 0, 1) rec[-1]
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
-                ... """).detector_error_model()
+                ... ''').detector_error_model()
                 ...
                 ... decoder = chromobius.compile_decoder_for_dem(dem)
         )DOC")
@@ -333,7 +333,7 @@ PYBIND11_MODULE(chromobius, m) {
                 >>> import stim
                 >>> import chromobius
                 >>>
-                >>> dem = stim.Circuit("""
+                >>> dem = stim.Circuit('''
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
                 ...     MPP Z0*Z1*Z2 Z1*Z2*Z3 Z2*Z3*Z4 Z3*Z4*Z5
                 ...     DETECTOR(0, 0, 0, 1) rec[-4]
@@ -342,7 +342,7 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     DETECTOR(3, 0, 0, 1) rec[-1]
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
-                ... """).detector_error_model()
+                ... ''').detector_error_model()
                 ...
                 ... decoder = chromobius.CompiledDecoder.from_dem(dem)
         )DOC")

@@ -15,8 +15,8 @@ TEST_FILES = glob.glob("src/**/*.test.cc", recursive=True)
 PERF_FILES = glob.glob("src/**/*.perf.cc", recursive=True)
 MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
 HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
-EXTRA_FILES = ['CMakeLists.txt']
-RELEVANT_SOURCE_FILES = sorted((set(EXTRA_FILES) | set(ALL_SOURCE_FILES) | set(HEADER_FILES)) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
+CMAKE_FILES = ['CMakeLists.txt', *glob.glob("file_lists/**", recursive=True)]
+RELEVANT_SOURCE_FILES = sorted((set(CMAKE_FILES) | set(ALL_SOURCE_FILES) | set(HEADER_FILES)) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
 
 
 class CMakeExtension(setuptools.Extension):

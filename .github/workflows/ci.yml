@@ -48,7 +48,7 @@ jobs:
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      CIBW_TEST_REQUIRES: pytest stim
+      CIBW_TEST_REQUIRES: pytest stim sinter
       CIBW_TEST_COMMAND: pytest {project}/src
     steps:
       - uses: actions/checkout@v3
@@ -107,27 +107,6 @@ jobs:
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
     - run: cmake --build .
     - run: out/chromobius --help
-  build_lib:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - run: cmake .
-    - run: make libchromobius -j 2
-    - run: echo -e '#include "chromobius.h"\nint main(int argc,const char **argv) {return (int)(chromobius::obsmask_int)0;}' > test.cc
-    - run: g++ -std=c++20 test.cc out/libchromobius.a -I src
-    - run: ./a.out
-  build_lib_install:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - run: mkdir install_dir
-    - run: cmake . -DCMAKE_INSTALL_PREFIX=install_dir
-    - run: make -j 2
-    - run: make install
-    - run: echo -e '#include "chromobius.h"\nint main(int argc,const char **argv) {return (int)(chromobius::obsmask_int)0;}' > test.cc
-    - run: g++ -std=c++20 test.cc out/libchromobius.a -I install_dir/include
-    - run: ./a.out
-    - run: install_dir/bin/chromobius --help
   perf:
     runs-on: ubuntu-latest
     steps:

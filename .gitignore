@@ -27,3 +27,5 @@ build
 package_data
 .eggs
 dist
+MODULE.bazel
+MODULE.bazel.lock
