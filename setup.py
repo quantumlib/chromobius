@@ -51,7 +51,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
             ext.sourcedir,
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={pathlib.Path(self.get_ext_fullpath(ext.name)).parent.absolute()}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
-            f"-DVERSION_INFO={__version__}",
+            f"-DCHROMOBIUS_VERSION_INFO={__version__}",
             *osx_cmake_flags,
             *[
                 env_arg_item
@@ -71,7 +71,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         ], cwd=build_temp, env=build_env)
 
 
-__version__ = '1.0.dev0'
+__version__ = '1.1.dev0'
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()

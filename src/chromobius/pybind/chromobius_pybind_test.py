@@ -20,6 +20,7 @@ import chromobius
 
 
 def test_version():
+    assert '.' in chromobius.__version__
     assert chromobius.__version__ is not None
 
 
@@ -74,3 +75,7 @@ def test_decoding():
     assert np.array_equal(predictions, predictions2)
     mistakes = np.count_nonzero(np.any(predictions != obs, axis=1))
     assert mistakes < 100
+
+
+def test_empty():
+    assert chromobius.compile_decoder_for_dem(stim.DetectorErrorModel()) is not None
