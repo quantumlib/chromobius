@@ -48,7 +48,7 @@ jobs:
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      CIBW_TEST_REQUIRES: pytest stim sinter
+      CIBW_TEST_REQUIRES: pytest stim sinter pygltflib
       CIBW_TEST_COMMAND: pytest {project}/src
     steps:
       - uses: actions/checkout@v3
@@ -170,6 +170,6 @@ jobs:
       - uses: bazelbuild/setup-bazelisk@v1
       - run: bazel build :chromobius_dev_wheel
       - run: pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
-      - run: pip install pytest
+      - run: pip install pytest stim sinter
       - run: pytest src
       - run: dev/doctest_proper.py --module chromobius
