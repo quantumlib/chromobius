@@ -32,28 +32,28 @@ void chromobius::xxx22(
     std::vector<AtomicErrorKey> &atoms_buf,
     std::vector<stim::DemTarget> &composite_error_buffer,
     stim::DemInstruction instruction) {
+    obsmask_int obs_flip;
+    extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip);
+
+    decompose_dets_into_atoms(
+        dets.sorted_items,
+        obs_flip,
+        node_colors,
+        atomic_errors,
+        ignore_decomposition_failures,
+        &x_buf,
+        &z_buf,
+        instruction,
+        &dem,
+        &atoms_buf,
+        out_remnants);
+
+    if (drop_mobius_errors_involving_remnant_errors && !out_remnants->empty()) {
+        atoms_buf.clear();
+        out_remnants->clear();
+    }
     throw std::invalid_argument("NO");
-//    obsmask_int obs_flip;
-//    extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip);
-//
-//    decompose_dets_into_atoms(
-//        dets.sorted_items,
-//        obs_flip,
-//        node_colors,
-//        atomic_errors,
-//        ignore_decomposition_failures,
-//        &x_buf,
-//        &z_buf,
-//        instruction,
-//        &dem,
-//        &atoms_buf,
-//        out_remnants);
-//
-//    if (drop_mobius_errors_involving_remnant_errors && !out_remnants->empty()) {
-//        atoms_buf.clear();
-//        out_remnants->clear();
-//    }
-//
+
 //    // Convert atomic errors into mobius detection events with decomposition suggestions.
 //    composite_error_buffer.clear();
 //    bool has_corner_node = false;
