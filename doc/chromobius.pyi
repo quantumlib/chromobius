@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     import stim
     import sinter
     import chromobius
+__version__: str
 class CompiledDecoder:
     """A chromobius decoder ready to predict observable flips from detection events.
 

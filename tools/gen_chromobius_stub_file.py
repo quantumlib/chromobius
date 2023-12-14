@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     import stim
     import sinter
     import chromobius
+__version__: str
 '''.strip())
 
     for obj in generate_documentation(obj=chromobius, full_name="chromobius", level=-1):

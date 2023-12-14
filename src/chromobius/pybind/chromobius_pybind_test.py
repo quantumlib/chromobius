@@ -19,6 +19,10 @@ import stim
 import chromobius
 
 
+def test_version():
+    assert chromobius.__version__ is not None
+
+
 def test_errors():
     with pytest.raises(ValueError, match='must be a stim.DetectorErrorModel'):
         chromobius.compile_decoder_for_dem(object())
