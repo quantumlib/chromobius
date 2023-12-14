@@ -106,6 +106,7 @@ if ((${pybind11_FOUND} AND ${Python_FOUND}) OR "$ENV{CMAKE_FORCE_PYBIND_CHROMOBI
     target_compile_options(chromobius_pybind PRIVATE -O3 -DNDEBUG)
     target_link_libraries(chromobius_pybind PRIVATE libstim libpymatching)
     target_link_options(chromobius_pybind PRIVATE -O3)
+    add_compile_definitions(CHROMOBIUS_VERSION_INFO=${CHROMOBIUS_VERSION_INFO})
 else()
     message("WARNING: Skipped chromobius_pybind target. `pybind11` not found. To fix, install pybind11. On debian based distributions, the package name is `pybind11-dev`")
 endif()

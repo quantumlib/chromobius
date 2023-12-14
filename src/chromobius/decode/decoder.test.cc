@@ -97,7 +97,6 @@ TEST(decoder, from_dem_d5_color_code_x_only) {
         error(0.1) D10 D16 ^ D11 D17
         error(0.1) D5 D7 ^ D4 D10 ^ D6 D11
         error(0.1) D9 D17 ^ D12 D16 ^ D8 D13
-        detector D17
     )DEM");
     ASSERT_TRUE(decoder.mobius_dem.approx_equals(expected_mobius_dem, 1e-5));
 }

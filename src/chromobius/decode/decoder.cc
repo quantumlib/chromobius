@@ -45,7 +45,7 @@ Decoder Decoder::from_dem(const stim::DetectorErrorModel &dem, DecoderConfigOpti
     for (const auto &e : remnant_edges) {
         result.atomic_errors.emplace(std::move(e));
     }
-    if (!options.include_coords_in_mobius_dem || result.mobius_dem.count_detectors() < result.node_colors.size() * 2) {
+    if (result.mobius_dem.count_detectors() < result.node_colors.size() * 2) {
         // Ensure the number of detectors in the mobius dem is exactly correct.
         result.mobius_dem.append_detector_instruction(
             {}, stim::DemTarget::relative_detector_id(result.node_colors.size() * 2 - 1));
