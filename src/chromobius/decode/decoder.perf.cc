@@ -107,7 +107,9 @@ BENCHMARK(decode_midout_color_code_d5_r10_p1000) {
 
     size_t num_shots = 1024;
     std::mt19937_64 rng{0};
-    auto [dets, obs_actual] = stim::sample_batch_detection_events<64>(src_circuit, num_shots, rng);
+    auto sample = stim::sample_batch_detection_events<64>(src_circuit, num_shots, rng);
+    auto &dets = sample.first;
+    auto &obs_actual = sample.second;
     dets = dets.transposed();
     obs_actual = obs_actual.transposed();
     size_t num_dets = 0;
@@ -141,7 +143,9 @@ BENCHMARK(decode_midout_color_code_d9_r36_p1000) {
 
     size_t num_shots = 1024;
     std::mt19937_64 rng{0};
-    auto [dets, obs_actual] = stim::sample_batch_detection_events<64>(src_circuit, num_shots, rng);
+    auto sample = stim::sample_batch_detection_events<64>(src_circuit, num_shots, rng);
+    auto &dets = sample.first;
+    auto &obs_actual = sample.second;
     dets = dets.transposed();
     obs_actual = obs_actual.transposed();
     size_t num_dets = 0;
@@ -175,7 +179,9 @@ BENCHMARK(decode_midout_color_code_d25_r100_p1000) {
     size_t num_shots = 128;
 
     std::mt19937_64 rng{0};
-    auto [dets, obs_actual] = stim::sample_batch_detection_events<64>(src_circuit, num_shots, rng);
+    auto sample = stim::sample_batch_detection_events<64>(src_circuit, num_shots, rng);
+    auto &dets = sample.first;
+    auto &obs_actual = sample.second;
     dets = dets.transposed();
     obs_actual = obs_actual.transposed();
     size_t num_dets = 0;
