@@ -27,6 +27,8 @@ src/chromobius/graph/collect_atomic_errors.cc
 src/chromobius/graph/collect_atomic_errors.h
 src/chromobius/graph/collect_composite_errors.cc
 src/chromobius/graph/collect_composite_errors.h
+src/chromobius/graph/collect_composite_errors_2.cc
+src/chromobius/graph/collect_composite_errors_3.cc
 src/chromobius/graph/collect_nodes.cc
 src/chromobius/graph/collect_nodes.h
 src/chromobius/graph/drag_graph.cc
