@@ -22,6 +22,9 @@
 
 #include "stim.h"
 
+#define str_literal(s) #s
+#define xstr_literal(s) str_literal(s)
+
 struct CompiledDecoder {
     chromobius::Decoder decoder;
     uint64_t num_detectors;
@@ -119,7 +122,7 @@ struct CompiledDecoder {
 };
 
 PYBIND11_MODULE(chromobius, m) {
-    m.attr("__version__") = "0.0.dev0";
+    m.attr("__version__") = xstr_literal(VERSION_INFO);
     m.doc() = R"pbdoc(
         chromobius: A fast implementation of the mobius color code decoder.
     )pbdoc";
