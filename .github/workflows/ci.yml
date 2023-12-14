@@ -170,6 +170,6 @@ jobs:
       - uses: bazelbuild/setup-bazelisk@v1
       - run: bazel build :chromobius_dev_wheel
       - run: pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
-      - run: pip install pytest stim sinter
+      - run: pip install pytest stim sinter pygltflib
       - run: pytest src
       - run: dev/doctest_proper.py --module chromobius
