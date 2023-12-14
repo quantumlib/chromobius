@@ -18,7 +18,7 @@
 
 using namespace chromobius;
 
-static void decompose_dets_into_atoms(
+void chromobius::decompose_dets_into_atoms(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,

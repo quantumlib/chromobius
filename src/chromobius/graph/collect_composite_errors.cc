@@ -18,123 +18,7 @@
 
 using namespace chromobius;
 
-static inline void try_grow_decomposition(
-    AtomicErrorKey e1,
-    AtomicErrorKey e2,
-    std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    int &best_score) {
-    bool c1 = atomic_errors.contains(e1);
-    bool c2 = atomic_errors.contains(e2);
-    int score = c1 + 2 * c2;
-    if (score <= best_score) {
-        return;
-    }
-    if (score == 1 && e2.weight() == 3 && e2.net_charge(node_colors) != Charge::NEUTRAL) {
-        return;
-    }
-    if (score == 2 && e1.weight() == 3 && e1.net_charge(node_colors) != Charge::NEUTRAL) {
-        return;
-    }
-
-    if (best_score > 0) {
-        out_atoms->pop_back();
-        out_atoms->pop_back();
-    }
-    out_atoms->push_back(e1);
-    out_atoms->push_back(e2);
-    best_score = score;
-}
-
-static inline bool try_finish_decomposition(
-    int best_score,
-    obsmask_int obs_flip,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
-    assert(best_score == 0 || out_atoms->size() >= 2);
-    if (best_score == 1) {
-        AtomicErrorKey cur = (*out_atoms)[out_atoms->size() - 2];
-        AtomicErrorKey rem = (*out_atoms)[out_atoms->size() - 1];
-        (*out_remnants)[rem] = obs_flip ^ atomic_errors.at(cur);
-    } else if (best_score == 2) {
-        AtomicErrorKey cur = (*out_atoms)[out_atoms->size() - 1];
-        AtomicErrorKey rem = (*out_atoms)[out_atoms->size() - 2];
-        (*out_remnants)[rem] = obs_flip ^ atomic_errors.at(cur);
-    }
-    return best_score > 0;
-}
-
-static bool decompose_single_basis_dets_into_atoms_helper_n2(
-    std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
-    std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
-    // Check if it's just directly included.
-    AtomicErrorKey e{dets[0], dets[1], BOUNDARY_NODE};
-    if (atomic_errors.contains(e)) {
-        out_atoms->push_back(e);
-        return true;
-    }
-
-    int best_score = 0;
-
-    // 1:1 decomposition.
-    for (size_t k1 = 0; k1 < dets.size(); k1++) {
-        try_grow_decomposition(
-            AtomicErrorKey{dets[k1], BOUNDARY_NODE, BOUNDARY_NODE},
-            AtomicErrorKey{
-                dets[0 + (k1 <= 0)],
-                BOUNDARY_NODE,
-                BOUNDARY_NODE,
-            },
-            node_colors,
-            atomic_errors,
-            out_atoms,
-            best_score);
-    }
-
-    return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
-}
-
-static bool decompose_single_basis_dets_into_atoms_helper_n3(
-    std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
-    std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
-    // Check if it's just directly included.
-    AtomicErrorKey e{dets[0], dets[1], dets[2]};
-    if (atomic_errors.contains(e)) {
-        out_atoms->push_back(e);
-        return true;
-    }
-
-    int best_score = 0;
-
-    // 1:2 decomposition.
-    for (size_t k1 = 0; k1 < dets.size(); k1++) {
-        try_grow_decomposition(
-            AtomicErrorKey{dets[k1], BOUNDARY_NODE, BOUNDARY_NODE},
-            AtomicErrorKey{
-                dets[0 + (k1 <= 0)],
-                dets[1 + (k1 <= 1)],
-                BOUNDARY_NODE,
-            },
-            node_colors,
-            atomic_errors,
-            out_atoms,
-            best_score);
-    }
-
-    return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
-}
-
-static bool decompose_single_basis_dets_into_atoms_helper_n4(
+bool chromobius::decompose_single_basis_dets_into_atoms_helper_n4(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
@@ -178,7 +62,7 @@ static bool decompose_single_basis_dets_into_atoms_helper_n4(
     return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
 }
 
-static bool decompose_single_basis_dets_into_atoms_helper_n5(
+bool chromobius::decompose_single_basis_dets_into_atoms_helper_n5(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
@@ -207,7 +91,7 @@ static bool decompose_single_basis_dets_into_atoms_helper_n5(
     return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
 }
 
-static bool decompose_single_basis_dets_into_atoms_helper_n6(
+bool chromobius::decompose_single_basis_dets_into_atoms_helper_n6(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
@@ -238,7 +122,7 @@ static bool decompose_single_basis_dets_into_atoms_helper_n6(
     return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
 }
 
-static bool decompose_single_basis_dets_into_atoms(
+bool chromobius::decompose_single_basis_dets_into_atoms(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
@@ -269,4 +153,68 @@ static bool decompose_single_basis_dets_into_atoms(
         default:
             return false;
     }
+}
+
+void chromobius::collect_composite_errors_and_remnants_into_mobius_dem(
+    const stim::DetectorErrorModel &dem,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    bool drop_mobius_errors_involving_remnant_errors,
+    bool ignore_decomposition_failures,
+    stim::DetectorErrorModel *out_mobius_dem,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
+
+    stim::SparseXorVec<node_offset_int> dets;
+    std::vector<node_offset_int> x_buf;
+    std::vector<node_offset_int> z_buf;
+    std::vector<AtomicErrorKey> atoms_buf;
+    std::vector<stim::DemTarget> composite_error_buffer;
+
+    dem.iter_flatten_error_instructions([&](stim::DemInstruction instruction) {
+        obsmask_int obs_flip;
+        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip);
+
+        decompose_dets_into_atoms(
+            dets.sorted_items,
+            obs_flip,
+            node_colors,
+            atomic_errors,
+            ignore_decomposition_failures,
+            &x_buf,
+            &z_buf,
+            instruction,
+            &dem,
+            &atoms_buf,
+            out_remnants);
+
+        if (drop_mobius_errors_involving_remnant_errors && !out_remnants->empty()) {
+            atoms_buf.clear();
+            out_remnants->clear();
+        }
+
+        // Convert atomic errors into mobius detection events with decomposition suggestions.
+        composite_error_buffer.clear();
+        bool has_corner_node = false;
+        for (const auto &atom : atoms_buf) {
+            has_corner_node |= atom.dets[1] == BOUNDARY_NODE;
+            atom.iter_mobius_edges(node_colors, [&](node_offset_int d1, node_offset_int d2) {
+                composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d1));
+                composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d2));
+                composite_error_buffer.push_back(stim::DemTarget::separator());
+            });
+        }
+
+        // Put the composite error into the mobius dem as an error instruction.
+        if (!composite_error_buffer.empty()) {
+            composite_error_buffer.pop_back();
+            double p = instruction.arg_data[0];
+            if (has_corner_node) {
+                // Corner nodes have edges to themselves that correspond to reaching the boundary in one subgraph
+                // and then bouncing back in another subgraph. Accounting for this correctly requires doubling the
+                // weight of the edge, which corresponds to squaring the probability.
+                p *= p;
+            }
+            out_mobius_dem->append_error_instruction(p, composite_error_buffer);
+        }
+    });
 }

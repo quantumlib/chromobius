@@ -18,66 +18,35 @@
 
 using namespace chromobius;
 
-void chromobius::collect_composite_errors_and_remnants_into_mobius_dem(
-    const stim::DetectorErrorModel &dem,
+bool chromobius::decompose_single_basis_dets_into_atoms(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
     const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    bool drop_mobius_errors_involving_remnant_errors,
-    bool ignore_decomposition_failures,
-    stim::DetectorErrorModel *out_mobius_dem,
+    std::vector<AtomicErrorKey> *out_atoms,
     std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
-
-    stim::SparseXorVec<node_offset_int> dets;
-    std::vector<node_offset_int> x_buf;
-    std::vector<node_offset_int> z_buf;
-    std::vector<AtomicErrorKey> atoms_buf;
-    std::vector<stim::DemTarget> composite_error_buffer;
-
-    dem.iter_flatten_error_instructions([&](stim::DemInstruction instruction) {
-        obsmask_int obs_flip;
-        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip);
-
-        decompose_dets_into_atoms(
-            dets.sorted_items,
-            obs_flip,
-            node_colors,
-            atomic_errors,
-            ignore_decomposition_failures,
-            &x_buf,
-            &z_buf,
-            instruction,
-            &dem,
-            &atoms_buf,
-            out_remnants);
-
-        if (drop_mobius_errors_involving_remnant_errors && !out_remnants->empty()) {
-            atoms_buf.clear();
-            out_remnants->clear();
-        }
-
-        // Convert atomic errors into mobius detection events with decomposition suggestions.
-        composite_error_buffer.clear();
-        bool has_corner_node = false;
-        for (const auto &atom : atoms_buf) {
-            has_corner_node |= atom.dets[1] == BOUNDARY_NODE;
-            atom.iter_mobius_edges(node_colors, [&](node_offset_int d1, node_offset_int d2) {
-                composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d1));
-                composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d2));
-                composite_error_buffer.push_back(stim::DemTarget::separator());
-            });
-        }
-
-        // Put the composite error into the mobius dem as an error instruction.
-        if (!composite_error_buffer.empty()) {
-            composite_error_buffer.pop_back();
-            double p = instruction.arg_data[0];
-            if (has_corner_node) {
-                // Corner nodes have edges to themselves that correspond to reaching the boundary in one subgraph
-                // and then bouncing back in another subgraph. Accounting for this correctly requires doubling the
-                // weight of the edge, which corresponds to squaring the probability.
-                p *= p;
-            }
-            out_mobius_dem->append_error_instruction(p, composite_error_buffer);
-        }
-    });
+    switch (dets.size()) {
+        case 0:
+            return true;
+        case 1:
+            out_atoms->push_back(AtomicErrorKey{dets[0], BOUNDARY_NODE, BOUNDARY_NODE});
+            return atomic_errors.contains(out_atoms->back());
+        case 2:
+            return decompose_single_basis_dets_into_atoms_helper_n2(
+                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+        case 3:
+            return decompose_single_basis_dets_into_atoms_helper_n3(
+                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+        case 4:
+            return decompose_single_basis_dets_into_atoms_helper_n4(
+                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+        case 5:
+            return decompose_single_basis_dets_into_atoms_helper_n5(
+                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+        case 6:
+            return decompose_single_basis_dets_into_atoms_helper_n6(
+                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+        default:
+            return false;
+    }
 }

@@ -49,6 +49,77 @@ void collect_composite_errors_and_remnants_into_mobius_dem(
     stim::DetectorErrorModel *out_mobius_dem,
     std::map<AtomicErrorKey, obsmask_int> *out_remnants);
 
+
+void decompose_dets_into_atoms(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    bool ignore_decomposition_failures,
+    std::vector<node_offset_int> *buf_x_detectors,
+    std::vector<node_offset_int> *buf_z_detectors,
+    const stim::DemInstruction &instruction_for_error_message,
+    const stim::DetectorErrorModel *dem_for_error_message,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+
+bool decompose_single_basis_dets_into_atoms(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+
+bool decompose_single_basis_dets_into_atoms_helper_n3(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+bool try_finish_decomposition(
+    int best_score,
+    obsmask_int obs_flip,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+void try_grow_decomposition(
+    AtomicErrorKey e1,
+    AtomicErrorKey e2,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    int &best_score);
+bool decompose_single_basis_dets_into_atoms_helper_n4(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+bool decompose_single_basis_dets_into_atoms_helper_n5(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+bool decompose_single_basis_dets_into_atoms_helper_n6(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+bool decompose_single_basis_dets_into_atoms_helper_n2(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+   const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    std::vector<AtomicErrorKey> *out_atoms,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+
 }  // namespace chromobius
 
 #endif
