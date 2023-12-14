@@ -172,4 +172,4 @@ jobs:
       - run: pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
       - run: pip install pytest stim sinter pygltflib
       - run: pytest src
-      - run: dev/doctest_proper.py --module chromobius
+      - run: tools/doctest_proper.py --module chromobius
