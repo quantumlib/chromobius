@@ -39,7 +39,7 @@ file(STRINGS file_lists/pybind_files PYBIND_FILES)
 include(FetchContent)
 FetchContent_Declare(stim
         GIT_REPOSITORY https://github.com/quantumlib/stim.git
-        GIT_TAG c135a6129963031b5c05f974e9c5e8def83f8316)
+        GIT_TAG 3e38d12d0a0fb3022646b694137b733a4700d300)
 FetchContent_GetProperties(stim)
 if(NOT stim_POPULATED)
   FetchContent_Populate(stim)
@@ -48,7 +48,7 @@ endif()
 
 FetchContent_Declare(pymatching
         GIT_REPOSITORY https://github.com/oscarhiggott/pymatching.git
-        GIT_TAG 19410c1a44e0c1589840f80c4f79ecf0268a88a0)
+        GIT_TAG 40dcf8c01273ff7e23a7105d5cdc410ada067001)
 FetchContent_GetProperties(pymatching)
 if(NOT pymatching_POPULATED)
   FetchContent_Populate(pymatching)
