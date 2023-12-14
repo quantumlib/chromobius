@@ -36,13 +36,12 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
 
         osx_cmake_flags = []
         if sys.platform.startswith("darwin"):
-            import platform
             # Cross-compile support for macOS - respect ARCHFLAGS if set
             archs = re.findall(r"-arch (\S+)", os.environ.get("ARCHFLAGS", ""))
-            assert False, (archs, platform.machine())
             if archs:
                 osx_cmake_flags = ["-DCMAKE_OSX_ARCHITECTURES={}".format(";".join(archs))]
             else:
+                import platform
                 arch = platform.machine()
                 if arch:
                     osx_cmake_flags = [f"-DCMAKE_OSX_ARCHITECTURES={arch}"]
