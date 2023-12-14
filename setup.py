@@ -51,6 +51,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
             ext.sourcedir,
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={pathlib.Path(self.get_ext_fullpath(ext.name)).parent.absolute()}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
+            f"-DVERSION_INFO={__version__}",
             *osx_cmake_flags,
             *[
                 env_arg_item

@@ -95,6 +95,7 @@ cc_binary(
         "-std=c++20",
         "-fvisibility=hidden",
         "-DNDEBUG",
+        "-DVERSION_INFO=0.0.dev0",
     ],
     includes = ["src/"],
     linkshared = 1,
