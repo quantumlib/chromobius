@@ -109,8 +109,8 @@ struct ChromobiusSinterDecoder {
         stim::RaiiFile obs_out(obs_predictions_b8_out_path_str.c_str(), "wb");
 
         auto reader =
-            stim::MeasureRecordReader<stim::MAX_BITWORD_WIDTH>::make(dets_in.f, stim::SAMPLE_FORMAT_B8, 0, num_dets, 0);
-        auto writer = stim::MeasureRecordWriter::make(obs_out.f, stim::SAMPLE_FORMAT_B8);
+            stim::MeasureRecordReader<stim::MAX_BITWORD_WIDTH>::make(dets_in.f, stim::SampleFormat::SAMPLE_FORMAT_B8, 0, num_dets, 0);
+        auto writer = stim::MeasureRecordWriter::make(obs_out.f, stim::SampleFormat::SAMPLE_FORMAT_B8);
 
         auto decoder = chromobius::Decoder::from_dem(dem, get_options());
 
