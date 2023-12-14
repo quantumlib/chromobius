@@ -19,6 +19,9 @@ on:
       - main
     tags:
       - v*
+  merge_group:
+    branches:
+      - main
   pull_request:
     branches:
       - main
