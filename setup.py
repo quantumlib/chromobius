@@ -100,7 +100,8 @@ setuptools.setup(
     requires=['numpy', 'stim'],
 
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
-    options={'build': {'build_base': 'python_build_chromobius'}},
+    # Also, the replacement name is short to avoid blowing the 256 character path limit on windows.
+    options={'build': {'build_base': 'b'}},
 
     # Add files in package_data_dir to the wheel.
     # I don't know why it has to be so esoteric, but I tried for hours.

@@ -135,7 +135,7 @@ PYBIND11_MODULE(chromobius, m) {
             Example:
                 >>> import stim
                 >>> import chromobius
-                >>>
+
                 >>> dem = stim.Circuit('''
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
                 ...     MPP Z0*Z1*Z2 Z1*Z2*Z3 Z2*Z3*Z4 Z3*Z4*Z5
@@ -146,8 +146,8 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
                 ... ''').detector_error_model()
-                ...
-                ... decoder = chromobius.CompiledDecoder.from_dem(dem)
+
+                >>> decoder = chromobius.CompiledDecoder.from_dem(dem)
         )DOC")
             .data());
 
@@ -191,7 +191,7 @@ PYBIND11_MODULE(chromobius, m) {
                 >>> import stim
                 >>> import chromobius
                 >>> import numpy as np
-                >>>
+
                 >>> repetition_color_code = stim.Circuit('''
                 ...     # Apply noise.
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
@@ -210,25 +210,25 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
                 ... ''')
-                ...
-                ... # Sample the circuit.
-                ... shots = 4096
-                ... sampler = repetition_color_code.compile_detector_sampler()
-                ... dets, actual_obs_flips = sampler.sample(
+
+                >>> # Sample the circuit.
+                >>> shots = 4096
+                >>> sampler = repetition_color_code.compile_detector_sampler()
+                >>> dets, actual_obs_flips = sampler.sample(
                 ...     shots=shots,
                 ...     separate_observables=True,
                 ...     bit_packed=True,
                 ... )
-                ...
-                ... # Decode with Chromobius.
-                ... dem = repetition_color_code.detector_error_model()
-                ... decoder = chromobius.compile_decoder_for_dem(dem)
-                ... predicted_flips = decoder.predict_obs_flips_from_dets_bit_packed(dets)
-                ...
-                ... # Count mistakes.
-                ... differences = np.any(predicted_flips != actual_obs_flips, axis=1)
-                ... mistakes = np.count_nonzero(differences)
-                ... assert mistakes < shots / 5
+
+                >>> # Decode with Chromobius.
+                >>> dem = repetition_color_code.detector_error_model()
+                >>> decoder = chromobius.compile_decoder_for_dem(dem)
+                >>> predicted_flips = decoder.predict_obs_flips_from_dets_bit_packed(dets)
+
+                >>> # Count mistakes.
+                >>> differences = np.any(predicted_flips != actual_obs_flips, axis=1)
+                >>> mistakes = np.count_nonzero(differences)
+                >>> assert mistakes < shots / 5
         )DOC")
             .data());
 
@@ -256,7 +256,7 @@ PYBIND11_MODULE(chromobius, m) {
                         have one symptom of each color. Errors with three symptoms that
                         repeat a color will cause an exception unless they can be decomposed
                         into other basic errors.
-                    3. Moveable excitations. It needs to be possible to combine bulk errors
+                    3. Movable excitations. It needs to be possible to combine bulk errors
                         to form simpler errors with one or two symptoms that can be used to
                         move or destroy excitations. If bulk errors don't have this
                         property, decoding will fail when attempting to lift a solution
@@ -274,7 +274,7 @@ PYBIND11_MODULE(chromobius, m) {
             Example:
                 >>> import stim
                 >>> import chromobius
-                >>>
+
                 >>> dem = stim.Circuit('''
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
                 ...     MPP Z0*Z1*Z2 Z1*Z2*Z3 Z2*Z3*Z4 Z3*Z4*Z5
@@ -285,8 +285,8 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
                 ... ''').detector_error_model()
-                ...
-                ... decoder = chromobius.compile_decoder_for_dem(dem)
+
+                >>> decoder = chromobius.compile_decoder_for_dem(dem)
         )DOC")
             .data());
 
@@ -314,7 +314,7 @@ PYBIND11_MODULE(chromobius, m) {
                         have one symptom of each color. Errors with three symptoms that
                         repeat a color will cause an exception unless they can be decomposed
                         into other basic errors.
-                    3. Moveable excitations. It needs to be possible to combine bulk errors
+                    3. Movable excitations. It needs to be possible to combine bulk errors
                         to form simpler errors with one or two symptoms that can be used to
                         move or destroy excitations. If bulk errors don't have this
                         property, decoding will fail when attempting to lift a solution
@@ -332,7 +332,7 @@ PYBIND11_MODULE(chromobius, m) {
             Example:
                 >>> import stim
                 >>> import chromobius
-                >>>
+
                 >>> dem = stim.Circuit('''
                 ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
                 ...     MPP Z0*Z1*Z2 Z1*Z2*Z3 Z2*Z3*Z4 Z3*Z4*Z5
@@ -343,8 +343,8 @@ PYBIND11_MODULE(chromobius, m) {
                 ...     M 0
                 ...     OBSERVABLE_INCLUDE(0) rec[-1]
                 ... ''').detector_error_model()
-                ...
-                ... decoder = chromobius.CompiledDecoder.from_dem(dem)
+
+                >>> decoder = chromobius.CompiledDecoder.from_dem(dem)
         )DOC")
             .data());
 }
