@@ -1,3 +1,4 @@
+import glob
 import os
 import pathlib
 import shutil
@@ -8,9 +9,19 @@ import setuptools
 import setuptools.command.build_ext
 
 
+ALL_SOURCE_FILES = glob.glob("src/**/*.cc", recursive=True)
+MUX_SOURCE_FILES = glob.glob("src/**/march.pybind.cc", recursive=True)
+TEST_FILES = glob.glob("src/**/*.test.cc", recursive=True)
+PERF_FILES = glob.glob("src/**/*.perf.cc", recursive=True)
+MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
+HEADER_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
+EXTRA_FILES = ['CMakeLists.txt']
+RELEVANT_SOURCE_FILES = sorted((set(EXTRA_FILES) | set(ALL_SOURCE_FILES) | set(HEADER_FILES)) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
+
+
 class CMakeExtension(setuptools.Extension):
-    def __init__(self, name, sourcedir=""):
-        setuptools.Extension.__init__(self, name, sources=[])
+    def __init__(self, name, sourcedir, sources):
+        setuptools.Extension.__init__(self, name, sources=sources)
         self.sourcedir = os.path.abspath(sourcedir)
 
 
@@ -57,10 +68,12 @@ with open("README.md", "r", encoding="utf-8") as f:
 # HACK: Workaround difficulties collecting data files for the package by just making a directory.
 package_data_dir = pathlib.Path(__file__).parent / 'package_data'
 package_data_dir.mkdir(exist_ok=True)
-shutil.copyfile(
-    pathlib.Path(__file__).parent / 'doc' / 'chromobius.pyi',
-    package_data_dir / 'chromobius.pyi',
-)
+doc_chromobius = pathlib.Path(__file__).parent / 'doc' / 'chromobius.pyi'
+if doc_chromobius.exists():
+    shutil.copyfile(
+        pathlib.Path(__file__).parent / 'doc' / 'chromobius.pyi',
+        package_data_dir / 'chromobius.pyi',
+    )
 
 setuptools.setup(
     name="chromobius",
@@ -70,7 +83,7 @@ setuptools.setup(
     description="A fast implementation of the mobius color code decoder.",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    ext_modules=[CMakeExtension("chromobius")],
+    ext_modules=[CMakeExtension("chromobius", sourcedir=".", sources=RELEVANT_SOURCE_FILES)],
     cmdclass={"build_ext": CMakeBuild},
     python_requires=">=3.10",
     setup_requires=['ninja', 'pybind11~=2.11.1'],
@@ -82,8 +95,8 @@ setuptools.setup(
     # Add files in package_data_dir to the wheel.
     # I don't know why it has to be so esoteric, but I tried for hours.
     # This is the best I could come up with.
-    packages=[''],
-    package_dir={'': package_data_dir.name},
-    package_data={'': [str(e) for e in package_data_dir.iterdir()]},
+    packages=['chromobius'],
+    package_dir={'chromobius': package_data_dir.name},
+    package_data={'chromobius': [str(e) for e in package_data_dir.iterdir()]},
     include_package_data=True,
 )

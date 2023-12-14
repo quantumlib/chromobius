@@ -25,3 +25,5 @@ chromobius.egg-info
 wheelhouse
 build
 package_data
+.eggs
+dist
