@@ -98,7 +98,7 @@ setuptools.setup(
     cmdclass={"build_ext": CMakeBuild},
     python_requires=">=3.10",
     setup_requires=['ninja', 'pybind11~=2.11.1'],
-    requires=['numpy', 'stim'],
+    install_requires=['numpy', 'stim'],
 
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
     # Also, the replacement name is short to avoid blowing the 256 character path limit on windows.
