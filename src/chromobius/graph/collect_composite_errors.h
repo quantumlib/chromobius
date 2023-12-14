@@ -119,6 +119,20 @@ bool decompose_single_basis_dets_into_atoms_helper_n2(
    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
     std::vector<AtomicErrorKey> *out_atoms,
     std::map<AtomicErrorKey, obsmask_int> *out_remnants);
+void xxx22(
+    const stim::DetectorErrorModel &dem,
+    std::span<const ColorBasis> node_colors,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
+    bool drop_mobius_errors_involving_remnant_errors,
+    bool ignore_decomposition_failures,
+    stim::DetectorErrorModel *out_mobius_dem,
+    std::map<AtomicErrorKey, obsmask_int> *out_remnants,
+    stim::SparseXorVec<node_offset_int> &dets,
+    std::vector<node_offset_int> &x_buf,
+    std::vector<node_offset_int> &z_buf,
+    std::vector<AtomicErrorKey> &atoms_buf,
+    std::vector<stim::DemTarget> &composite_error_buffer,
+    stim::DemInstruction instruction);
 
 }  // namespace chromobius
 
