@@ -1,9 +1,9 @@
 # Chromobius: color code decoder
 
-Chromobius is an implementation of [Sahay and Brown's "mobius decoder"](https://arxiv.org/abs/2108.11395), which approximates the color code decoding problem as a minimum weight matching problem.
+Chromobius is an implementation of a ["mobius decoder"](https://arxiv.org/abs/2108.11395), which approximates the color code decoding problem as a minimum weight matching problem.
 Chromobius uses [PyMatching](https://github.com/oscarhiggott/PyMatching/) to solve the minimum weight matching problem.
 
-See ((((the published paper "New circuits and an open source decoder for the color code")))) for more details on how Chromobius works.
+See ((((the paper "New circuits and an open source decoder for the color code")))) for more details on how Chromobius works.
 
 ## How to use Chromobius
 
