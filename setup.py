@@ -1,6 +1,7 @@
 import glob
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -33,11 +34,25 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
             'CMAKE_FORCE_PYBIND_CHROMOBIUS': '1',
         }
 
+        osx_cmake_flags = []
+        if sys.platform.startswith("darwin"):
+            import platform
+            # Cross-compile support for macOS - respect ARCHFLAGS if set
+            archs = re.findall(r"-arch (\S+)", os.environ.get("ARCHFLAGS", ""))
+            assert False, (archs, platform.machine())
+            if archs:
+                osx_cmake_flags = ["-DCMAKE_OSX_ARCHITECTURES={}".format(";".join(archs))]
+            else:
+                arch = platform.machine()
+                if arch:
+                    osx_cmake_flags = [f"-DCMAKE_OSX_ARCHITECTURES={arch}"]
+
         subprocess.check_call([
             "cmake",
             ext.sourcedir,
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={pathlib.Path(self.get_ext_fullpath(ext.name)).parent.absolute()}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
+            *osx_cmake_flags,
             *[
                 env_arg_item
                 for env_arg_item in os.environ.get("CMAKE_ARGS", "").split(" ")
