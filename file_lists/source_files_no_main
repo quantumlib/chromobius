@@ -30,6 +30,10 @@ src/chromobius/graph/collect_composite_errors.h
 src/chromobius/graph/collect_composite_errors_2.cc
 src/chromobius/graph/collect_composite_errors_3.cc
 src/chromobius/graph/collect_composite_errors_4.cc
+src/chromobius/graph/collect_composite_errors_5.cc
+src/chromobius/graph/collect_composite_errors_6.cc
+src/chromobius/graph/collect_composite_errors_7.cc
+src/chromobius/graph/collect_composite_errors_8.cc
 src/chromobius/graph/collect_nodes.cc
 src/chromobius/graph/collect_nodes.h
 src/chromobius/graph/drag_graph.cc

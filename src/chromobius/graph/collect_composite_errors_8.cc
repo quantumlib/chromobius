@@ -18,7 +18,7 @@
 
 using namespace chromobius;
 
-bool chromobius::decompose_single_basis_dets_into_atoms_helper_n4(
+bool chromobius::decompose_single_basis_dets_into_atoms_helper_n5(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
@@ -27,7 +27,7 @@ bool chromobius::decompose_single_basis_dets_into_atoms_helper_n4(
     std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
     int best_score = 0;
 
-    // 2:2 decomposition.
+    // 2:3 decomposition.
     for (size_t k1 = 0; k1 < dets.size() && best_score < 2; k1++) {
         for (size_t k2 = k1 + 1; k2 < dets.size(); k2++) {
             try_grow_decomposition(
@@ -35,28 +35,13 @@ bool chromobius::decompose_single_basis_dets_into_atoms_helper_n4(
                 AtomicErrorKey{
                     dets[0 + (k1 <= 0) + (k2 <= 0)],
                     dets[1 + (k1 <= 1) + (k2 <= 1)],
-                    BOUNDARY_NODE,
+                    dets[2 + (k1 <= 2) + (k2 <= 2)],
                 },
                 node_colors,
                 atomic_errors,
                 out_atoms,
                 best_score);
         }
-    }
-
-    // 1:3 decomposition.
-    for (size_t k1 = 0; k1 < dets.size(); k1++) {
-        try_grow_decomposition(
-            AtomicErrorKey{dets[k1], BOUNDARY_NODE, BOUNDARY_NODE},
-            AtomicErrorKey{
-                dets[0 + (k1 <= 0)],
-                dets[1 + (k1 <= 1)],
-                dets[2 + (k1 <= 2)],
-            },
-            node_colors,
-            atomic_errors,
-            out_atoms,
-            best_score);
     }
 
     return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
