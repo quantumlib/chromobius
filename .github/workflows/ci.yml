@@ -19,6 +19,9 @@ on:
       - main
     tags:
       - v*
+  merge_group:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -175,3 +178,17 @@ jobs:
       - run: pip install pytest stim sinter pygltflib
       - run: pytest src
       - run: tools/doctest_proper.py --module chromobius
+  upload_dev_release_to_pypi:
+    needs: ["build_dist"]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          packages_dir: dist/
+          password: ${{ secrets.pypi_token_chromobius }}
