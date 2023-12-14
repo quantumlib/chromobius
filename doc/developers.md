@@ -7,6 +7,7 @@
     - [with bazel](#build-cli-bazel)
     - [with cmake](#build-cli-cmake)
     - [with gcc](#build-cli-gcc)
+    - [with clang](#build-cli-clang)
 - [Building chromobius as a python package](#build-python)
     - [with bazel](#build-python-bazel)
     - [with cmake](#build-python-cmake)
@@ -78,6 +79,32 @@ g++ \
     -O3 \
     -march=native \
     ${CC_FILES_TO_BUILD[@]} \
+    -l stim \
+    -l pymatching
+```
+
+<a class="anchor" id="build-cli-clang"></a>
+### with clang:
+
+```bash
+# This must be run from the repository root.
+# This requires that you have libstim and libpymatching installed.
+
+readarray -d '' CC_FILES_TO_BUILD < \
+    <( \
+      find src \
+      | grep "\\.cc$" \
+      | grep -v "\\.\(test\|perf\|pybind\)\\.cc$" \
+    )
+
+clang \
+    -I src \
+    -std=c++20 \
+    -O3 \
+    -march=native \
+    ${CC_FILES_TO_BUILD[@]} \
+    -l "stdc++" \
+    -l m \
     -l stim \
     -l pymatching
 ```

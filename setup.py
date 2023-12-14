@@ -11,7 +11,7 @@ import setuptools.command.build_ext
 
 CC_FILES = glob.glob("src/**/*.cc", recursive=True)
 H_FILES = glob.glob("src/**/*.h", recursive=True) + glob.glob("src/**/*.inl", recursive=True)
-CMAKE_FILES = ['CMakeLists.txt', *glob.glob("file_lists/**", recursive=True)]
+CMAKE_FILES = ['CMakeLists.txt', *glob.glob("file_lists/*", recursive=True)]
 RELEVANT_SOURCE_FILES = sorted(CMAKE_FILES + CC_FILES + CMAKE_FILES)
 
 
