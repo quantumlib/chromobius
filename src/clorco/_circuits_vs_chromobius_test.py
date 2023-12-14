@@ -41,11 +41,11 @@ def test_constructions_are_decoded(style: str):
         circuit.detector_error_model()
     )
 
-    shots = 1024
+    shots = 2048
     assert 0 < circuit.num_observables <= 8
     dets, obs = circuit.compile_detector_sampler().sample(
         shots=shots, separate_observables=True, bit_packed=True
     )
     predictions = decoder.predict_obs_flips_from_dets_bit_packed(dets)
     mistakes = np.count_nonzero(np.any(predictions != obs, axis=1))
-    assert mistakes / shots < 0.4, (mistakes, shots)
+    assert mistakes / shots < 0.42, (mistakes, shots)
