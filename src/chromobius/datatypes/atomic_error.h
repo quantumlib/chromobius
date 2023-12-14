@@ -93,8 +93,7 @@ struct AtomicErrorKey {
     /// Each symptom splits into two, and the symptoms then get distributed to the various mobius subgraphs.
     /// The pairing of the split up symptoms is important to ensure the subgraphs are connected (and disconnected)
     /// in the appropriate ways.
-    template <typename CALLBACK>
-    inline void iter_mobius_edges(std::span<const ColorBasis> node_colors, CALLBACK callback) const {
+    inline void iter_mobius_edges(std::span<const ColorBasis> node_colors, const std::function<void(node_offset_int, node_offset_int)> &callback) const {
         auto [n1, n2, n3] = dets;
         if (n1 == BOUNDARY_NODE) {
             // No edge.

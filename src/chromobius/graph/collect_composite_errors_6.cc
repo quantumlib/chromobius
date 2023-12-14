@@ -52,30 +52,33 @@ void chromobius::xxx22(
         atoms_buf.clear();
         out_remnants->clear();
     }
-    throw std::invalid_argument("NO");
+//    throw std::invalid_argument("NO");
 
-//    // Convert atomic errors into mobius detection events with decomposition suggestions.
-//    composite_error_buffer.clear();
-//    bool has_corner_node = false;
-//    for (const auto &atom : atoms_buf) {
-//        has_corner_node |= atom.dets[1] == BOUNDARY_NODE;
-//        atom.iter_mobius_edges(node_colors, [&](node_offset_int d1, node_offset_int d2) {
-//            composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d1));
-//            composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d2));
-//            composite_error_buffer.push_back(stim::DemTarget::separator());
-//        });
-//    }
-//
-//    // Put the composite error into the mobius dem as an error instruction.
-//    if (!composite_error_buffer.empty()) {
-//        composite_error_buffer.pop_back();
-//        double p = instruction.arg_data[0];
-//        if (has_corner_node) {
-//            // Corner nodes have edges to themselves that correspond to reaching the boundary in one subgraph
-//            // and then bouncing back in another subgraph. Accounting for this correctly requires doubling the
-//            // weight of the edge, which corresponds to squaring the probability.
-//            p *= p;
-//        }
-//        out_mobius_dem->append_error_instruction(p, composite_error_buffer);
-//    }
+
+
+
+    // Convert atomic errors into mobius detection events with decomposition suggestions.
+    composite_error_buffer.clear();
+    bool has_corner_node = false;
+    for (const auto &atom : atoms_buf) {
+        has_corner_node |= atom.dets[1] == BOUNDARY_NODE;
+        atom.iter_mobius_edges(node_colors, [&](node_offset_int d1, node_offset_int d2) {
+            composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d1));
+            composite_error_buffer.push_back(stim::DemTarget::relative_detector_id(d2));
+            composite_error_buffer.push_back(stim::DemTarget::separator());
+        });
+    }
+
+    // Put the composite error into the mobius dem as an error instruction.
+    if (!composite_error_buffer.empty()) {
+        composite_error_buffer.pop_back();
+        double p = instruction.arg_data[0];
+        if (has_corner_node) {
+            // Corner nodes have edges to themselves that correspond to reaching the boundary in one subgraph
+            // and then bouncing back in another subgraph. Accounting for this correctly requires doubling the
+            // weight of the edge, which corresponds to squaring the probability.
+            p *= p;
+        }
+        out_mobius_dem->append_error_instruction(p, composite_error_buffer);
+    }
 }
