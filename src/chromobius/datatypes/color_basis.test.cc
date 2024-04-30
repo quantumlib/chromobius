@@ -36,7 +36,7 @@ TEST(atomic_error, detector_instruction_to_color_basis) {
     stim::DemInstruction instruction{
         .arg_data = args,
         .target_data = {},
-        .type = stim::DemInstructionType::DEM_ERROR,
+        .type = stim::DemInstructionType::DEM_DETECTOR,
     };
     ASSERT_EQ(detector_instruction_to_color_basis(instruction, offsets), (ColorBasis{Charge::B, Basis::Z}));
     offsets[3] = 100;
@@ -45,6 +45,8 @@ TEST(atomic_error, detector_instruction_to_color_basis) {
     ASSERT_THROW({ detector_instruction_to_color_basis(instruction, offsets); }, std::invalid_argument);
     args[3] = 0.5;
     ASSERT_EQ(detector_instruction_to_color_basis(instruction, offsets), (ColorBasis{Charge::G, Basis::X}));
+    args[3] = -1.5;
+    ASSERT_EQ(detector_instruction_to_color_basis(instruction, offsets), (ColorBasis{Charge::NEUTRAL, Basis::UNKNOWN_BASIS, true}));
 }
 
 TEST(atomic_error, mobius_node_to_detector_vs_detector_to_mobius_node) {

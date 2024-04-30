@@ -35,7 +35,9 @@ std::vector<RgbEdge> chromobius::choose_rgb_reps_from_atomic_errors(
         size_t weight = 0;
         for (auto n : err.dets) {
             if (n != BOUNDARY_NODE) {
-                Charge c = node_colors[n].color;
+                ColorBasis cb = node_colors[n];
+                assert(!cb.ignored);
+                Charge c = cb.color;
                 rep.color_node(c) = n;
                 rep.charge_flip ^= c;
                 weight += 1;

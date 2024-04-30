@@ -50,7 +50,8 @@ static void extract_atomic_errors_from_dem_error_instruction_dets(
 void chromobius::extract_obs_and_dets_from_error_instruction(
     stim::DemInstruction instruction,
     stim::SparseXorVec<node_offset_int> *out_xor_detectors_buffer,
-    obsmask_int *out_obs_flip) {
+    obsmask_int *out_obs_flip,
+    std::span<const ColorBasis> node_colors) {
     out_xor_detectors_buffer->clear();
     *out_obs_flip = 0;
     for (const auto &t : instruction.target_data) {
@@ -65,7 +66,9 @@ void chromobius::extract_obs_and_dets_from_error_instruction(
                 ss << std::numeric_limits<node_offset_int>::max();
                 throw std::invalid_argument(ss.str());
             }
-            out_xor_detectors_buffer->xor_item((node_offset_int)u);
+            if (!node_colors[u].ignored) {
+                out_xor_detectors_buffer->xor_item((node_offset_int)u);
+            }
         } else if (t.is_observable_id()) {
             if (t.raw_id() >= sizeof(obsmask_int) * 8) {
                 std::stringstream ss;
@@ -89,7 +92,7 @@ std::map<AtomicErrorKey, obsmask_int> chromobius::collect_atomic_errors(
     std::map<AtomicErrorKey, obsmask_int> result;
 
     dem.iter_flatten_error_instructions([&](stim::DemInstruction instruction) {
-        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip);
+        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip, node_colors);
 
         extract_atomic_errors_from_dem_error_instruction_dets(dets.sorted_items, obs_flip, node_colors, &result);
     });

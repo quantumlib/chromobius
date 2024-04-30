@@ -19,7 +19,7 @@
 using namespace chromobius;
 
 bool ColorBasis::operator==(const ColorBasis &other) const {
-    return color == other.color && basis == other.basis;
+    return color == other.color && basis == other.basis && ignored == other.ignored;
 }
 
 bool ColorBasis::operator!=(const ColorBasis &other) const {
@@ -31,7 +31,11 @@ std::string ColorBasis::str() const {
     return ss.str();
 }
 std::ostream &chromobius::operator<<(std::ostream &out, const ColorBasis &val) {
-    out << "ColorBasis{.color=" << val.color << ", .basis=" << val.basis << "}";
+    out << "ColorBasis{.color=" << val.color << ", .basis=" << val.basis;
+    if (val.ignored) {
+        out << ", .ignored=true";
+    }
+    out << "}";
     return out;
 }
 
@@ -93,21 +97,40 @@ std::ostream &chromobius::operator<<(std::ostream &out, const SubGraphCoord &val
 
 ColorBasis chromobius::detector_instruction_to_color_basis(
     const stim::DemInstruction &instruction, std::span<const double> coord_offsets) {
-    assert(instruction.type == stim::DemInstructionType::DEM_ERROR);
-    double c = -1;
+    assert(instruction.type == stim::DemInstructionType::DEM_DETECTOR);
+    bool failed = false;
+    double c = -2;
     if (instruction.arg_data.size() > 3) {
         c = instruction.arg_data[3];
         if (coord_offsets.size() > 3) {
             c += coord_offsets[3];
         }
+    } else {
+        failed = true;
     }
-    int r = (int)c;
-    if (r < 0 || r >= 6 || r != c) {
+
+    int r = 0;
+    if (c < -1 || c > 5) {
+        failed = true;
+    } else {
+        r = (int)c;
+        if (r != c) {
+            failed = true;
+        }
+    }
+    if (failed) {
         throw std::invalid_argument(
             "Expected all detectors to have at least 4 coordinates, with the 4th "
             "identifying the basis and color "
             "(RedX=0, GreenX=1, BlueX=2, RedZ=3, GreenZ=4, BlueZ=5), but got " +
             instruction.str());
+    }
+    if (r == -1) {
+        return ColorBasis{
+            .color=Charge::NEUTRAL,
+            .basis=Basis::UNKNOWN_BASIS,
+            .ignored=true,
+        };
     }
     constexpr std::array<ColorBasis, 6> mapping{
         ColorBasis{Charge::R, Basis::X},

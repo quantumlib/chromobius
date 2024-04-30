@@ -44,7 +44,8 @@ std::map<AtomicErrorKey, obsmask_int> collect_atomic_errors(
 void extract_obs_and_dets_from_error_instruction(
     stim::DemInstruction instruction,
     stim::SparseXorVec<node_offset_int> *out_xor_detectors_buffer,
-    obsmask_int *out_obs_flip);
+    obsmask_int *out_obs_flip,
+    std::span<const ColorBasis> node_colors);
 
 }  // namespace chromobius
 

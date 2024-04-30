@@ -147,6 +147,7 @@ INSTANTIATE_TEST_SUITE_P(
                 std::tuple<const char *, int>{"midout_color_code_d9_r36_p1000.stim", 45},
                 std::tuple<const char *, int>{"superdense_color_code_d5_r20_p1000.stim", 329},  // Including remnant errors reduces to 273?
                 std::tuple<const char *, int>{"phenom_color_code_d5_r5_p1000.stim", 0},
+                std::tuple<const char *, int>{"phenom_color_code_d5_r5_p1000_with_ignored.stim", 0},
                 std::tuple<const char *, int>{"surface_code_d5_r5_p1000.stim", 3},
                 std::tuple<const char *, int>{"rep_code_d9_transit_p10.stim", 1},
                 std::tuple<const char *, int>{"rep_code_rg_d9_transit_p10.stim", 1},

@@ -255,6 +255,7 @@ PYBIND11_MODULE(chromobius, m) {
                             3 = Red Z
                             4 = Green Z
                             5 = Blue Z
+                            -1 = Ignore this Detector
                     2. Rainbow triplets. Bulk errors with three symptoms in one basis should
                         have one symptom of each color. Errors with three symptoms that
                         repeat a color will cause an exception unless they can be decomposed
@@ -313,6 +314,7 @@ PYBIND11_MODULE(chromobius, m) {
                             3 = Red Z
                             4 = Green Z
                             5 = Blue Z
+                            -1 = Ignore this Detector
                     2. Rainbow triplets. Bulk errors with three symptoms in one basis should
                         have one symptom of each color. Errors with three symptoms that
                         repeat a color will cause an exception unless they can be decomposed

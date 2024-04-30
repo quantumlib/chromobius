@@ -288,6 +288,9 @@ static void decompose_dets_into_atoms(
     buf_z_detectors->clear();
     for (const auto &t : dets) {
         auto cb = node_colors[t];
+        if (cb.ignored) {
+            continue;
+        }
         int c = (int)cb.color - 1;
         int b = (int)cb.basis - 1;
         if (c < 0 || c >= 3 || b < 0 || b >= 2) {
@@ -366,7 +369,7 @@ void chromobius::collect_composite_errors_and_remnants_into_mobius_dem(
 
     dem.iter_flatten_error_instructions([&](stim::DemInstruction instruction) {
         obsmask_int obs_flip;
-        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip);
+        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip, node_colors);
 
         decompose_dets_into_atoms(
             dets.sorted_items,

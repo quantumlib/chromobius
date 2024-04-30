@@ -65,6 +65,7 @@ enum Basis : uint8_t {
 struct ColorBasis {
     Charge color;
     Basis basis;
+    bool ignored = false;
     bool operator==(const ColorBasis &other) const;
     bool operator!=(const ColorBasis &other) const;
     std::string str() const;

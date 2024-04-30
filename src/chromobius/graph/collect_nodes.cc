@@ -23,36 +23,13 @@ static void collect_nodes_from_dem_helper_process_detector_instruction(
     std::vector<double> *coord_buffer,
     std::span<ColorBasis> out_node_color,
     stim::DetectorErrorModel *out_mobius_dem) {
-    double c = -1;
-    if (instruction.arg_data.size() > 3) {
-        c = instruction.arg_data[3];
-        if (coord_offsets.size() > 3) {
-            c += coord_offsets[3];
-        }
-    }
-    int r = (int)c;
-    if (r < 0 || r >= 6 || r != c) {
-        throw std::invalid_argument(
-            "Expected all detectors to have at least 4 coordinates, with the 4th "
-            "identifying the basis and color "
-            "(RedX=0, GreenX=1, BlueX=2, RedZ=3, GreenZ=4, BlueZ=5), but got " +
-            instruction.str());
-    }
-    constexpr std::array<ColorBasis, 6> mapping{
-        ColorBasis{Charge::R, Basis::X},
-        ColorBasis{Charge::G, Basis::X},
-        ColorBasis{Charge::B, Basis::X},
-        ColorBasis{Charge::R, Basis::Z},
-        ColorBasis{Charge::G, Basis::Z},
-        ColorBasis{Charge::B, Basis::Z},
-    };
-    ColorBasis cb = mapping[r];
+    ColorBasis cb = detector_instruction_to_color_basis(instruction, coord_offsets);
 
     for (const auto &t : instruction.target_data) {
         auto n = t.raw_id() + det_offset;
         out_node_color[n] = cb;
 
-        if (out_mobius_dem != nullptr) {
+        if (out_mobius_dem != nullptr && !cb.ignored) {
             SubGraphCoord g0;
             SubGraphCoord g1;
             switch (cb.color) {
