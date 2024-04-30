@@ -23,13 +23,7 @@ static void collect_nodes_from_dem_helper_process_detector_instruction(
     std::vector<double> *coord_buffer,
     std::span<ColorBasis> out_node_color,
     stim::DetectorErrorModel *out_mobius_dem) {
-    double c = -1;
-    if (instruction.arg_data.size() > 3) {
-        c = instruction.arg_data[3];
-        if (coord_offsets.size() > 3) {
-            c += coord_offsets[3];
-        }
-    }
+    auto cc = detector_instruction_to_color_basis(instruction, coord_offsets);
     int r = (int)c;
     if (r < 0 || r >= 6 || r != c) {
         throw std::invalid_argument(

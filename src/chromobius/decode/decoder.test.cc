@@ -138,3 +138,47 @@ TEST(decoder, mobius_dem) {
     )DEM");
     ASSERT_TRUE(decoder.mobius_dem.approx_equals(expected, 1e-5));
 }
+
+TEST(decoder, ignores_detectors_annotated_with_minus_1) {
+    stim::DetectorErrorModel dem(R"DEM(
+        error(0.125) D0 D1 D2
+        error(0.0625) D3 D4 D5
+        error(0.0625) D0 D1 D2 D3 D4 D5
+        error(0.25) D0 L1
+        detector(0, 0, 0, 0) D0
+        detector(0, 0, 0, 1) D1
+        detector(0, 0, 0, 2) D2
+        detector(0, 0, 0, 3) D3
+        error(0.125) D20 D21 D22 D23
+        detector(0, 0, 0, -1) D20
+        detector(0, 0, 0, -1) D21
+        detector(0, 0, 0, -1) D22
+        detector(0, 0, 0, -1) D23
+        repeat 2 {
+            detector(0, 0, 0, 4) D4
+            shift_detectors(0, 0, 0, 1) 1
+        }
+    )DEM");
+
+    Decoder decoder = Decoder::from_dem(dem, DecoderConfigOptions{.include_coords_in_mobius_dem=true});
+    stim::DetectorErrorModel expected(R"DEM(
+        detector(0, 0, 0, 0, 2) D0
+        detector(0, 0, 0, 0, 3) D1
+        detector(0, 0, 0, 1, 1) D2
+        detector(0, 0, 0, 1, 3) D3
+        detector(0, 0, 0, 2, 1) D4
+        detector(0, 0, 0, 2, 2) D5
+        detector(0, 0, 0, 3, 2) D6
+        detector(0, 0, 0, 3, 3) D7
+        detector(0, 0, 0, 4, 1) D8
+        detector(0, 0, 0, 4, 3) D9
+        detector(0, 0, 0, 5, 1) D10
+        detector(0, 0, 0, 5, 2) D11
+        detector D47
+        error(0.125) D1 D3 ^ D2 D4 ^ D0 D5
+        error(0.0625) D7 D9 ^ D8 D10 ^ D6 D11
+        error(0.0625) D1 D3 ^ D2 D4 ^ D0 D5 ^ D7 D9 ^ D8 D10 ^ D6 D11
+        error(0.0625) D0 D1
+    )DEM");
+    ASSERT_TRUE(decoder.mobius_dem.approx_equals(expected, 1e-5));
+}
