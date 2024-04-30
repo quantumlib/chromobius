@@ -47,6 +47,12 @@ void extract_obs_and_dets_from_error_instruction(
     obsmask_int *out_obs_flip,
     std::span<const ColorBasis> node_colors);
 
+AtomicErrorKey extract_atomic_errors_from_dem_error_instruction_dets(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    std::map<AtomicErrorKey, obsmask_int> *out_atomic_errors);
+
 }  // namespace chromobius
 
 #endif

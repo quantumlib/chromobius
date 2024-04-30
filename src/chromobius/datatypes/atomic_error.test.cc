@@ -31,6 +31,28 @@ TEST(atomic_error, sort3) {
     }
 }
 
+TEST(atomic_error, atomic_error_key_construct) {
+    AtomicErrorKey n{std::vector<node_offset_int>{}};
+    ASSERT_EQ(n.dets[0], BOUNDARY_NODE);
+    ASSERT_EQ(n.dets[1], BOUNDARY_NODE);
+    ASSERT_EQ(n.dets[2], BOUNDARY_NODE);
+
+    n = AtomicErrorKey{std::vector<node_offset_int>{1}};
+    ASSERT_EQ(n.dets[0], 1);
+    ASSERT_EQ(n.dets[1], BOUNDARY_NODE);
+    ASSERT_EQ(n.dets[2], BOUNDARY_NODE);
+
+    n = AtomicErrorKey{std::vector<node_offset_int>{1, 3}};
+    ASSERT_EQ(n.dets[0], 1);
+    ASSERT_EQ(n.dets[1], 3);
+    ASSERT_EQ(n.dets[2], BOUNDARY_NODE);
+
+    n = AtomicErrorKey{std::vector<node_offset_int>{4, 1, 3}};
+    ASSERT_EQ(n.dets[0], 1);
+    ASSERT_EQ(n.dets[1], 3);
+    ASSERT_EQ(n.dets[2], 4);
+}
+
 TEST(atomic_error, atomic_error_key_basic) {
     AtomicErrorKey n{2, 3, 5};
     ASSERT_EQ(n.dets[0], 2);

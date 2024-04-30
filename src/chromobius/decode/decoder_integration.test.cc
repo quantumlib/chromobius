@@ -142,10 +142,10 @@ INSTANTIATE_TEST_SUITE_P(
     IntegrationTestData,
     ::testing::Values(
                 std::tuple<const char *, int>{"toric_superdense_color_code_epr_d12_r5_p1000.stim", 1693},
-                std::tuple<const char *, int>{"midout488_color_code_d9_r33_p1000.stim", 823},
+                std::tuple<const char *, int>{"midout488_color_code_d9_r33_p1000.stim", 822},
                 std::tuple<const char *, int>{"midout_color_code_d5_r10_p1000.stim", 94},
                 std::tuple<const char *, int>{"midout_color_code_d9_r36_p1000.stim", 45},
-                std::tuple<const char *, int>{"superdense_color_code_d5_r20_p1000.stim", 329},  // Including remnant errors reduces to 273?
+                std::tuple<const char *, int>{"superdense_color_code_d5_r20_p1000.stim", 324},  // Including remnant errors reduces to 273?
                 std::tuple<const char *, int>{"phenom_color_code_d5_r5_p1000.stim", 0},
                 std::tuple<const char *, int>{"phenom_color_code_d5_r5_p1000_with_ignored.stim", 0},
                 std::tuple<const char *, int>{"surface_code_d5_r5_p1000.stim", 3},

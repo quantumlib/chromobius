@@ -59,6 +59,13 @@ struct AtomicErrorKey {
     inline AtomicErrorKey(node_offset_int det1, node_offset_int det2, node_offset_int det3)
         : dets(sort3(det1, det2, det3)) {
     }
+    inline AtomicErrorKey(std::span<const node_offset_int> dets)
+        : dets(sort3(
+              dets.size() > 0 ? dets[0] : BOUNDARY_NODE,
+              dets.size() > 1 ? dets[1] : BOUNDARY_NODE,
+              dets.size() > 2 ? dets[2] : BOUNDARY_NODE)) {
+        assert(dets.size() <= 3);
+    }
     inline bool operator<(const AtomicErrorKey &other) const {
         for (size_t k = 0; k < 3; k++) {
             if (dets[k] != other.dets[k]) {

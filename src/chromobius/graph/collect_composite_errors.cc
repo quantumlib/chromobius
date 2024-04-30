@@ -23,7 +23,7 @@ static inline void try_grow_decomposition(
     AtomicErrorKey e2,
     std::span<const ColorBasis> node_colors,
     const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
+    AtomicErrorKey *out_atom,
     int &best_score) {
     bool c1 = atomic_errors.contains(e1);
     bool c2 = atomic_errors.contains(e2);
@@ -38,83 +38,32 @@ static inline void try_grow_decomposition(
         return;
     }
 
-    if (best_score > 0) {
-        out_atoms->pop_back();
-        out_atoms->pop_back();
-    }
-    out_atoms->push_back(e1);
-    out_atoms->push_back(e2);
+    *out_atom = c2 ? e2 : e1;
     best_score = score;
 }
 
-static inline bool try_finish_decomposition(
-    int best_score,
-    obsmask_int obs_flip,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
-    assert(best_score == 0 || out_atoms->size() >= 2);
-    if (best_score == 1) {
-        AtomicErrorKey cur = (*out_atoms)[out_atoms->size() - 2];
-        AtomicErrorKey rem = (*out_atoms)[out_atoms->size() - 1];
-        (*out_remnants)[rem] = obs_flip ^ atomic_errors.at(cur);
-    } else if (best_score == 2) {
-        AtomicErrorKey cur = (*out_atoms)[out_atoms->size() - 1];
-        AtomicErrorKey rem = (*out_atoms)[out_atoms->size() - 2];
-        (*out_remnants)[rem] = obs_flip ^ atomic_errors.at(cur);
+static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n2(
+    std::span<const node_offset_int> dets,
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors) {
+
+    AtomicErrorKey a1{dets[0], BOUNDARY_NODE, BOUNDARY_NODE};
+    AtomicErrorKey a2{dets[0], BOUNDARY_NODE, BOUNDARY_NODE};
+    if (atomic_errors.contains(a1)) {
+        return a1;
     }
-    return best_score > 0;
+    if (atomic_errors.contains(a2)) {
+        return a2;
+    }
+    return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
 }
 
-static bool decompose_single_basis_dets_into_atoms_helper_n2(
+static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n3(
     std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
-    // Check if it's just directly included.
-    AtomicErrorKey e{dets[0], dets[1], BOUNDARY_NODE};
-    if (atomic_errors.contains(e)) {
-        out_atoms->push_back(e);
-        return true;
-    }
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors) {
 
     int best_score = 0;
-
-    // 1:1 decomposition.
-    for (size_t k1 = 0; k1 < dets.size(); k1++) {
-        try_grow_decomposition(
-            AtomicErrorKey{dets[k1], BOUNDARY_NODE, BOUNDARY_NODE},
-            AtomicErrorKey{
-                dets[0 + (k1 <= 0)],
-                BOUNDARY_NODE,
-                BOUNDARY_NODE,
-            },
-            node_colors,
-            atomic_errors,
-            out_atoms,
-            best_score);
-    }
-
-    return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
-}
-
-static bool decompose_single_basis_dets_into_atoms_helper_n3(
-    std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
-    std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
-    // Check if it's just directly included.
-    AtomicErrorKey e{dets[0], dets[1], dets[2]};
-    if (atomic_errors.contains(e)) {
-        out_atoms->push_back(e);
-        return true;
-    }
-
-    int best_score = 0;
+    AtomicErrorKey result{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
 
     // 1:2 decomposition.
     for (size_t k1 = 0; k1 < dets.size(); k1++) {
@@ -127,21 +76,19 @@ static bool decompose_single_basis_dets_into_atoms_helper_n3(
             },
             node_colors,
             atomic_errors,
-            out_atoms,
+            &result,
             best_score);
     }
 
-    return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
+    return result;
 }
 
-static bool decompose_single_basis_dets_into_atoms_helper_n4(
+static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n4(
     std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors) {
     int best_score = 0;
+    AtomicErrorKey result{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
 
     // 2:2 decomposition.
     for (size_t k1 = 0; k1 < dets.size() && best_score < 2; k1++) {
@@ -155,7 +102,7 @@ static bool decompose_single_basis_dets_into_atoms_helper_n4(
                 },
                 node_colors,
                 atomic_errors,
-                out_atoms,
+                &result,
                 best_score);
         }
     }
@@ -171,21 +118,20 @@ static bool decompose_single_basis_dets_into_atoms_helper_n4(
             },
             node_colors,
             atomic_errors,
-            out_atoms,
+            &result,
             best_score);
     }
 
-    return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
+    return result;
 }
 
-static bool decompose_single_basis_dets_into_atoms_helper_n5(
+static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n5(
     std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors) {
+
     int best_score = 0;
+    AtomicErrorKey result{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
 
     // 2:3 decomposition.
     for (size_t k1 = 0; k1 < dets.size() && best_score < 2; k1++) {
@@ -199,22 +145,21 @@ static bool decompose_single_basis_dets_into_atoms_helper_n5(
                 },
                 node_colors,
                 atomic_errors,
-                out_atoms,
+                &result,
                 best_score);
         }
     }
 
-    return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
+    return result;
 }
 
-static bool decompose_single_basis_dets_into_atoms_helper_n6(
+static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n6(
     std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors) {
+
     int best_score = 0;
+    AtomicErrorKey result{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
 
     // 3:3 decomposition.
     for (size_t k1 = 0; k1 < dets.size() && best_score < 2; k1++) {
@@ -229,45 +174,45 @@ static bool decompose_single_basis_dets_into_atoms_helper_n6(
                     },
                     node_colors,
                     atomic_errors,
-                    out_atoms,
+                    &result,
                     best_score);
             }
         }
     }
 
-    return try_finish_decomposition(best_score, obs_flip, atomic_errors, out_atoms, out_remnants);
+    return result;
 }
 
-static bool decompose_single_basis_dets_into_atoms(
+static AtomicErrorKey decompose_single_basis_dets_into_atoms(
     std::span<const node_offset_int> dets,
-    obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors,
-    std::vector<AtomicErrorKey> *out_atoms,
-    std::map<AtomicErrorKey, obsmask_int> *out_remnants) {
+    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors) {
+    if (dets.size() <= 3) {
+        AtomicErrorKey solo{dets};
+        if (atomic_errors.contains(solo)) {
+            return solo;
+        }
+    }
+
     switch (dets.size()) {
-        case 0:
-            return true;
-        case 1:
-            out_atoms->push_back(AtomicErrorKey{dets[0], BOUNDARY_NODE, BOUNDARY_NODE});
-            return atomic_errors.contains(out_atoms->back());
         case 2:
             return decompose_single_basis_dets_into_atoms_helper_n2(
-                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+                dets, atomic_errors);
         case 3:
             return decompose_single_basis_dets_into_atoms_helper_n3(
-                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+                dets, node_colors, atomic_errors);
         case 4:
             return decompose_single_basis_dets_into_atoms_helper_n4(
-                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+                dets, node_colors, atomic_errors);
         case 5:
             return decompose_single_basis_dets_into_atoms_helper_n5(
-                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+                dets, node_colors, atomic_errors);
         case 6:
             return decompose_single_basis_dets_into_atoms_helper_n6(
-                dets, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
+                dets, node_colors, atomic_errors);
         default:
-            return false;
+            // Failed to decompose.
+            return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
     }
 }
 
@@ -288,21 +233,8 @@ static void decompose_dets_into_atoms(
     buf_z_detectors->clear();
     for (const auto &t : dets) {
         auto cb = node_colors[t];
-        if (cb.ignored) {
-            continue;
-        }
-        int c = (int)cb.color - 1;
-        int b = (int)cb.basis - 1;
-        if (c < 0 || c >= 3 || b < 0 || b >= 2) {
-            std::stringstream ss;
-            ss << "Detector D" << t << " originating from instruction (after shifting) '"
-               << instruction_for_error_message << "'";
-            ss << " is missing coordinate data indicating its color and basis.\n";
-            ss << "Every detector used in an error must have a 4th coordinate in "
-                  "[0,6) where RedX=0, GreenX=1, BlueX=2, RedZ=3, GreenZ=4, BlueZ=5.";
-            throw std::invalid_argument(ss.str());
-        }
-        if (b == 0) {
+        assert(!cb.ignored);
+        if (cb.basis == Basis::X) {
             buf_x_detectors->push_back(t);
         } else {
             buf_z_detectors->push_back(t);
@@ -311,19 +243,69 @@ static void decompose_dets_into_atoms(
 
     // Split into atomic errors.
     out_atoms->clear();
-    bool x_worked = decompose_single_basis_dets_into_atoms(
-        *buf_x_detectors, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
-    bool z_worked = decompose_single_basis_dets_into_atoms(
-        *buf_z_detectors, obs_flip, node_colors, atomic_errors, out_atoms, out_remnants);
-    if (!(x_worked && z_worked) && !ignore_decomposition_failures) {
+    for (size_t rep = 0; rep < 3; rep++) {
+        for (auto *basis_dets : std::array<std::vector<node_offset_int> *, 2>{buf_x_detectors, buf_z_detectors}) {
+            AtomicErrorKey removed{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
+            if (rep == 2) {
+                removed = extract_atomic_errors_from_dem_error_instruction_dets(
+                    *basis_dets,
+                    obs_flip,
+                    node_colors,
+                    out_remnants);
+            } else {
+                removed = decompose_single_basis_dets_into_atoms(*basis_dets, node_colors, atomic_errors);
+            }
+
+            auto w = removed.weight();
+            if (w) {
+                for (size_t k = 0; k < w; k++) {
+                    // Remove matching item.
+                    for (size_t i = 0; i < basis_dets->size(); i++) {
+                        if ((*basis_dets)[i] == removed.dets[k]) {
+                            (*basis_dets)[i] = basis_dets->back();
+                            basis_dets->pop_back();
+                            break;
+                        }
+                    }
+                }
+                if (atomic_errors.contains(removed)) {
+                    obs_flip ^= atomic_errors.at(removed);
+                } else {
+                    obs_flip ^= out_remnants->at(removed);
+                }
+                out_atoms->push_back(removed);
+            }
+        }
+    }
+    if ((!buf_x_detectors->empty() || !buf_z_detectors->empty()) && !ignore_decomposition_failures) {
         std::stringstream ss;
         ss << "Failed to decompose a complex error instruction into basic errors.\n";
         ss << "    The instruction (after shifting): " + instruction_for_error_message.str() << "\n";
-        if (!x_worked) {
-            ss << "    The undecomposed X detectors: [" << stim::comma_sep(*buf_x_detectors) << "]\n";
+        ss << "    The undecomposed X detectors: [" << stim::comma_sep(*buf_x_detectors) << "]\n";
+        ss << "    The undecomposed Z detectors: [" << stim::comma_sep(*buf_z_detectors) << "]\n";
+        for (auto e : *out_atoms) {
+            ss << "    Decomposed piece:";
+            for (auto d : e.dets) {
+                if (d != BOUNDARY_NODE) {
+                    ss << " D" << d;
+                }
+            }
+            obsmask_int l = atomic_errors.contains(e) ? atomic_errors.at(e) : out_remnants->at(e);
+            for (size_t k = 0; k < sizeof(obsmask_int) * 8; k++) {
+                if ((l >> k) & 1) {
+                    ss << " L" << k;
+                }
+            }
+            ss << "\n";
         }
-        if (!z_worked) {
-            ss << "    The undecomposed Z detectors: [" << stim::comma_sep(*buf_z_detectors) << "]\n";
+        if (obs_flip) {
+            ss << "    The undecomposed observable mask:";
+            for (size_t k = 0; k < sizeof(obsmask_int) * 8; k++) {
+                if ((obs_flip >> k) & 1) {
+                    ss << " L" << k;
+                }
+            }
+            ss << "\n";
         }
         ss << "    Detector data:\n";
         std::set<uint64_t> ds;

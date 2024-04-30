@@ -16,34 +16,41 @@
 
 using namespace chromobius;
 
-static void extract_atomic_errors_from_dem_error_instruction_dets(
+AtomicErrorKey chromobius::extract_atomic_errors_from_dem_error_instruction_dets(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
     std::map<AtomicErrorKey, obsmask_int> *out_atomic_errors) {
     switch (dets.size()) {
         case 1: {
-            (*out_atomic_errors)[AtomicErrorKey{dets[0], BOUNDARY_NODE, BOUNDARY_NODE}] = obs_flip;
-            return;
+            AtomicErrorKey key{dets[0], BOUNDARY_NODE, BOUNDARY_NODE};
+            (*out_atomic_errors)[key] = obs_flip;
+            return key;
         }
         case 2: {
+            AtomicErrorKey key{dets[0], dets[1], BOUNDARY_NODE};
             ColorBasis c0 = node_colors[dets[0]];
             ColorBasis c1 = node_colors[dets[1]];
             if (c0.basis == c1.basis) {
-                (*out_atomic_errors)[AtomicErrorKey{dets[0], dets[1], BOUNDARY_NODE}] = obs_flip;
+                (*out_atomic_errors)[key] = obs_flip;
+                return key;
             }
-            return;
+            return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
         }
         case 3: {
+            AtomicErrorKey key{dets[0], dets[1], dets[2]};
             ColorBasis c0 = node_colors[dets[0]];
             ColorBasis c1 = node_colors[dets[1]];
             ColorBasis c2 = node_colors[dets[2]];
             Charge net_charge = c0.color ^ c1.color ^ c2.color;
             if (net_charge == Charge::NEUTRAL && c0.basis == c1.basis && c1.basis == c2.basis) {
-                (*out_atomic_errors)[AtomicErrorKey{dets[0], dets[1], dets[2]}] = obs_flip;
+                (*out_atomic_errors)[key] = obs_flip;
+                return key;
             }
-            return;
+            return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
         }
+        default:
+            return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
     }
 }
 
