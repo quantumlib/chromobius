@@ -24,6 +24,7 @@ namespace chromobius {
 
 struct PymatchingMatcher : MatcherInterface {
     pm::Mwpm pymatching_matcher;
+    double weight_scaling_constant;
 
     PymatchingMatcher();
     PymatchingMatcher(const stim::DetectorErrorModel &dem);
@@ -32,7 +33,7 @@ struct PymatchingMatcher : MatcherInterface {
     virtual std::unique_ptr<MatcherInterface> configured_for_mobius_dem(const stim::DetectorErrorModel &dem) override;
 
     virtual void match_edges(
-        const std::vector<uint64_t> &mobius_detection_event_indices, std::vector<int64_t> *out_edge_buffer) override;
+        const std::vector<uint64_t> &mobius_detection_event_indices, std::vector<int64_t> *out_edge_buffer, float *out_weight = nullptr) override;
 };
 
 }  // namespace chromobius

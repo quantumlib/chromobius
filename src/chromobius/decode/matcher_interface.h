@@ -41,7 +41,7 @@ struct MatcherInterface {
     ///         is an edge. There should be no boundary edges in the result, since the mobius
     ///         dem is guaranteed to not contain any boundary edges.
     virtual void match_edges(
-        const std::vector<uint64_t> &mobius_detection_event_indices, std::vector<int64_t> *out_edge_buffer) = 0;
+        const std::vector<uint64_t> &mobius_detection_event_indices, std::vector<int64_t> *out_edge_buffer, float *out_weight = nullptr) = 0;
 };
 
 }  // namespace chromobius
