@@ -81,68 +81,66 @@ def _color_code_round_chunk(
 
     # Fold color code state towards next measurement.
     if not first_round:
-        builder.gate2("CX", rail_b)
+        builder.append("CX", rail_b)
         builder.tick()
-        builder.gate2("CX", rail_a)
+        builder.append("CX", rail_a)
         builder.tick()
-        builder.gate2("CX", rung_m)
+        builder.append("CX", rung_m)
         builder.tick()
 
         # Measure stabilizers.
-        builder.measure(mx, basis="X", save_layer="solo")
-        builder.measure(mz, basis="Z", save_layer="solo")
+        builder.append('MX', mx)
+        builder.append('MZ', mz)
         builder.shift_coords(dt=1)
         builder.tick()
 
     # Physically do a demolition measurement, but use feedback to present it as non-demolition to the control system.
-    builder.gate("RX", mx)
+    builder.append("RX", mx)
     if first_round:
-        builder.gate(f"R{basis}", patch.data_set - mx - mz)
-    builder.gate("R", mz)
+        builder.append(f"R{basis}", patch.data_set - mx - mz)
+    builder.append("R", mz)
     if not first_round:
         for ms, mb in ((mx, "Z"), (mz, "X")):
             for m in gen.sorted_complex(ms):
                 builder.classical_paulis(
-                    control_keys=[gen.AtLayer(m, "solo")], targets=[m], basis=mb
+                    control_keys=[m], targets=[m], basis=mb
                 )
     builder.tick()
 
     # Unfold from previous measurement to color code state.
-    builder.gate2("CX", rung_m)
+    builder.append("CX", rung_m)
     builder.tick()
-    builder.gate2("CX", rail_a)
+    builder.append("CX", rail_a)
     builder.tick()
-    builder.gate2("CX", rail_b)
+    builder.append("CX", rail_b)
 
     flows = []
     discarded_outputs = []
     for tile in patch.tiles:
         measured_tile_basis = "X" if tile.measurement_qubit in mx else "Z"
         for check_basis in "XZ":
+            flags = {*tile.flags, f'basis={check_basis}'}
             ps = gen.PauliString({q: check_basis for q in tile.data_set})
-            additional_coords = [tile.extra_coords[0] + "XZ".index(check_basis) * 3]
             if first_round:
                 if check_basis in [basis, measured_tile_basis]:
                     flows.append(
                         gen.Flow(
                             end=ps,
                             center=tile.measurement_qubit,
-                            additional_coords=additional_coords,
+                            flags=flags,
                         )
                     )
                 else:
                     discarded_outputs.append(ps)
             else:
                 if check_basis == measured_tile_basis:
-                    ms = builder.tracker.measurement_indices(
-                        [gen.AtLayer(tile.measurement_qubit, "solo")]
-                    )
+                    ms = builder.lookup_rec(tile.measurement_qubit)
                     flows.append(
                         gen.Flow(
                             start=ps,
                             measurement_indices=ms,
                             center=tile.measurement_qubit,
-                            additional_coords=additional_coords,
+                            flags=flags,
                         )
                     )
                     flows.append(
@@ -150,7 +148,7 @@ def _color_code_round_chunk(
                             end=ps,
                             measurement_indices=ms,
                             center=tile.measurement_qubit,
-                            additional_coords=additional_coords,
+                            flags=flags,
                         )
                     )
                 else:
@@ -159,7 +157,7 @@ def _color_code_round_chunk(
                             start=ps,
                             end=ps,
                             center=tile.measurement_qubit,
-                            additional_coords=additional_coords,
+                            flags=flags,
                         )
                     )
 
@@ -170,7 +168,6 @@ def _color_code_round_chunk(
             end=obs,
             center=0,
             obs_index=0,
-            additional_coords=(),
         )
     )
 
@@ -213,7 +210,7 @@ def make_midout_color_code_circuit_chunks(
         basis=basis,
         layer_parity=rounds % 2 == 1,
         first_round=True,
-    ).inverted()
+    ).time_reversed()
 
     if rounds % 2 == 0:
         tail = [body_1, end]

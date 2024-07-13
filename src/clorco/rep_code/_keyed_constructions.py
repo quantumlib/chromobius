@@ -115,14 +115,12 @@ def _simplified_noise_rep_code_constructions() -> (
         )
         if phenom:
             return code.make_phenom_circuit(
-                noise=params.noise_model,
+                noise=params.noise_model.idle_depolarization,
                 rounds=params.rounds,
-                debug_out_dir=params.debug_out_dir,
             )
         assert params.rounds == 1
         return code.make_code_capacity_circuit(
-            noise=params.noise_model.idle_noise,
-            debug_out_dir=params.debug_out_dir
+            noise=params.noise_model.idle_depolarization,
         )
 
     for coloring in ["r", "rg", "rbrrr"]:

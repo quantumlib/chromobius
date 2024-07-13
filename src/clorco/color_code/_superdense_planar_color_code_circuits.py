@@ -44,7 +44,7 @@ def make_color_code_layout_for_superdense(
                         bases=bases[k],
                         measurement_qubit=q + k,
                         ordered_data_qubits=[q + d for d in order],
-                        extra_coords=[rgb + k * 3],
+                        flags={f'color={"rgb"[rgb]}', f'basis={bases[k]}'},
                     )
                 )
 
@@ -59,14 +59,9 @@ def make_color_code_layout_for_superdense(
 
     filtered_tiles = []
     for tile in tiles:
-        new_tile = gen.Tile(
-            bases=tile.bases,
-            measurement_qubit=tile.measurement_qubit,
-            ordered_data_qubits=[
-                (q if is_in_bounds(q) else None) for q in tile.ordered_data_qubits
-            ],
-            extra_coords=tile.extra_coords,
-        )
+        new_tile = tile.with_edits(ordered_data_qubits=[
+            (q if is_in_bounds(q) else None) for q in tile.ordered_data_qubits
+        ])
         if len(new_tile.data_set) >= 4:
             filtered_tiles.append(new_tile)
 
@@ -103,7 +98,7 @@ def make_superdense_color_code_circuit_round_chunk(
         d_target: complex,
         inv: Callable[[complex], bool] = lambda _: False,
     ) -> None:
-        builder.gate2(
+        builder.append(
             "CX",
             [
                 (c + d_control, c + d_target)[:: -1 if inv(c) else +1]
@@ -113,10 +108,10 @@ def make_superdense_color_code_circuit_round_chunk(
             ],
         )
 
-    builder.gate("RX", x_ms)
+    builder.append("RX", x_ms)
     if initialize:
-        builder.gate(f"R{basis}", code.patch.data_set)
-    builder.gate("RZ", z_ms)
+        builder.append(f"R{basis}", code.patch.data_set)
+    builder.append("RZ", z_ms)
     builder.tick()
 
     do_cxs(x_ms, +0, +1)
@@ -142,13 +137,11 @@ def make_superdense_color_code_circuit_round_chunk(
     do_cxs(x_ms, +0, +1)
     builder.tick()
 
-    builder.measure(x_ms, basis="X", save_layer="solo")
-    builder.measure(z_ms, basis="Z", save_layer="solo")
+    builder.append('MX', x_ms)
+    builder.append('MZ', z_ms)
 
     def mf(*qs):
-        return builder.tracker.measurement_indices(
-            [gen.AtLayer(q, "solo") for q in qs if q in code.patch.measure_set]
-        )
+        return builder.lookup_recs(q for q in qs if q in code.patch.measure_set)
 
     flows = []
     for tile in code.patch.tiles:
@@ -160,7 +153,7 @@ def make_superdense_color_code_circuit_round_chunk(
                         start=tile.to_data_pauli_string(),
                         measurement_indices=mf(m),
                         center=m,
-                        additional_coords=tile.extra_coords,
+                        flags=tile.flags,
                     )
                 )
             elif basis == "X":
@@ -168,7 +161,7 @@ def make_superdense_color_code_circuit_round_chunk(
                     gen.Flow(
                         measurement_indices=mf(m),
                         center=m,
-                        additional_coords=tile.extra_coords,
+                        flags=tile.flags,
                     )
                 )
             flows.append(
@@ -176,7 +169,7 @@ def make_superdense_color_code_circuit_round_chunk(
                     end=tile.to_data_pauli_string(),
                     measurement_indices=mf(m),
                     center=m,
-                    additional_coords=tile.extra_coords,
+                    flags=tile.flags,
                 )
             )
         elif tile.basis == "Z":
@@ -186,7 +179,7 @@ def make_superdense_color_code_circuit_round_chunk(
                         start=tile.to_data_pauli_string(),
                         measurement_indices=mf(m),
                         center=m,
-                        additional_coords=tile.extra_coords,
+                        flags=tile.flags,
                     )
                 )
             elif basis == "Z":
@@ -194,7 +187,7 @@ def make_superdense_color_code_circuit_round_chunk(
                     gen.Flow(
                         measurement_indices=mf(m),
                         center=m,
-                        additional_coords=tile.extra_coords,
+                        flags=tile.flags,
                     )
                 )
             flows.append(
@@ -202,7 +195,7 @@ def make_superdense_color_code_circuit_round_chunk(
                     end=tile.to_data_pauli_string(),
                     measurement_indices=mf(m - 2j if m.imag > 0 else m, m + 2j),
                     center=m,
-                    additional_coords=tile.extra_coords,
+                    flags=tile.flags,
                 )
             )
 
@@ -242,6 +235,25 @@ def make_superdense_color_code_circuit_round_chunk(
     )
 
 
+def f2c(flow: gen.Flow) -> list[float]:
+    c = 0
+    if 'color=r' in flow.flags:
+        c += 0
+    elif 'color=g' in flow.flags:
+        c += 1
+    elif 'color=b' in flow.flags:
+        c += 2
+    else:
+        raise NotImplementedError(f'{flow=}')
+    if 'basis=X' in flow.flags:
+        c += 0
+    elif 'basis=Z' in flow.flags:
+        c += 3
+    else:
+        raise NotImplementedError(f'{flow=}')
+    return [c]
+
+
 def make_superdense_color_code_circuit(
     *,
     base_data_width: int,
@@ -260,12 +272,13 @@ def make_superdense_color_code_circuit(
         basis=basis,
         base_data_width=base_data_width,
     )
-    end_round = first_round.inverted()
+    end_round = first_round.time_reversed()
 
     return gen.compile_chunks_into_circuit(
         [
             first_round,
             gen.ChunkLoop([mid_round], repetitions=rounds - 2),
             end_round,
-        ]
+        ],
+        flow_to_extra_coords_func=f2c,
     )

@@ -25,7 +25,7 @@ def test_make_surface_code_layout():
         height=4,
     )
     assert len(code.observables_x) == len(code.observables_z) == 1
-    code.check_commutation_relationships()
+    code.verify()
     assert (
         len(code.make_code_capacity_circuit(noise=1e-3).shortest_graphlike_error()) == 3
     )
@@ -34,67 +34,67 @@ def test_make_surface_code_layout():
             ordered_data_qubits=(None, None, 0j, 1j),
             measurement_qubit=(-0.5 + 0.5j),
             bases="Z",
-            extra_coords=(5,),
+            flags={'color=b', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=(None, None, 2j, 3j),
             measurement_qubit=(-0.5 + 2.5j),
             bases="Z",
-            extra_coords=(5,),
+            flags={'color=b', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=(0j, (1 + 0j), 1j, (1 + 1j)),
             measurement_qubit=(0.5 + 0.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=(1j, 2j, (1 + 1j), (1 + 2j)),
             measurement_qubit=(0.5 + 1.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=(2j, (1 + 2j), 3j, (1 + 3j)),
             measurement_qubit=(0.5 + 2.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=(None, None, (1 + 0j), (2 + 0j)),
             measurement_qubit=(1.5 - 0.5j),
             bases="X",
-            extra_coords=(2,),
+            flags={'color=b', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 0j), (1 + 1j), (2 + 0j), (2 + 1j)),
             measurement_qubit=(1.5 + 0.5j),
             bases="Z",
-            extra_coords=(5,),
+            flags={'color=b', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 1j), (2 + 1j), (1 + 2j), (2 + 2j)),
             measurement_qubit=(1.5 + 1.5j),
             bases="X",
-            extra_coords=(2,),
+            flags={'color=b', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 2j), (1 + 3j), (2 + 2j), (2 + 3j)),
             measurement_qubit=(1.5 + 2.5j),
             bases="Z",
-            extra_coords=(5,),
+            flags={'color=b', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 3j), (2 + 3j), None, None),
             measurement_qubit=(1.5 + 3.5j),
             bases="X",
-            extra_coords=(2,),
+            flags={'color=b', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((2 + 1j), (2 + 2j), None, None),
             measurement_qubit=(2.5 + 1.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
     )
 
@@ -105,7 +105,7 @@ def test_make_toric_surface_code_layout():
         height=6,
     )
     assert len(code.observables_x) == len(code.observables_z) == 2
-    code.check_commutation_relationships()
+    code.verify()
     assert (
         len(code.make_code_capacity_circuit(noise=1e-3).shortest_graphlike_error()) == 4
     )
@@ -114,144 +114,144 @@ def test_make_toric_surface_code_layout():
             ordered_data_qubits=(0j, 1j, (1 + 0j), (1 + 1j)),
             measurement_qubit=(0.5 + 0.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=(1j, (1 + 1j), 2j, (1 + 2j)),
             measurement_qubit=(0.5 + 1.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=(2j, 3j, (1 + 2j), (1 + 3j)),
             measurement_qubit=(0.5 + 2.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=(3j, (1 + 3j), 4j, (1 + 4j)),
             measurement_qubit=(0.5 + 3.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=(4j, 5j, (1 + 4j), (1 + 5j)),
             measurement_qubit=(0.5 + 4.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=(5j, (1 + 5j), 0j, (1 + 0j)),
             measurement_qubit=(0.5 + 5.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 0j), (2 + 0j), (1 + 1j), (2 + 1j)),
             measurement_qubit=(1.5 + 0.5j),
             bases="Z",
-            extra_coords=(4,),
+            flags={'color=g', 'basis=Z'}
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 1j), (1 + 2j), (2 + 1j), (2 + 2j)),
             measurement_qubit=(1.5 + 1.5j),
             bases="X",
-            extra_coords=(1,),
+            flags={'color=g', 'basis=X'}
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 2j), (2 + 2j), (1 + 3j), (2 + 3j)),
             measurement_qubit=(1.5 + 2.5j),
             bases="Z",
-            extra_coords=(4,),
+            flags={'color=g', 'basis=Z'}
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 3j), (1 + 4j), (2 + 3j), (2 + 4j)),
             measurement_qubit=(1.5 + 3.5j),
             bases="X",
-            extra_coords=(1,),
+            flags={'color=g', 'basis=X'}
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 4j), (2 + 4j), (1 + 5j), (2 + 5j)),
             measurement_qubit=(1.5 + 4.5j),
             bases="Z",
-            extra_coords=(4,),
+            flags={'color=g', 'basis=Z'}
         ),
         gen.Tile(
             ordered_data_qubits=((1 + 5j), (1 + 0j), (2 + 5j), (2 + 0j)),
             measurement_qubit=(1.5 + 5.5j),
             bases="X",
-            extra_coords=(1,),
+            flags={'color=g', 'basis=X'}
         ),
         gen.Tile(
             ordered_data_qubits=((2 + 0j), (2 + 1j), (3 + 0j), (3 + 1j)),
             measurement_qubit=(2.5 + 0.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=((2 + 1j), (3 + 1j), (2 + 2j), (3 + 2j)),
             measurement_qubit=(2.5 + 1.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((2 + 2j), (2 + 3j), (3 + 2j), (3 + 3j)),
             measurement_qubit=(2.5 + 2.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=((2 + 3j), (3 + 3j), (2 + 4j), (3 + 4j)),
             measurement_qubit=(2.5 + 3.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((2 + 4j), (2 + 5j), (3 + 4j), (3 + 5j)),
             measurement_qubit=(2.5 + 4.5j),
             bases="X",
-            extra_coords=(0,),
+            flags={'color=r', 'basis=X'},
         ),
         gen.Tile(
             ordered_data_qubits=((2 + 5j), (3 + 5j), (2 + 0j), (3 + 0j)),
             measurement_qubit=(2.5 + 5.5j),
             bases="Z",
-            extra_coords=(3,),
+            flags={'color=r', 'basis=Z'},
         ),
         gen.Tile(
             ordered_data_qubits=((3 + 0j), 0j, (3 + 1j), 1j),
             measurement_qubit=(3.5 + 0.5j),
             bases="Z",
-            extra_coords=(4,),
+            flags={'color=g', 'basis=Z'}
         ),
         gen.Tile(
             ordered_data_qubits=((3 + 1j), (3 + 2j), 1j, 2j),
             measurement_qubit=(3.5 + 1.5j),
             bases="X",
-            extra_coords=(1,),
+            flags={'color=g', 'basis=X'}
         ),
         gen.Tile(
             ordered_data_qubits=((3 + 2j), 2j, (3 + 3j), 3j),
             measurement_qubit=(3.5 + 2.5j),
             bases="Z",
-            extra_coords=(4,),
+            flags={'color=g', 'basis=Z'}
         ),
         gen.Tile(
             ordered_data_qubits=((3 + 3j), (3 + 4j), 3j, 4j),
             measurement_qubit=(3.5 + 3.5j),
             bases="X",
-            extra_coords=(1,),
+            flags={'color=g', 'basis=X'}
         ),
         gen.Tile(
             ordered_data_qubits=((3 + 4j), 4j, (3 + 5j), 5j),
             measurement_qubit=(3.5 + 4.5j),
             bases="Z",
-            extra_coords=(4,),
+            flags={'color=g', 'basis=Z'}
         ),
         gen.Tile(
             ordered_data_qubits=((3 + 5j), (3 + 0j), 5j, 0j),
             measurement_qubit=(3.5 + 5.5j),
             bases="X",
-            extra_coords=(1,),
+            flags={'color=g', 'basis=X'}
         ),
     )

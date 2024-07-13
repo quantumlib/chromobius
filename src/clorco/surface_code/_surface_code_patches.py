@@ -62,6 +62,12 @@ def surface_code_patch(
     return gen.Patch(tiles)
 
 
+def checkerboard_basis(q: complex) -> str:
+    """Classifies a coordinate as X type or Z type according to a checkerboard."""
+    is_x = int(q.real + q.imag) & 1 == 0
+    return "X" if is_x else "Z"
+
+
 def rectangular_surface_code_patch(
     *,
     width: int,
@@ -85,7 +91,7 @@ def rectangular_surface_code_patch(
 
     return surface_code_patch(
         possible_data_qubits=[x + 1j * y for x in range(width) for y in range(height)],
-        basis=gen.checkerboard_basis,
+        basis=checkerboard_basis,
         is_boundary_x=functools.partial(is_boundary, b="X"),
         is_boundary_z=functools.partial(is_boundary, b="Z"),
         order_func=order_func,
@@ -139,7 +145,7 @@ def make_ztop_yboundary_patch(*, distance: int) -> gen.Patch:
 
 def make_xtop_qubit_patch(*, diameter: int) -> gen.Patch:
     def order_func(m: complex) -> list[complex]:
-        if gen.checkerboard_basis(m) == "X":
+        if checkerboard_basis(m) == "X":
             return ORDER_S
         else:
             return ORDER_N

@@ -1,17 +1,3 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import stim
 
 import gen
@@ -47,38 +33,35 @@ def test_make_phenom_circuit_for_stabilizer_code():
     ).make_phenom_circuit(
         noise=gen.NoiseRule(flip_result=0.125, after={"DEPOLARIZE1": 0.25}),
         rounds=100,
-    ) == stim.Circuit(
-        """
+    ) == stim.Circuit("""
         QUBIT_COORDS(0, -1) 0
         QUBIT_COORDS(0, 0) 1
         QUBIT_COORDS(0, 1) 2
         QUBIT_COORDS(1, 0) 3
         QUBIT_COORDS(1, 1) 4
-        MPP X0*X1*X2
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        MPP Z0*Z1*Z3
-        OBSERVABLE_INCLUDE(1) rec[-1]
-        MPP X1*X3 Z1*Z2*Z3*Z4 X2*X4
+        MPP X0*X1*X2 Z0*Z1*Z3 X1*X3 Z1*Z2*Z3*Z4 X2*X4
+        DEPOLARIZE1(0.25) 1 2 3 4
+        OBSERVABLE_INCLUDE(0) rec[-5]
+        OBSERVABLE_INCLUDE(1) rec[-4]
         TICK
         REPEAT 100 {
-            DEPOLARIZE1(0.25) 1 2 3 4
             MPP(0.125) X1*X3 Z1*Z2*Z3*Z4 X2*X4
+            DEPOLARIZE1(0.25) 1 2 3 4
             DETECTOR(0.5, 0, 0) rec[-6] rec[-3]
             DETECTOR(0.5, 0.5, 0) rec[-5] rec[-2]
             DETECTOR(0.5, 1, 0) rec[-4] rec[-1]
             SHIFT_COORDS(0, 0, 1)
             TICK
         }
-        MPP X1*X3 Z1*Z2*Z3*Z4 X2*X4
-        DETECTOR(0.5, 0, 0) rec[-6] rec[-3]
-        DETECTOR(0.5, 0.5, 0) rec[-5] rec[-2]
-        DETECTOR(0.5, 1, 0) rec[-4] rec[-1]
-        MPP X0*X1*X2
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        MPP Z0*Z1*Z3
-        OBSERVABLE_INCLUDE(1) rec[-1]
-    """
-    )
+        MPP X0*X1*X2 Z0*Z1*Z3 X1*X3 Z1*Z2*Z3*Z4 X2*X4
+        OBSERVABLE_INCLUDE(0) rec[-5]
+        OBSERVABLE_INCLUDE(1) rec[-4]
+        DETECTOR(0.5, 0, 0) rec[-8] rec[-3]
+        DETECTOR(0.5, 0.5, 0) rec[-7] rec[-2]
+        DETECTOR(0.5, 1, 0) rec[-6] rec[-1]
+        SHIFT_COORDS(0, 0, 1)
+        TICK
+    """)
 
 
 def test_make_code_capacity_circuit_for_stabilizer_code():
@@ -110,31 +93,26 @@ def test_make_code_capacity_circuit_for_stabilizer_code():
         observables_z=[obs_z],
     ).make_code_capacity_circuit(
         noise=gen.NoiseRule(after={"DEPOLARIZE1": 0.25}),
-    ) == stim.Circuit(
-        """
+    ) == stim.Circuit("""
         QUBIT_COORDS(0, -1) 0
         QUBIT_COORDS(0, 0) 1
         QUBIT_COORDS(0, 1) 2
         QUBIT_COORDS(1, 0) 3
         QUBIT_COORDS(1, 1) 4
-        MPP X0*X1*X2
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        MPP Z0*Z1*Z3
-        OBSERVABLE_INCLUDE(1) rec[-1]
-        MPP X1*X3 Z1*Z2*Z3*Z4 X2*X4
-        TICK
+        MPP X0*X1*X2 Z0*Z1*Z3 X1*X3 Z1*Z2*Z3*Z4 X2*X4
         DEPOLARIZE1(0.25) 1 2 3 4
+        OBSERVABLE_INCLUDE(0) rec[-5]
+        OBSERVABLE_INCLUDE(1) rec[-4]
         TICK
-        MPP X1*X3 Z1*Z2*Z3*Z4 X2*X4
-        DETECTOR(0.5, 0, 0) rec[-6] rec[-3]
-        DETECTOR(0.5, 0.5, 0) rec[-5] rec[-2]
-        DETECTOR(0.5, 1, 0) rec[-4] rec[-1]
-        MPP X0*X1*X2
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        MPP Z0*Z1*Z3
-        OBSERVABLE_INCLUDE(1) rec[-1]
-    """
-    )
+        MPP X0*X1*X2 Z0*Z1*Z3 X1*X3 Z1*Z2*Z3*Z4 X2*X4
+        OBSERVABLE_INCLUDE(0) rec[-5]
+        OBSERVABLE_INCLUDE(1) rec[-4]
+        DETECTOR(0.5, 0, 0) rec[-8] rec[-3]
+        DETECTOR(0.5, 0.5, 0) rec[-7] rec[-2]
+        DETECTOR(0.5, 1, 0) rec[-6] rec[-1]
+        SHIFT_COORDS(0, 0, 1)
+        TICK
+    """)
 
 
 def test_from_patch_with_inferred_observables():
@@ -156,5 +134,5 @@ def test_from_patch_with_inferred_observables():
             ]
         )
     )
-    code.check_commutation_relationships()
+    code.verify()
     assert len(code.observables_x) == len(code.observables_z) == 1

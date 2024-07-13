@@ -20,6 +20,25 @@ import gen
 from clorco.color_code._color_code_layouts import make_toric_color_code_layout
 
 
+def f2c(flow: gen.Flow) -> list[float]:
+    c = 0
+    if 'color=r' in flow.flags:
+        c += 0
+    elif 'color=g' in flow.flags:
+        c += 1
+    elif 'color=b' in flow.flags:
+        c += 2
+    else:
+        raise NotImplementedError(f'{flow=}')
+    if 'basis=X' in flow.flags:
+        c += 0
+    elif 'basis=Z' in flow.flags:
+        c += 3
+    else:
+        raise NotImplementedError(f'{flow=}')
+    return [c]
+
+
 def make_toric_color_code_circuit_with_magic_time_boundaries(
     *,
     rounds: int,
@@ -54,10 +73,10 @@ def make_toric_color_code_circuit_with_magic_time_boundaries(
     assert rounds % rounds_per_chunk == 0
     return gen.compile_chunks_into_circuit(
         [
-            chunk.magic_init_chunk(),
+            chunk.mpp_init_chunk(),
             gen.ChunkLoop([chunk], repetitions=rounds // rounds_per_chunk),
-            chunk.magic_end_chunk(),
-        ]
+            chunk.mpp_end_chunk(),
+        ], flow_to_extra_coords_func=f2c,
     ).with_inlined_feedback()
 
 
@@ -87,7 +106,7 @@ def make_toric_color_code_circuit_round_chunk_superdense(
         d_target: complex,
         inv: Callable[[complex], bool] = lambda _: False,
     ) -> None:
-        builder.gate2(
+        builder.append(
             "CX",
             [
                 (wrap(c + d_control), wrap(c + d_target))[:: -1 if inv(c) else +1]
@@ -95,8 +114,8 @@ def make_toric_color_code_circuit_round_chunk_superdense(
             ],
         )
 
-    builder.gate("RX", x_ms)
-    builder.gate("RZ", z_ms)
+    builder.append("RX", x_ms)
+    builder.append("RZ", z_ms)
     builder.tick()
 
     do_cxs(x_ms, +0, +1j)
@@ -122,19 +141,17 @@ def make_toric_color_code_circuit_round_chunk_superdense(
     do_cxs(x_ms, +0, +1j)
     builder.tick()
 
-    builder.measure(x_ms, basis="X", save_layer="solo")
-    builder.measure(z_ms, basis="Z", save_layer="solo")
+    builder.append('MX', x_ms)
+    builder.append('MZ', z_ms)
     builder.tick()
 
     def mf(*qs):
-        return builder.tracker.measurement_indices(
-            [gen.AtLayer(wrap(q), "solo") for q in qs]
-        )
+        return builder.lookup_recs([wrap(q) for q in qs])
 
     flows = []
     for tile in code.patch.tiles:
         m = tile.measurement_qubit
-        rgb = m.real % 3
+        rgb = int(m.real % 3)
         if tile.basis == "X":
             if ablate_into_matchable_code and rgb == 0:
                 continue
@@ -143,7 +160,7 @@ def make_toric_color_code_circuit_round_chunk_superdense(
                     end=tile.to_data_pauli_string(),
                     measurement_indices=mf(m),
                     center=m,
-                    additional_coords=[rgb],
+                    flags={f'color={"rgb"[rgb]}', 'basis=X'},
                 )
             )
             flows.append(
@@ -151,7 +168,7 @@ def make_toric_color_code_circuit_round_chunk_superdense(
                     start=tile.to_data_pauli_string(),
                     measurement_indices=mf(m),
                     center=m,
-                    additional_coords=[rgb],
+                    flags={f'color={"rgb"[rgb]}', 'basis=X'},
                 )
             )
         elif tile.basis == "Z":
@@ -162,7 +179,7 @@ def make_toric_color_code_circuit_round_chunk_superdense(
                     start=tile.to_data_pauli_string(),
                     measurement_indices=mf(m),
                     center=m,
-                    additional_coords=[3 + rgb],
+                    flags={f'color={"rgb"[rgb]}', 'basis=Z'},
                 )
             )
             flows.append(
@@ -170,7 +187,7 @@ def make_toric_color_code_circuit_round_chunk_superdense(
                     end=tile.to_data_pauli_string(),
                     measurement_indices=mf(m - 2, m + 2),
                     center=m,
-                    additional_coords=[3 + rgb],
+                    flags={f'color={"rgb"[rgb]}', 'basis=Z'},
                 )
             )
 
@@ -257,7 +274,7 @@ def make_toric_color_code_circuit_double_round_chunk_midout(
         d_target: complex,
         inv: Callable[[complex], bool] = lambda _: False,
     ) -> None:
-        builder.gate2(
+        builder.append(
             "CX",
             [
                 (
@@ -285,7 +302,7 @@ def make_toric_color_code_circuit_double_round_chunk_midout(
     do_cxs(x_ms, +0, +1j)
     builder.tick()
     builder.demolition_measure_with_feedback_passthrough(
-        xs=x_ms, zs=z_ms, save_layer="a"
+        xs=x_ms, zs=z_ms, measure_key_func=lambda e: (e, "a")
     )
     builder.tick()
     do_cxs(z_ms, +1j, +0)
@@ -304,7 +321,7 @@ def make_toric_color_code_circuit_double_round_chunk_midout(
     do_cxs(x_ms, +1j, +0)
     builder.tick()
     builder.demolition_measure_with_feedback_passthrough(
-        xs=z_ms, zs=x_ms, save_layer="b"
+        xs=z_ms, zs=x_ms, measure_key_func=lambda e: (e, "b")
     )
     builder.tick()
     do_cxs(z_ms, +0, +1j)
@@ -316,19 +333,15 @@ def make_toric_color_code_circuit_double_round_chunk_midout(
     builder.tick()
 
     def ma(*qs) -> list[int]:
-        return builder.tracker.measurement_indices(
-            [gen.AtLayer(wrap(q), "a") for q in qs]
-        )
+        return builder.lookup_recs((wrap(q), "a") for q in qs)
 
     def mb(*qs) -> list[int]:
-        return builder.tracker.measurement_indices(
-            [gen.AtLayer(wrap(q), "b") for q in qs]
-        )
+        return builder.lookup_recs((wrap(q), "b") for q in qs)
 
     flows = []
     for tile in code.patch.tiles:
         m = tile.measurement_qubit
-        if ablate_into_matchable_code and tile.extra_coords[0] in [0, 5]:
+        if ablate_into_matchable_code and (tile.flags == {'color=r', 'basis=X'} or tile.flags == {'color=b', 'basis=Z'}):
             continue
         if tile.basis == "X":
             mids = mb(m + 1) if m.real % 2 == 1 else ma(m - 1)
@@ -341,7 +354,7 @@ def make_toric_color_code_circuit_double_round_chunk_midout(
                 start=tile.to_data_pauli_string(),
                 measurement_indices=mids,
                 center=m,
-                additional_coords=tile.extra_coords,
+                flags=tile.flags,
             )
         )
         flows.append(
@@ -349,7 +362,7 @@ def make_toric_color_code_circuit_double_round_chunk_midout(
                 end=tile.to_data_pauli_string(),
                 measurement_indices=mids,
                 center=m,
-                additional_coords=tile.extra_coords,
+                flags=tile.flags,
             )
         )
 

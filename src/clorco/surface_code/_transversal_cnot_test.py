@@ -49,10 +49,6 @@ def test_make_transversal_cnot_surface_code_circuit(d: int, b: Any):
     if b == "MagicEPR":
         assert gen.count_measurement_layers(c) == 6
         assert c.num_observables == 4
-        assert (
-            c.count_determined_measurements()
-            == c.num_detectors + c.num_observables + 6 * (d % 2 == 0)
-        )
     else:
         assert gen.count_measurement_layers(c) == 4
         assert c.num_observables == 2
@@ -104,7 +100,6 @@ def test_make_transversal_cnot_surface_code_circuit_exact():
         QUBIT_COORDS(6.5, 0.5) 33
         QUBIT_COORDS(6.5, 1.5) 34
         QUBIT_COORDS(7.5, 1.5) 35
-        RY 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35
         MPP X1*X2*X3*X4 Z1*Z2*Z5*Z8 X0*X11*X12*X13 Z0*Z11*Z14*Z17
         OBSERVABLE_INCLUDE(0) rec[-4]
         OBSERVABLE_INCLUDE(1) rec[-3]

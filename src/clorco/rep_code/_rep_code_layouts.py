@@ -59,13 +59,14 @@ def make_rep_code_layout(
         "B": 5,
     }
     for x in range(distance - (0 if toric else 1)):
-        c = color_indices[coloring[x % len(coloring)]]
+        color = coloring[x % len(coloring)].lower()
+        c = color_indices[color]
         tiles.append(
             gen.Tile(
                 ordered_data_qubits=[x, (x + 1) % distance],
                 bases="XYZ"[c % 3] if replace_basis_with_coloring else "Z",
                 measurement_qubit=x + 0.5,
-                extra_coords=[c],
+                flags={f'color={color}', f'basis=Z'},
             )
         )
     patch = gen.Patch(tiles)

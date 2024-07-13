@@ -23,6 +23,7 @@ from clorco.color_code._midout_planar_color_code_circuits import (
     _color_code_round_chunk,
     make_midout_color_code_circuit_chunks,
 )
+from clorco.color_code._toric_color_code_circuits import f2c
 
 
 @pytest.mark.parametrize(
@@ -66,7 +67,7 @@ def test_make_color_code_circuit_chunks(
         use_488=use_488,
     )
 
-    circuit = gen.compile_chunks_into_circuit(chunks)
+    circuit = gen.compile_chunks_into_circuit(chunks, flow_to_extra_coords_func=f2c)
     circuit.detector_error_model()
     assert (
         circuit.count_determined_measurements()
@@ -302,12 +303,12 @@ def test_exact_color_code_circuit():
         MX(0.001) 8 6 5 3 0 7 1
         DETECTOR(1, 1, 0, 1) rec[-1]
         DETECTOR(1, 2, 0, 2) rec[-7] rec[-5] rec[-4] rec[-3] rec[-2] rec[-1]
-        DETECTOR(1, 2, 0, 5) rec[-11] rec[-10] rec[-8]
+        DETECTOR(1, 2, 1, 5) rec[-11] rec[-10] rec[-8]
         DETECTOR(1, 4, 0, 0) rec[-7] rec[-6]
-        DETECTOR(1, 4, 0, 3) rec[-9]
+        DETECTOR(1, 4, 1, 3) rec[-9]
         DETECTOR(2, 3, 0, 2) rec[-2]
         OBSERVABLE_INCLUDE(0) rec[-7] rec[-5] rec[-1]
-        SHIFT_COORDS(0, 0, 1)
+        SHIFT_COORDS(0, 0, 2)
         DEPOLARIZE1(0.001) 4 2 8 6 5 3 0 7 1
     """
     )

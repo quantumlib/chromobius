@@ -1,17 +1,3 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import base64
 import collections
 from typing import Iterable, Sequence
@@ -125,7 +111,7 @@ def gltf_model_from_colored_triangle_data(
     colored_line_data = ColoredLineData.fused(colored_line_data)
 
     gltf = pygltflib.GLTF2()
-    gltf.asset = None
+    gltf.asset = {'version': '2.0'}
 
     material_INDICES = {}
     for data in colored_triangle_data:
@@ -138,7 +124,7 @@ def gltf_model_from_colored_triangle_data(
         material.alphaMode = None
         material.alphaCutoff = None
         material.doubleSided = True
-        material_INDICES[data.rgba] = len(gltf.materials)
+        material_INDICES[(data.rgba, 'tri')] = len(gltf.materials)
         gltf.materials.append(material)
     for data in colored_line_data:
         material = pygltflib.Material()
@@ -149,7 +135,7 @@ def gltf_model_from_colored_triangle_data(
         material.emissiveFactor = None
         material.alphaMode = None
         material.alphaCutoff = None
-        material_INDICES[data.rgba] = len(gltf.materials)
+        material_INDICES[(data.rgba, 'edge')] = len(gltf.materials)
         gltf.materials.append(material)
 
     shared_buffer = pygltflib.Buffer()
@@ -182,7 +168,7 @@ def gltf_model_from_colored_triangle_data(
         bufferView.byteLength = byte_length
         byte_offset += byte_length
         bufferView.target = pygltflib.ARRAY_BUFFER
-        buffer_view_INDICES[data.rgba] = len(gltf.bufferViews)
+        buffer_view_INDICES[(data.rgba, 'tri')] = len(gltf.bufferViews)
         gltf.bufferViews.append(bufferView)
     for data in colored_line_data:
         bufferView = pygltflib.BufferView()
@@ -192,44 +178,44 @@ def gltf_model_from_colored_triangle_data(
         bufferView.byteLength = byte_length
         byte_offset += byte_length
         bufferView.target = pygltflib.ARRAY_BUFFER
-        buffer_view_INDICES[data.rgba] = len(gltf.bufferViews)
+        buffer_view_INDICES[(data.rgba, 'edge')] = len(gltf.bufferViews)
         gltf.bufferViews.append(bufferView)
 
     accessor_INDICES = {}
     for data in colored_triangle_data:
         accessor = pygltflib.Accessor()
-        accessor.bufferView = buffer_view_INDICES[data.rgba]
+        accessor.bufferView = buffer_view_INDICES[(data.rgba, 'tri')]
         accessor.byteOffset = 0
         accessor.componentType = pygltflib.FLOAT
         accessor.count = data.triangle_list.shape[0]
         accessor.type = pygltflib.VEC3
         accessor.max = [float(e) for e in np.max(data.triangle_list, axis=0)]
         accessor.min = [float(e) for e in np.min(data.triangle_list, axis=0)]
-        accessor_INDICES[data.rgba] = len(gltf.accessors)
+        accessor_INDICES[(data.rgba, 'tri')] = len(gltf.accessors)
         gltf.accessors.append(accessor)
     for data in colored_line_data:
         accessor = pygltflib.Accessor()
-        accessor.bufferView = buffer_view_INDICES[data.rgba]
+        accessor.bufferView = buffer_view_INDICES[(data.rgba, 'edge')]
         accessor.byteOffset = 0
         accessor.componentType = pygltflib.FLOAT
         accessor.count = data.edge_list.shape[0]
         accessor.type = pygltflib.VEC3
         accessor.max = [float(e) for e in np.max(data.edge_list, axis=0)]
         accessor.min = [float(e) for e in np.min(data.edge_list, axis=0)]
-        accessor_INDICES[data.rgba] = len(gltf.accessors)
+        accessor_INDICES[(data.rgba, 'edge')] = len(gltf.accessors)
         gltf.accessors.append(accessor)
 
     mesh0 = pygltflib.Mesh()
     for data in colored_triangle_data:
         primitive = pygltflib.Primitive()
-        primitive.material = material_INDICES[data.rgba]
-        primitive.attributes.POSITION = accessor_INDICES[data.rgba]
+        primitive.material = material_INDICES[(data.rgba, 'tri')]
+        primitive.attributes.POSITION = accessor_INDICES[(data.rgba, 'tri')]
         primitive.mode = pygltflib.TRIANGLES
         mesh0.primitives.append(primitive)
     for data in colored_line_data:
         primitive = pygltflib.Primitive()
-        primitive.material = material_INDICES[data.rgba]
-        primitive.attributes.POSITION = accessor_INDICES[data.rgba]
+        primitive.material = material_INDICES[(data.rgba, 'edge')]
+        primitive.attributes.POSITION = accessor_INDICES[(data.rgba, 'edge')]
         primitive.mode = pygltflib.LINES
         mesh0.primitives.append(primitive)
     mesh0_INDEX = len(gltf.meshes)
@@ -266,7 +252,7 @@ def viz_3d_gltf_model_html(model: pygltflib.GLTF2) -> str:
         + model_data_uri
         + r"""">Download 3D Model as .GLTF File</a>
   <br>Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
-  <div style="border: 1px dashed gray; margin-bottom: 50px; width: 100%; height: 600px; resize: both; overflow: hidden">
+  <div id="stim-outer-container", style="border: 1px dashed gray; margin-bottom: 50px; width: 100%; height: 600px; resize: both; overflow: hidden">
     <div id="stim-3d-viewer-scene-container" style="width: 100%; height: 100%;">JavaScript Blocked?</div>
   </div>
 
@@ -274,8 +260,11 @@ def viz_3d_gltf_model_html(model: pygltflib.GLTF2) -> str:
     /// BEGIN TERRIBLE HACK.
     /// Get the object by ID then change the ID.
     /// This is a workaround for https://github.com/jupyter/notebook/issues/6598
+    let outerContainer = document.getElementById("stim-outer-container");
     let container = document.getElementById("stim-3d-viewer-scene-container");
     container.id = "stim-3d-viewer-scene-container-USED";
+    outerContainer.id = "stim-outer-container-USED";
+    outerContainer.style.height = `${window.innerHeight-100}px`;
     let downloadLink = document.getElementById("stim-3d-viewer-download-link");
     downloadLink.id = "stim-3d-viewer-download-link-USED";
     /// END TERRIBLE HACK.
@@ -287,7 +276,7 @@ def viz_3d_gltf_model_html(model: pygltflib.GLTF2) -> str:
     ///
     /// What this SHOULD be is:
     ///
-    /// import {Box3, Scene, Color, PerspectiveCamera, WebGLRenderer, DirectionalLight} from "three";
+    /// import {Box3, Scene, Color, OrthographicCamera, PerspectiveCamera, WebGLRenderer, DirectionalLight} from "three";
     /// import {OrbitControls} from "three-orbitcontrols";
     /// import {GLTFLoader} from "three-gltf-loader";
     ///
@@ -337,14 +326,20 @@ def viz_3d_gltf_model_html(model: pygltflib.GLTF2) -> str:
       scene.add(gltf.scene);
 
       // Point the camera at the center, far enough back to see everything.
-      let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100000);
-      let controls = new OrbitControls(camera, container);
       let bounds = new Box3().setFromObject(scene);
+      let w = container.clientWidth;
+      let h = container.clientHeight;
+      let camera = new OrthographicCamera(-w/2, w/2, h/2, -h/2, 0.1, 100000);
+      let controls = new OrbitControls(camera, container);
       let mid = new Vector3(
           (bounds.min.x + bounds.max.x) * 0.5,
           (bounds.min.y + bounds.max.y) * 0.5,
           (bounds.min.z + bounds.max.z) * 0.5,
       );
+      let max_dx = bounds.max.x - bounds.min.x;
+      let max_dy = bounds.max.y - bounds.min.y;
+      let max_dz = bounds.max.z - bounds.min.z;
+      let max_d = Math.sqrt(max_dx*max_dx + max_dy*max_dy + max_dz*max_dz);
       let boxPoints = [];
       for (let dx of [0, 0.5, 1]) {
           for (let dy of [0, 0.5, 1]) {
@@ -360,14 +355,16 @@ def viz_3d_gltf_model_html(model: pygltflib.GLTF2) -> str:
       let isInView = p => {
           p = new Vector3(p.x, p.y, p.z);
           p.project(camera);
-          return Math.abs(p.x) < 1 && Math.abs(p.y) < 1 && p.z >= 0 && p.z < 1;
+          return Math.abs(p.x) < 1 && Math.abs(p.y) < 1;
       };
       let unit = new Vector3(0.3, 0.4, -1.8);
       unit.normalize();
       let setCameraDistance = d => {
           controls.target.copy(mid);
           camera.position.copy(mid);
-          camera.position.addScaledVector(unit, d);
+          camera.position.addScaledVector(unit, max_d);
+          camera.zoom = 1/d;
+          camera.updateProjectionMatrix();
           controls.update();
           return boxPoints.every(isInView);
       };
@@ -407,8 +404,14 @@ def viz_3d_gltf_model_html(model: pygltflib.GLTF2) -> str:
       // Render whenever any important changes have occurred.
       requestAnimationFrame(() => renderer.render(scene, camera));
       new ResizeObserver(() => {
-        camera.aspect = container.clientWidth / container.clientHeight;
+        let w = container.clientWidth;
+        let h = container.clientHeight;
+        camera.left = -w/2;
+        camera.right = w/2;
+        camera.top = h/2;
+        camera.bottom = -h/2;
         camera.updateProjectionMatrix();
+        controls.update();
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.render(scene, camera);
       }).observe(container);

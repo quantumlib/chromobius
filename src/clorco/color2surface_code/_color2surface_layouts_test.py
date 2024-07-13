@@ -22,7 +22,7 @@ from clorco.color2surface_code._draw_mobius_graph import code_capacity_mobius_gr
 @pytest.mark.parametrize("d", [3, 5, 7, 9])
 def test_make_color2surface_layout(d: int):
     code = make_color2surface_layout(base_data_width=d)
-    code.check_commutation_relationships()
+    code.verify()
     for tile in code.patch.tiles:
         assert (tile.extra_coords[0] >= 3) == (tile.basis == "Z")
     err = code.make_code_capacity_circuit(

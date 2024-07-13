@@ -53,13 +53,32 @@ def make_named_color_code_constructions() -> (
     }
 
 
+def f2c(flow: gen.Flow) -> list[float]:
+    c = 0
+    if 'color=r' in flow.flags:
+        c += 0
+    elif 'color=g' in flow.flags:
+        c += 1
+    elif 'color=b' in flow.flags:
+        c += 2
+    else:
+        raise NotImplementedError(f'{flow=}')
+    if 'basis=X' in flow.flags:
+        c += 0
+    elif 'basis=Z' in flow.flags:
+        c += 3
+    else:
+        raise NotImplementedError(f'{flow=}')
+    return [c]
+
+
 def _midout_color_code_circuit_constructions() -> (
     dict[str, Callable[[Params], stim.Circuit]]
 ):
     constructions: dict[str, Callable[[Params], stim.Circuit]] = {}
 
     def _chunks_to_circuit(params: Params, chunks: list[gen.Chunk]) -> stim.Circuit:
-        circuit = gen.compile_chunks_into_circuit(chunks)
+        circuit = gen.compile_chunks_into_circuit(chunks, flow_to_extra_coords_func=f2c)
 
         if params.debug_out_dir is not None:
             make_layout = make_color_code_layout_488 if '488' in params.style else make_color_code_layout
@@ -273,14 +292,14 @@ def _simplified_noise_color_code_constructions() -> (
     ) -> stim.Circuit:
         if phenom:
             return code.make_phenom_circuit(
-                noise=params.noise_model,
+                noise=params.noise_model.idle_depolarization,
                 rounds=params.rounds,
-                debug_out_dir=params.debug_out_dir,
+                extra_coords_func=f2c,
             )
         assert params.rounds == 1
         return code.make_code_capacity_circuit(
-            noise=params.noise_model.idle_noise,
-            debug_out_dir=params.debug_out_dir
+            noise=params.noise_model.idle_depolarization,
+            extra_coords_func=f2c,
         )
 
     constructions["transit_color_code"] = lambda params: _make_simple_circuit(
@@ -398,11 +417,11 @@ def _toric_color_code_constructions() -> dict[str, Callable[[Params], stim.Circu
             )
         if phenom:
             circuit = code.make_phenom_circuit(
-                noise=params.noise_strength, rounds=params.rounds
+                noise=params.noise_strength, rounds=params.rounds, extra_coords_func=f2c,
             )
         else:
             assert params.rounds == 1
-            circuit = code.make_code_capacity_circuit(noise=params.noise_strength)
+            circuit = code.make_code_capacity_circuit(noise=params.noise_strength, extra_coords_func=f2c)
         if params.debug_out_dir is not None:
             gen.write_file(
                 params.debug_out_dir / "detslice.svg", circuit.diagram("detslice-svg")

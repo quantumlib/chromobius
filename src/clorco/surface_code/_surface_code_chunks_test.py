@@ -15,6 +15,7 @@
 import stim
 
 import gen
+from clorco.surface_code._keyed_constructions import f2c
 from clorco.surface_code._surface_code_chunks import standard_surface_code_chunk
 from clorco.surface_code._surface_code_patches import make_xtop_qubit_patch
 
@@ -23,9 +24,9 @@ def test_magic_init_surface_code_chunk():
     p = make_xtop_qubit_patch(diameter=3)
     obs = gen.PauliString({0: "X", 1j: "X", 2j: "X"})
     c = standard_surface_code_chunk(p, obs=obs)
-    c2 = c.magic_init_chunk()
+    c2 = c.mpp_init_chunk()
     c2.verify()
-    c3 = c.magic_end_chunk()
+    c3 = c.mpp_end_chunk()
     c3.verify()
     assert gen.compile_chunks_into_circuit([c2, c3]) == stim.Circuit(
         """
@@ -38,28 +39,20 @@ def test_magic_init_surface_code_chunk():
         QUBIT_COORDS(2, 0) 6
         QUBIT_COORDS(2, 1) 7
         QUBIT_COORDS(2, 2) 8
-        QUBIT_COORDS(-0.5, 1.5) 9
-        QUBIT_COORDS(0.5, -0.5) 10
-        QUBIT_COORDS(0.5, 0.5) 11
-        QUBIT_COORDS(0.5, 1.5) 12
-        QUBIT_COORDS(1.5, 0.5) 13
-        QUBIT_COORDS(1.5, 1.5) 14
-        QUBIT_COORDS(1.5, 2.5) 15
-        QUBIT_COORDS(2.5, 0.5) 16
-        MPP Z1*Z2 X0*X3 Z0*Z1*Z3*Z4 X1*X2*X4*X5 X3*X4*X6*X7 Z4*Z5*Z7*Z8 X5*X8 Z6*Z7 X0*X1*X2
-        OBSERVABLE_INCLUDE(0) rec[-1]
+        MPP X0*X1*X2 X0*X3 Z0*Z1*Z3*Z4 X1*X2*X4*X5 Z1*Z2 X3*X4*X6*X7 Z4*Z5*Z7*Z8 X5*X8 Z6*Z7
+        OBSERVABLE_INCLUDE(0) rec[-9]
         TICK
-        MPP Z1*Z2 X0*X3 Z0*Z1*Z3*Z4 X1*X2*X4*X5 X3*X4*X6*X7 Z4*Z5*Z7*Z8 X5*X8 Z6*Z7 X0*X1*X2
-        DETECTOR(-0.5, 1.5, 0, 3) rec[-18] rec[-9]
-        DETECTOR(0.5, -0.5, 0, 1) rec[-17] rec[-8]
-        DETECTOR(0.5, 0.5, 0, 4) rec[-16] rec[-7]
-        DETECTOR(0.5, 1.5, 0, 1) rec[-15] rec[-6]
-        DETECTOR(1.5, 0.5, 0, 0) rec[-14] rec[-5]
-        DETECTOR(1.5, 1.5, 0, 3) rec[-13] rec[-4]
-        DETECTOR(1.5, 2.5, 0, 0) rec[-12] rec[-3]
-        DETECTOR(2.5, 0.5, 0, 4) rec[-11] rec[-2]
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        SHIFT_COORDS(0, 0, 1)
+        MPP X0*X1*X2 X0*X3 Z0*Z1*Z3*Z4 X1*X2*X4*X5 Z1*Z2 X3*X4*X6*X7 Z4*Z5*Z7*Z8 X5*X8 Z6*Z7
+        OBSERVABLE_INCLUDE(0) rec[-9]
+        DETECTOR(0, 0, 0) rec[-17] rec[-8]
+        DETECTOR(0, 0, 1) rec[-16] rec[-7]
+        DETECTOR(0, 1, 0) rec[-15] rec[-6]
+        DETECTOR(0, 1, 1) rec[-14] rec[-5]
+        DETECTOR(1, 0, 0) rec[-13] rec[-4]
+        DETECTOR(1, 1, 0) rec[-12] rec[-3]
+        DETECTOR(1, 2, 0) rec[-11] rec[-2]
+        DETECTOR(2, 0, 0) rec[-10] rec[-1]
+        SHIFT_COORDS(0, 0, 2)
         TICK
     """
     )
@@ -76,7 +69,7 @@ def test_verify_normal_surface_code_chunk():
     c2.verify()
     c3.verify()
     c4.verify()
-    circuit = gen.compile_chunks_into_circuit([c1, c2, c3])
+    circuit = gen.compile_chunks_into_circuit([c1, c2, c3], flow_to_extra_coords_func=f2c)
     circuit.detector_error_model(decompose_errors=True)
     assert (
         len(
@@ -169,12 +162,12 @@ def test_verify_normal_surface_code_chunk():
         DETECTOR(1.5, 1.5, 0, 3) rec[-19] rec[-2]
         DETECTOR(1.5, 2.5, 0, 0) rec[-22] rec[-14]
         DETECTOR(2.5, 0.5, 0, 4) rec[-18] rec[-1]
-        DETECTOR(0.5, -0.5, 0, 1) rec[-17] rec[-13] rec[-10]
-        DETECTOR(0.5, 1.5, 0, 1) rec[-16] rec[-12] rec[-11] rec[-9] rec[-8]
-        DETECTOR(1.5, 0.5, 0, 0) rec[-15] rec[-10] rec[-9] rec[-7] rec[-6]
-        DETECTOR(1.5, 2.5, 0, 0) rec[-14] rec[-8] rec[-5]
+        DETECTOR(0.5, -0.5, 1, 1) rec[-17] rec[-13] rec[-10]
+        DETECTOR(0.5, 1.5, 1, 1) rec[-16] rec[-12] rec[-11] rec[-9] rec[-8]
+        DETECTOR(1.5, 0.5, 1, 0) rec[-15] rec[-10] rec[-9] rec[-7] rec[-6]
+        DETECTOR(1.5, 2.5, 1, 0) rec[-14] rec[-8] rec[-5]
         OBSERVABLE_INCLUDE(0) rec[-13] rec[-12] rec[-11]
-        SHIFT_COORDS(0, 0, 1)
+        SHIFT_COORDS(0, 0, 2)
         TICK
     """
     )

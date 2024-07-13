@@ -18,7 +18,7 @@ from clorco.rep_code._rep_code_layouts import make_rep_code_layout
 
 def test_make_rep_code_layout():
     v = make_rep_code_layout(distance=5, coloring="rgb")
-    v.check_commutation_relationships()
+    v.verify()
     assert v == gen.StabilizerCode(
         patch=gen.Patch(
             tiles=[
@@ -26,36 +26,36 @@ def test_make_rep_code_layout():
                     ordered_data_qubits=(0, 1),
                     measurement_qubit=0.5,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(1, 2),
                     measurement_qubit=1.5,
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(2, 3),
                     measurement_qubit=2.5,
                     bases="Z",
-                    extra_coords=(5,),
+                    flags={'color=b', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(3, 4),
                     measurement_qubit=3.5,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
             ]
         ),
         observables_x=[],
         observables_z=[
-            gen.PauliString(qubits={0: "Z"}),
+            gen.PauliString({0: "Z"}),
         ],
     )
 
     v = make_rep_code_layout(distance=3, coloring="rg", toric=True)
-    v.check_commutation_relationships()
+    v.verify()
     assert v == gen.StabilizerCode(
         patch=gen.Patch(
             tiles=[
@@ -63,24 +63,24 @@ def test_make_rep_code_layout():
                     ordered_data_qubits=(0, 1),
                     measurement_qubit=0.5,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(1, 2),
                     measurement_qubit=1.5,
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(2, 0),
                     measurement_qubit=2.5,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
             ]
         ),
         observables_x=[],
         observables_z=[
-            gen.PauliString(qubits={0: "Z"}),
+            gen.PauliString({0: "Z"}),
         ],
     )

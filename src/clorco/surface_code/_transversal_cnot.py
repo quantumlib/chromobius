@@ -42,10 +42,10 @@ def make_transversal_cnot_surface_code_circuit(
 
     # Initial round.
     head = gen.Builder.for_qubits(combo.used_set | ancillas)
-    builder = head.fork()
-    tail = head.fork()
+
+    builder = gen.Builder(q2i=head.q2i, circuit=stim.Circuit(), tracker=head.tracker)
+    tail = gen.Builder(q2i=head.q2i, circuit=stim.Circuit(), tracker=head.tracker)
     if basis == "MagicEPR":
-        head.gate("RY", combo.used_set)
         head.measure_pauli_string(xl * gen.PauliString({-1: "X"}), key="OBS_INIT1")
         head.measure_pauli_string(zl * gen.PauliString({-1: "Z"}), key="OBS_INIT2")
         head.measure_pauli_string(xr * gen.PauliString({-2: "X"}), key="OBS_INIT3")
@@ -54,7 +54,8 @@ def make_transversal_cnot_surface_code_circuit(
         head.obs_include(["OBS_INIT2"], obs_index=1)
         head.obs_include(["OBS_INIT3"], obs_index=2)
         head.obs_include(["OBS_INIT4"], obs_index=3)
-        head.measure_patch(combo, sorted_by_basis=True, save_layer="init")
+        for tile in sorted(combo.tiles, key=lambda e: e.basis):
+            head.measure_pauli_string(tile.to_data_pauli_string(), key=(tile.measurement_qubit, "init"))
         pad_rounds += 1
     else:
         build_surface_code_round_circuit(
@@ -67,7 +68,7 @@ def make_transversal_cnot_surface_code_circuit(
             m = tile.measurement_qubit
             if tile.basis == basis:
                 builder.detector(
-                    [gen.AtLayer(m, "init")],
+                    [(m, "init")],
                     pos=m,
                     extra_coords=[0 + 3 * (tile.basis == "Z")],
                 )
@@ -75,7 +76,7 @@ def make_transversal_cnot_surface_code_circuit(
     builder.tick()
 
     # Padding rounds until transition.
-    loop = builder.fork()
+    loop = gen.Builder(q2i=builder.q2i, circuit=stim.Circuit(), tracker=builder.tracker)
     build_surface_code_round_circuit(
         patch=combo,
         save_layer="before",
@@ -84,7 +85,7 @@ def make_transversal_cnot_surface_code_circuit(
     for tile in combo.tiles:
         m = tile.measurement_qubit
         loop.detector(
-            [gen.AtLayer(m, "init"), gen.AtLayer(m, "before")],
+            [(m, "init"), (m, "before")],
             pos=m,
             extra_coords=[0 + 3 * (tile.basis == "Z")],
         )
@@ -93,7 +94,7 @@ def make_transversal_cnot_surface_code_circuit(
     builder.circuit += loop.circuit * (pad_rounds - 1)
 
     # Transition round.
-    builder.gate2("CX", [(q, q + offset) for q in left.patch.data_set])
+    builder.append("CX", [(q, q + offset) for q in left.patch.data_set])
     builder.tick()
     build_surface_code_round_circuit(
         patch=combo,
@@ -109,7 +110,7 @@ def make_transversal_cnot_surface_code_circuit(
         else:
             tile_offsets = [(0, "before"), (0, "transition")]
         builder.detector(
-            [gen.AtLayer(m + d, layer) for d, layer in tile_offsets],
+            [(m + d, layer) for d, layer in tile_offsets],
             pos=m,
             extra_coords=[1 + (m in left.patch.measure_set) + 3 * (tile.basis == "Z")],
         )
@@ -117,7 +118,7 @@ def make_transversal_cnot_surface_code_circuit(
     builder.tick()
 
     # Padding rounds until measurement round.
-    loop = builder.fork()
+    loop = gen.Builder(q2i=builder.q2i, circuit=stim.Circuit(), tracker=builder.tracker)
     build_surface_code_round_circuit(
         patch=combo,
         save_layer="after",
@@ -126,7 +127,7 @@ def make_transversal_cnot_surface_code_circuit(
     for tile in combo.tiles:
         m = tile.measurement_qubit
         loop.detector(
-            [gen.AtLayer(m, "transition"), gen.AtLayer(m, "after")],
+            [(m, "transition"), (m, "after")],
             pos=m,
             extra_coords=[0 + 3 * (tile.basis == "Z")],
         )
@@ -136,11 +137,12 @@ def make_transversal_cnot_surface_code_circuit(
 
     # Final measurement round.
     if basis == "MagicEPR":
-        tail.measure_patch(combo, sorted_by_basis=True, save_layer="end")
+        for tile in sorted(combo.tiles, key=lambda e: e.basis):
+            tail.measure_pauli_string(tile.to_data_pauli_string(), key=(tile.measurement_qubit, "end"))
         for tile in combo.tiles:
             m = tile.measurement_qubit
             tail.detector(
-                [gen.AtLayer(m, "after"), gen.AtLayer(m, "end")],
+                [(m, "after"), (m, "end")],
                 pos=m,
                 extra_coords=[0 + 3 * (tile.basis == "Z")],
             )
@@ -162,7 +164,7 @@ def make_transversal_cnot_surface_code_circuit(
         for tile in combo.tiles:
             m = tile.measurement_qubit
             builder.detector(
-                [gen.AtLayer(m, "after"), gen.AtLayer(m, "end")],
+                [(m, "after"), (m, "end")],
                 pos=m,
                 extra_coords=[0 + 3 * (tile.basis == "Z")],
             )
@@ -171,16 +173,16 @@ def make_transversal_cnot_surface_code_circuit(
             m = tile.measurement_qubit
             if tile.basis == basis:
                 builder.detector(
-                    [gen.AtLayer(q, "end") for q in tile.used_set],
+                    [(q, "end") for q in tile.used_set],
                     pos=m,
                     extra_coords=[0 + 3 * (tile.basis == "Z")],
                 )
         if basis == "X":
-            builder.obs_include([gen.AtLayer(q, "end") for q in xl.qubits], obs_index=0)
-            builder.obs_include([gen.AtLayer(q, "end") for q in xr.qubits], obs_index=1)
+            builder.obs_include([(q, "end") for q in xl.qubits], obs_index=0)
+            builder.obs_include([(q, "end") for q in xr.qubits], obs_index=1)
         elif basis == "Z":
-            builder.obs_include([gen.AtLayer(q, "end") for q in zl.qubits], obs_index=0)
-            builder.obs_include([gen.AtLayer(q, "end") for q in zr.qubits], obs_index=1)
+            builder.obs_include([(q, "end") for q in zl.qubits], obs_index=0)
+            builder.obs_include([(q, "end") for q in zr.qubits], obs_index=1)
         else:
             raise NotImplementedError(f"{basis=}")
 

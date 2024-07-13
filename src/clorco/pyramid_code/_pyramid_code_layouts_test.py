@@ -25,7 +25,7 @@ def test_make_toric_pyramid_code_layout(w: int, h: int):
         width=w,
         height=h,
     )
-    code.check_commutation_relationships()
+    code.verify()
     assert (
         len(code.patch.data_set)
         == len(code.patch.tiles)
@@ -48,7 +48,7 @@ def test_make_planar_pyramid_code_layout(w: int, h: int):
         width=w,
         height=h,
     )
-    code.check_commutation_relationships()
+    code.verify()
     c = code.make_code_capacity_circuit(noise=1e-3)
     assert len(code.patch.data_set) == len(code.patch.tiles) + max(
         len(code.observables_x), len(code.observables_z)

@@ -1,20 +1,8 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import stim
 
+from gen._layers._interact_layer import InteractLayer
 from gen._layers._layer_circuit import LayerCircuit
+from gen._layers._reset_layer import ResetLayer
 
 
 def test_with_squashed_rotations():
@@ -352,3 +340,318 @@ def test_merge_resets_and_measurements():
     """
         )
     )
+
+
+def test_swap_cancellation():
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        SWAP 0 1 2 3 4 5
+        TICK
+        SWAP 2 3 4 6 7 8
+    """)).with_locally_optimized_layers() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        SWAP 0 1 4 5 7 8
+        TICK
+        SWAP 4 6
+    """))
+
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        SWAP 0 1 2 3 4 5
+        TICK
+        SWAP 2 3
+    """)).with_locally_optimized_layers() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        SWAP 0 1 4 5
+    """))
+
+
+def test_with_rotation_layers_moved_earlier():
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        CX 0 1
+        TICK
+        SWAP 2 3
+        TICK
+        H 1 4 5 6
+    """)).with_whole_rotation_layers_slid_earlier() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        CX 0 1
+        TICK
+        H 1 4 5 6
+        TICK
+        SWAP 2 3
+    """))
+
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        CX 0 1
+        TICK
+        S 7
+        TICK
+        SWAP 2 3
+        TICK
+        H 1 4 5 6
+    """)).with_whole_rotation_layers_slid_earlier() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        CX 0 1
+        TICK
+        S 7
+        H 1 4 5 6
+        TICK
+        SWAP 2 3
+    """))
+
+
+def test_with_whole_measurement_layers_slid_earlier():
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        M 0 1
+        CX rec[-2] 5
+        DETECTOR rec[-1]
+        TICK
+        M 2 3
+    """)).with_whole_measurement_layers_slid_earlier() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        M 0 1 2 3
+        CX rec[-4] 5
+        DETECTOR rec[-3]
+    """))
+
+
+def test_with_whole_layers_slid_as_early_as_possible_for_merge_with_same_layer():
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        
+        R 0 1
+        TICK
+
+        CX 0 1
+        TICK
+
+        CX 1 0
+        TICK
+
+        CX 0 1
+        TICK
+
+        M 5
+        DETECTOR rec[-1]
+        TICK
+
+        R 2 3
+        TICK
+
+        CX 2 3
+        TICK
+
+        CX 3 4
+    """)).with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type(ResetLayer).with_whole_layers_slid_as_early_as_possible_for_merge_with_same_layer(InteractLayer) == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        
+        R 0 1 2 3
+        TICK
+
+        CX 0 1 2 3
+        TICK
+
+        CX 1 0 3 4
+        TICK
+
+        CX 0 1
+        TICK
+
+        M 5
+        DETECTOR rec[-1]
+    """))
+
+
+def test_with_cleaned_up_loop_iterations():
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        S 2
+        TICK
+        
+        REPEAT 5 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+    """)).with_cleaned_up_loop_iterations() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        REPEAT 6 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+    """)).without_empty_layers()
+
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        H 1
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        REPEAT 5 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+    """)).with_cleaned_up_loop_iterations() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        H 1
+
+        REPEAT 6 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+    """)).without_empty_layers()
+
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        H 1
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        REPEAT 5 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+    """)).with_cleaned_up_loop_iterations() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        H 1
+
+        REPEAT 7 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+    """)).without_empty_layers()
+
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        H 1
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        REPEAT 5 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+    """)).with_cleaned_up_loop_iterations() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        H 1
+
+        REPEAT 8 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+    """)).without_empty_layers()
+
+    assert LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        H 1
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        REPEAT 5 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        R 0 1
+        TICK
+        S 2
+        TICK
+        
+        H 0
+        TICK
+
+        R 0 1
+        TICK
+        S 2
+        TICK        
+    """)).with_cleaned_up_loop_iterations() == LayerCircuit.from_stim_circuit(stim.Circuit("""
+        R 0 1
+        TICK
+        S 2
+        TICK
+
+        H 1
+
+        REPEAT 9 {
+            R 0 1
+            TICK
+            S 2
+            TICK
+        }
+        
+        H 0
+        TICK
+
+        R 0 1
+        TICK
+        S 2
+        TICK        
+    """)).without_empty_layers()

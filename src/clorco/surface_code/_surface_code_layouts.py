@@ -15,6 +15,11 @@
 import gen
 
 
+UL, UR, DL, DR = [e * 0.5 for e in [-1 - 1j, +1 - 1j, -1 + 1j, +1 + 1j]]
+Order_Z = [UL, UR, DL, DR]
+Order_ᴎ = [UL, DL, UR, DR]
+
+
 def make_surface_code_layout(
     *,
     width: int,
@@ -40,7 +45,7 @@ def make_surface_code_layout(
                 continue
             if not (0 < m.imag < height - 1) and b == "Z":
                 continue
-            order = gen.Order_Z if b == "X" else gen.Order_ᴎ
+            order = Order_Z if b == "X" else Order_ᴎ
             data_qubits = [m + d for d in order]
             tile = gen.Tile(
                 ordered_data_qubits=[
@@ -49,7 +54,7 @@ def make_surface_code_layout(
                 ],
                 bases=b,
                 measurement_qubit=m,
-                extra_coords=["XZ".index(b) * 3 + (x % 2) * 2],
+                flags={f'basis={b}', f'color={"rgb"[(x % 2) * 2]}'},
             )
             if sum(e is not None for e in tile.ordered_data_qubits) > 0:
                 tiles.append(tile)
@@ -93,13 +98,13 @@ def make_toric_surface_code_layout(
         for y in range(height):
             m = wrap(x + 1j * y + 0.5 + 0.5j)
             b = "XZ"[(x + y) % 2]
-            order = gen.Order_ᴎ if b == "X" else gen.Order_Z
+            order = Order_ᴎ if b == "X" else Order_Z
             tiles.append(
                 gen.Tile(
                     ordered_data_qubits=[wrap(m + d) for d in order],
                     bases=b,
                     measurement_qubit=m,
-                    extra_coords=["XZ".index(b) * 3 + x % 2],
+                    flags={f'basis={b}', f'color={"rgb"[x % 2]}'},
                 )
             )
     patch = gen.Patch(tiles)

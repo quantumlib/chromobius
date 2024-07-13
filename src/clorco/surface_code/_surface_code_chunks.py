@@ -37,17 +37,17 @@ def build_surface_code_round_circuit(
     elif isinstance(measure_data_basis, str):
         measure_data_basis = {q: measure_data_basis for q in patch.data_set}
 
-    out.gate("RX", measure_xs.measure_set)
+    out.append("RX", measure_xs.measure_set)
     for basis in "XYZ":
         qs = [q for q in init_data_basis if init_data_basis[q] == basis]
         if qs:
-            out.gate(f"R{basis}", qs)
-    out.gate("R", measure_zs.measure_set)
+            out.append(f"R{basis}", qs)
+    out.append("R", measure_zs.measure_set)
     out.tick()
 
     (num_layers,) = {len(tile.ordered_data_qubits) for tile in patch.tiles}
     for k in range(num_layers):
-        out.gate2(
+        out.append(
             "CX",
             [
                 (tile.measurement_qubit, tile.ordered_data_qubits[k])[
@@ -59,12 +59,12 @@ def build_surface_code_round_circuit(
         )
         out.tick()
 
-    out.measure(measure_xs.measure_set, basis="X", save_layer=save_layer)
+    out.append('MX', measure_xs.measure_set, measure_key_func=lambda e: (e, save_layer))
     for basis in "XYZ":
         qs = [q for q in measure_data_basis if measure_data_basis[q] == basis]
         if qs:
-            out.measure(qs, basis=basis, save_layer=save_layer)
-    out.measure(measure_zs.measure_set, basis="Z", save_layer=save_layer)
+            out.append(f'M{basis}', qs, measure_key_func=lambda e: (e, save_layer))
+    out.append('MZ', measure_zs.measure_set, measure_key_func=lambda e: (e, save_layer))
 
 
 def standard_surface_code_chunk(
@@ -116,12 +116,10 @@ def standard_surface_code_chunk(
             gen.Flow(
                 center=tile.measurement_qubit,
                 start=from_prev,
-                measurement_indices=out.tracker.measurement_indices(
-                    [gen.AtLayer(tile.measurement_qubit, save_layer)]
+                measurement_indices=out.lookup_recs(
+                    [(tile.measurement_qubit, save_layer)]
                 ),
-                additional_coords=[
-                    (tile.measurement_qubit.real % 2 == 0.5) + 3 * (tile.basis == "Z")
-                ],
+                flags={f'color={"rgb"[tile.measurement_qubit.real % 2 == 0.5]}', f'basis={tile.basis}'}
             )
         )
 
@@ -145,16 +143,12 @@ def standard_surface_code_chunk(
             gen.Flow(
                 center=tile.measurement_qubit,
                 end=to_next,
-                measurement_indices=out.tracker.measurement_indices(
-                    [
-                        gen.AtLayer(q, save_layer)
-                        for q in tile.used_set
-                        if q in measure_data_basis or q == tile.measurement_qubit
-                    ]
+                measurement_indices=out.lookup_recs(
+                    (q, save_layer)
+                    for q in tile.used_set
+                    if q in measure_data_basis or q == tile.measurement_qubit
                 ),
-                additional_coords=[
-                    (tile.measurement_qubit.real % 2 == 0.5) + 3 * (tile.basis == "Z")
-                ],
+                flags={f'color={"rgb"[tile.measurement_qubit.real % 2 == 0.5]}', f'basis={tile.basis}'}
             )
         )
 
@@ -171,7 +165,7 @@ def standard_surface_code_chunk(
                 if end_obs.pop(q) != measure_data_basis[q]:
                     raise ValueError("wrong measure basis for obs")
                 measure_indices.extend(
-                    out.tracker.measurement_indices([gen.AtLayer(q, save_layer)])
+                    out.lookup_recs([(q, save_layer)])
                 )
 
         flows.append(

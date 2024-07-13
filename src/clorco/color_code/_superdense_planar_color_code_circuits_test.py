@@ -196,7 +196,8 @@ def test_make_superdense_color_code_circuit_exact():
             SHIFT_COORDS(0, 0, 1)
             TICK
         }
-        R 36 31 29 27 19 17 15 6 4
+        M 36
+        R 31 29 27 19 17 15 6 4
         RX 33 25 23 21 13 11 9 3 1
         TICK
         CX 33 36 25 31 23 29 21 27 13 19 11 17 9 15 3 6 1 4
@@ -218,34 +219,34 @@ def test_make_superdense_color_code_circuit_exact():
         M 36 31 29 27 19 17 15 6 4
         MX 35 34 32 30 28 26 24 22 20 18 16 14 12 10 8 7 5 2 0 33 25 23 21 13 11 9 3 1
         DETECTOR(1, 0, 0, 0) rec[-14] rec[-12] rec[-11] rec[-10] rec[-2] rec[-1]
-        DETECTOR(1, 0, 0, 0) rec[-55] rec[-1]
+        DETECTOR(1, 0, 1, 0) rec[-56] rec[-1]
         DETECTOR(1, 2, 0, 2) rec[-15] rec[-13] rec[-12] rec[-11] rec[-1]
-        DETECTOR(1, 2, 0, 2) rec[-54] rec[-2]
-        DETECTOR(2, 0, 0, 3) rec[-46] rec[-45] rec[-29]
-        DETECTOR(2, 2, 0, 5) rec[-46] rec[-30]
+        DETECTOR(1, 2, 1, 2) rec[-55] rec[-2]
+        DETECTOR(2, 0, 0, 3) rec[-47] rec[-46] rec[-29]
+        DETECTOR(2, 2, 0, 5) rec[-47] rec[-30]
         DETECTOR(3, 1, 0, 1) rec[-21] rec[-18] rec[-17] rec[-15] rec[-14] rec[-12] rec[-4]
-        DETECTOR(3, 1, 0, 1) rec[-53] rec[-3]
+        DETECTOR(3, 1, 1, 1) rec[-54] rec[-3]
         DETECTOR(3, 3, 0, 0) rec[-22] rec[-19] rec[-18] rec[-16] rec[-15] rec[-13] rec[-5] rec[-3]
-        DETECTOR(3, 3, 0, 0) rec[-52] rec[-4]
+        DETECTOR(3, 3, 1, 0) rec[-53] rec[-4]
         DETECTOR(3, 5, 0, 2) rec[-23] rec[-20] rec[-19] rec[-16] rec[-4]
-        DETECTOR(3, 5, 0, 2) rec[-51] rec[-5]
-        DETECTOR(4, 1, 0, 4) rec[-43] rec[-31]
-        DETECTOR(4, 3, 0, 3) rec[-44] rec[-42] rec[-32]
-        DETECTOR(4, 5, 0, 5) rec[-43] rec[-33]
+        DETECTOR(3, 5, 1, 2) rec[-52] rec[-5]
+        DETECTOR(4, 1, 0, 4) rec[-44] rec[-31]
+        DETECTOR(4, 3, 0, 3) rec[-45] rec[-43] rec[-32]
+        DETECTOR(4, 5, 0, 5) rec[-44] rec[-33]
         DETECTOR(5, 0, 0, 0) rec[-26] rec[-24] rec[-21] rec[-17] rec[-7] rec[-6]
-        DETECTOR(5, 0, 0, 0) rec[-50] rec[-6]
+        DETECTOR(5, 0, 1, 0) rec[-51] rec[-6]
         DETECTOR(5, 2, 0, 2) rec[-27] rec[-25] rec[-24] rec[-22] rec[-21] rec[-18] rec[-8] rec[-6]
-        DETECTOR(5, 2, 0, 2) rec[-49] rec[-7]
+        DETECTOR(5, 2, 1, 2) rec[-50] rec[-7]
         DETECTOR(5, 4, 0, 1) rec[-25] rec[-23] rec[-22] rec[-19] rec[-7]
-        DETECTOR(5, 4, 0, 1) rec[-48] rec[-8]
-        DETECTOR(6, 0, 0, 3) rec[-41] rec[-40] rec[-34]
-        DETECTOR(6, 2, 0, 5) rec[-41] rec[-39] rec[-35]
-        DETECTOR(6, 4, 0, 4) rec[-40] rec[-36]
+        DETECTOR(5, 4, 1, 1) rec[-49] rec[-8]
+        DETECTOR(6, 0, 0, 3) rec[-42] rec[-41] rec[-34]
+        DETECTOR(6, 2, 0, 5) rec[-42] rec[-40] rec[-35]
+        DETECTOR(6, 4, 0, 4) rec[-41] rec[-36]
         DETECTOR(7, 1, 0, 1) rec[-28] rec[-27] rec[-26] rec[-24]
-        DETECTOR(7, 1, 0, 1) rec[-47] rec[-9]
+        DETECTOR(7, 1, 1, 1) rec[-48] rec[-9]
         DETECTOR(8, 1, 0, 4) rec[-37]
         OBSERVABLE_INCLUDE(0) rec[-28] rec[-27] rec[-26] rec[-25] rec[-24] rec[-23] rec[-22] rec[-21] rec[-20] rec[-19] rec[-18] rec[-17] rec[-16] rec[-15] rec[-14] rec[-13] rec[-12] rec[-11] rec[-10] rec[-9] rec[-8] rec[-7] rec[-5] rec[-4] rec[-3] rec[-2]
-        SHIFT_COORDS(0, 0, 1)
+        SHIFT_COORDS(0, 0, 2)
         TICK
     """
     )

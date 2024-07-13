@@ -1,27 +1,18 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import pathlib
-from typing import Iterable, Callable, Union
+from typing import Iterable, Callable, Optional, Any, Literal, TYPE_CHECKING, Union
 
 import sinter
 import stim
 
-from gen._core._patch import Patch
-from gen._core._tile import Tile
-from gen._flows._flow import Flow, PauliString
+from gen._core import Patch, StabilizerCode, KeyedPauliString, PauliString, NoiseModel
+from gen._flows._circuit_util import circuit_with_xz_flipped, circuit_to_dem_target_measurement_records_map
+from gen._flows._flow import Flow
+from gen._flows._test_util import assert_has_same_set_of_items_as
 from gen._util import stim_circuit_with_transformed_coords, write_file
+
+if TYPE_CHECKING:
+    from gen._flows._chunk_loop import ChunkLoop
+    from gen._flows._chunk_interface import ChunkInterface
 
 
 class Chunk:
@@ -32,9 +23,8 @@ class Chunk:
         circuit: stim.Circuit,
         q2i: dict[complex, int],
         flows: Iterable[Flow],
-        magic: bool = False,
-        discarded_inputs: Iterable[PauliString] = (),
-        discarded_outputs: Iterable[PauliString] = (),
+        discarded_inputs: Iterable[PauliString | KeyedPauliString] = (),
+        discarded_outputs: Iterable[PauliString | KeyedPauliString] = (),
     ):
         """
         Args:
@@ -53,24 +43,241 @@ class Chunk:
                 will fail when attempting to combine this chunk with a following
                 chunk that has those stabilizers from the anticommuting basis
                 flowing in.
-            magic: Whether or not the circuit is relying on magical noiseless
-                operations like noiselessly measuring entire observables. This
-                is useful when testing and debugging and initially building
-                circuits, but prevents them from being run on hardware.
         """
+        from gen._flows._flow_util import solve_flow_auto_measurements
+
         self.q2i = q2i
-        self.magic = magic
         self.circuit = circuit
-        self.flows = tuple(flows)
-        self.discarded_inputs = discarded_inputs
-        self.discarded_outputs = discarded_outputs
+        self.flows = solve_flow_auto_measurements(flows=flows, circuit=circuit, q2i=q2i)
+        self.discarded_inputs = tuple(discarded_inputs)
+        self.discarded_outputs = tuple(discarded_outputs)
+        assert all(isinstance(e, (PauliString, KeyedPauliString)) for e in self.discarded_inputs)
+        assert all(isinstance(e, (PauliString, KeyedPauliString)) for e in self.discarded_outputs)
+        self.verify()
+
+    def __add__(self, other: 'Chunk') -> 'Chunk':
+        from gen._flows._flow_util import compile_chunks_into_circuit
+        new_circuit = compile_chunks_into_circuit([self, other], ignore_errors=True)
+        new_q2i = {x + 1j*y: i for i, (x, y) in new_circuit.get_final_qubit_coordinates().items()}
+
+        end2flow = {}
+        for flow in self.flows:
+            if flow.end:
+                end2flow[(flow.end, flow.obs_index)] = flow
+        for key in self.discarded_outputs:
+            end2flow[key] = 'discard'
+
+        nm1 = self.circuit.num_measurements
+        nm2 = other.circuit.num_measurements
+
+        new_flows = []
+        new_discarded_outputs = list(other.discarded_outputs)
+        new_discarded_inputs = list(self.discarded_inputs)
+
+        for key in self.discarded_inputs:
+            prev_flow = end2flow.pop(key)
+            if prev_flow is None:
+                raise ValueError("Incompatible chunks.")
+            if prev_flow != 'discard' and prev_flow.start:
+                new_discarded_inputs.append((prev_flow.start, prev_flow.obs_index))
+
+        for flow in other.flows:
+            if not flow.start:
+                new_flows.append(flow.with_edits(
+                    measurement_indices=[m % nm2 + nm1 for m in flow.measurement_indices],
+                )),
+                continue
+
+            prev_flow = end2flow.pop((flow.start, flow.obs_index))
+            if prev_flow is None:
+                raise ValueError("Incompatible chunks.")
+
+            if prev_flow == 'discard':
+                if flow.end:
+                    new_discarded_outputs.append((flow.end, flow.obs_index))
+                continue
+
+            new_flows.append(flow.with_edits(
+                start=prev_flow.start,
+                measurement_indices=[m % nm1 for m in prev_flow.measurement_indices] + [m % nm2 + nm1 for m in flow.measurement_indices],
+                flags=flow.flags | prev_flow.flags,
+            ))
+
+        return Chunk(
+            circuit=new_circuit,
+            q2i=new_q2i,
+            flows=new_flows,
+            discarded_inputs=new_discarded_inputs,
+            discarded_outputs=new_discarded_outputs,
+        )
+
+    def __repr__(self) -> str:
+        lines = ['gen.Chunk(']
+        lines.append(f'    q2i={self.q2i!r},'),
+        lines.append(f'    circuit={self.circuit!r},'.replace('\n', '\n    ')),
+        if self.flows:
+            lines.append(f'    flows={self.flows!r},'),
+        if self.discarded_inputs:
+            lines.append(f'    discarded_inputs={self.discarded_inputs!r},'),
+        if self.discarded_outputs:
+            lines.append(f'    discarded_outputs={self.discarded_outputs!r},'),
+        lines.append(')')
+        return '\n'.join(lines)
+
+    def with_noise(self, noise: NoiseModel | float) -> 'Chunk':
+        if isinstance(noise, float):
+            noise = NoiseModel.uniform_depolarizing(1e-3)
+        return self.with_edits(
+            circuit=noise.noisy_circuit(self.circuit),
+        )
+
+    def with_obs_flows_as_det_flows(self) -> 'Chunk':
+        return self.with_edits(
+            flows=[
+                flow.with_edits(obs_index=None)
+                for flow in self.flows
+            ],
+        )
+
+    @staticmethod
+    def from_circuit_with_mpp_boundaries(circuit: stim.Circuit) -> 'Chunk':
+        allowed = {
+            'TICK',
+            'OBSERVABLE_INCLUDE',
+            'DETECTOR',
+            'MPP',
+            'QUBIT_COORDS',
+            'SHIFT_COORDS',
+        }
+        start = 0
+        end = len(circuit)
+        while start < len(circuit) and circuit[start].name in allowed:
+            start += 1
+        while end > 0 and circuit[end - 1].name in allowed:
+            end -= 1
+        while end < len(circuit) and circuit[end].name != 'MPP':
+            end += 1
+        while end > 0 and circuit[end - 1].name == 'TICK':
+            end -= 1
+        if end <= start:
+            raise ValueError("end <= start")
+
+        prefix, body, suffix = circuit[:start], circuit[start:end], circuit[end:]
+        start_tick = prefix.num_ticks
+        end_tick = start_tick + body.num_ticks + 1
+        c = stim.Circuit()
+        c += prefix
+        c.append('TICK')
+        c += body
+        c.append('TICK')
+        c += suffix
+        det_regions = c.detecting_regions(ticks=[start_tick, end_tick])
+        records = circuit_to_dem_target_measurement_records_map(c)
+        pn = prefix.num_measurements
+        record_range = range(pn, pn + body.num_measurements)
+
+        q2i = {qr + qi*1j: i for i, (qr, qi) in circuit.get_final_qubit_coordinates().items()}
+        i2q = {i: q for q, i in q2i.items()}
+        dropped_detectors = set()
+
+        flows = []
+        for target, items in det_regions.items():
+            if target.is_relative_detector_id():
+                dropped_detectors.add(target.val)
+            start_ps: stim.PauliString = items.get(start_tick, stim.PauliString(0))
+            start = PauliString({i2q[i]: '_XYZ'[start_ps[i]] for i in start_ps.pauli_indices()})
+
+            end_ps: stim.PauliString = items.get(end_tick, stim.PauliString(0))
+            end = PauliString({i2q[i]: '_XYZ'[end_ps[i]] for i in end_ps.pauli_indices()})
+
+            flows.append(Flow(
+                start=start,
+                end=end,
+                measurement_indices=[m - record_range.start for m in records[target] if m in record_range],
+                obs_index=None if target.is_relative_detector_id() else target.val,
+                center=(sum(start.qubits.keys()) + sum(end.qubits.keys())) / (len(start.qubits) + len(end.qubits)),
+            ))
+
+        kept = stim.Circuit()
+        num_d = prefix.num_detectors
+        for inst in body.flattened():
+            if inst.name == 'DETECTOR':
+                if num_d not in dropped_detectors:
+                    kept.append(inst)
+                num_d += 1
+            elif inst.name != 'OBSERVABLE_INCLUDE':
+                kept.append(inst)
+
+        return Chunk(
+            q2i=q2i,
+            flows=flows,
+            circuit=kept,
+        )
+
+    def _interface(
+            self,
+            side: Literal['start', 'end'],
+            *,
+            skip_discards: bool = False,
+            skip_passthroughs: bool = False,
+    ) -> tuple[PauliString | KeyedPauliString, ...]:
+        if side == 'start':
+            include_start = True
+            include_end = False
+        elif side == 'end':
+            include_start = False
+            include_end = True
+        else:
+            raise NotImplementedError(f'{side=}')
+
+        result = []
+        for flow in self.flows:
+            if include_start and flow.start and not (skip_passthroughs and flow.end):
+                result.append((flow.start, flow.obs_index))
+            if include_end and flow.end and not (skip_passthroughs and flow.start):
+                result.append((flow.end, flow.obs_index))
+        if include_start and not skip_discards:
+            result.extend(self.discarded_inputs)
+        if include_end and not skip_discards:
+            result.extend(self.discarded_outputs)
+
+        result_set = set()
+        collisions = set()
+        for item in result:
+            if item in result_set:
+                collisions.add(item)
+            result_set.add(item)
+
+        if collisions:
+            msg = [f"{side} interface had collisions:"]
+            for a, b in sorted(collisions):
+                msg.append(f"    {a}, obs_index={b}")
+            raise ValueError("\n".join(msg))
+
+        return tuple(sorted(result_set))
+
+    def with_edits(
+            self,
+            *,
+            circuit: stim.Circuit | None = None,
+            q2i: dict[complex, int] | None = None,
+            flows: Iterable[Flow] | None = None,
+            discarded_inputs: Iterable[PauliString | KeyedPauliString] | None = None,
+            discarded_outputs: Iterable[PauliString | KeyedPauliString] | None = None,
+    ) -> 'Chunk':
+        return Chunk(
+            circuit=self.circuit if circuit is None else circuit,
+            q2i=self.q2i if q2i is None else q2i,
+            flows=self.flows if flows is None else flows,
+            discarded_inputs=self.discarded_inputs if discarded_inputs is None else discarded_inputs,
+            discarded_outputs=self.discarded_outputs if discarded_outputs is None else discarded_outputs,
+        )
 
     def __eq__(self, other):
         if not isinstance(other, Chunk):
             return NotImplemented
         return (
             self.q2i == other.q2i
-            and self.magic == other.magic
             and self.circuit == other.circuit
             and self.flows == other.flows
             and self.discarded_inputs == other.discarded_inputs
@@ -78,23 +285,22 @@ class Chunk:
         )
 
     def write_viewer(
-        self, path: str | pathlib.Path, *, patch: Patch | None = None
+        self, path: str | pathlib.Path, *, patch: Optional[Patch] = None
     ) -> None:
         from gen import stim_circuit_html_viewer
 
         if patch is None:
-            patch = self.start_patch()
-            if len(patch.tiles) == 0:
-                patch = self.end_patch()
+            patch = self.start_interface()
+            if len(patch.ports) == 0:
+                patch = self.end_interface()
         write_file(path, stim_circuit_html_viewer(self.circuit, patch=patch))
 
     def with_flows_postselected(
         self, flow_predicate: Callable[[Flow], bool]
-    ) -> "Chunk":
+    ) -> 'Chunk':
         return Chunk(
             circuit=self.circuit,
             q2i=self.q2i,
-            magic=self.magic,
             flows=[
                 flow.postselected() if flow_predicate(flow) else flow
                 for flow in self.flows
@@ -104,13 +310,33 @@ class Chunk:
         )
 
     def __mul__(self, other: int) -> "ChunkLoop":
+        from gen._flows._chunk_loop import ChunkLoop
         return ChunkLoop([self], repetitions=other)
 
     def with_repetitions(self, repetitions: int) -> "ChunkLoop":
+        from gen._flows._chunk_loop import ChunkLoop
         return ChunkLoop([self], repetitions=repetitions)
 
-    def verify(self):
+    def verify(
+        self,
+        *,
+        expected_in: Union['ChunkInterface', 'StabilizerCode', None] = None,
+        expected_out: Union['ChunkInterface', 'StabilizerCode', None] = None,
+        should_measure_all_code_stabilizers: bool = False,
+    ):
         """Checks that this chunk's circuit actually implements its flows."""
+        __tracebackhide__ = True
+
+        assert not should_measure_all_code_stabilizers or expected_in is not None or should_measure_all_code_stabilizers is not None
+        assert isinstance(self.circuit, stim.Circuit)
+        assert isinstance(self.q2i, dict)
+        assert isinstance(self.flows, tuple)
+        assert isinstance(self.discarded_inputs, tuple)
+        assert isinstance(self.discarded_outputs, tuple)
+        assert all(isinstance(e, Flow) for e in self.flows)
+        assert all(isinstance(e, (PauliString, KeyedPauliString)) for e in self.discarded_inputs)
+        assert all(isinstance(e, (PauliString, KeyedPauliString)) for e in self.discarded_outputs)
+
         for key, group in sinter.group_by(
             self.flows, key=lambda flow: (flow.start, flow.obs_index)
         ).items():
@@ -122,223 +348,155 @@ class Chunk:
             if key[0] and len(group) > 1:
                 raise ValueError(f"Multiple flows with same non-empty end: {group}")
 
-        from gen._flows._flow_verifier import FlowStabilizerVerifier
+        stim_flows = []
+        for flow in self.flows:
+            inp = stim.PauliString(len(self.q2i))
+            out = stim.PauliString(len(self.q2i))
+            for q, p in flow.start.qubits.items():
+                inp[self.q2i[q]] = p
+            for q, p in flow.end.qubits.items():
+                out[self.q2i[q]] = p
+            stim_flows.append(stim.Flow(
+                input=inp,
+                output=out,
+                measurements=flow.measurement_indices,
+            ))
+        if not self.circuit.has_all_flows(stim_flows, unsigned=True):
+            msg = ["Circuit lacks the following flows:"]
+            for k in range(len(stim_flows)):
+                if not self.circuit.has_flow(stim_flows[k], unsigned=True):
+                    msg.append('    ' + str(self.flows[k]))
+            raise ValueError('\n'.join(msg))
 
-        FlowStabilizerVerifier.verify(self)
+        if expected_in is not None:
+            if isinstance(expected_in, StabilizerCode):
+                expected_in = expected_in.as_interface()
+            assert_has_same_set_of_items_as(
+                self.start_interface().with_discards_as_ports().ports,
+                expected_in.with_discards_as_ports().ports,
+                "self.start_interface().with_discards_as_ports().ports",
+                "expected_in.with_discards_as_ports().ports",
+            )
+            if should_measure_all_code_stabilizers:
+                assert_has_same_set_of_items_as(
+                    self.start_interface(skip_passthroughs=True).without_discards().without_keyed().ports,
+                    expected_in.without_discards().without_keyed().ports,
+                    "self.start_interface(skip_passthroughs=True).without_discards().without_keyed().ports",
+                    "expected_in.without_discards().without_keyed().ports",
+                )
+        else:
+            # Creating the interface checks for collisions
+            self.start_interface()
 
-    def inverted(self) -> "Chunk":
+        if expected_out is not None:
+            if isinstance(expected_out, StabilizerCode):
+                expected_out = expected_out.as_interface()
+            assert_has_same_set_of_items_as(
+                self.end_interface().with_discards_as_ports().ports,
+                expected_out.with_discards_as_ports().ports,
+                "self.end_interface().with_discards_as_ports().ports",
+                "expected_out.with_discards_as_ports().ports",
+            )
+            if should_measure_all_code_stabilizers:
+                assert_has_same_set_of_items_as(
+                    self.end_interface(skip_passthroughs=True).without_discards().without_keyed().ports,
+                    expected_out.without_discards().without_keyed().ports,
+                    "self.end_interface(skip_passthroughs=True).without_discards().without_keyed().ports",
+                    "expected_out.without_discards().without_keyed().ports",
+                )
+        else:
+            # Creating the interface checks for collisions
+            self.end_interface()
+
+    def time_reversed(self) -> 'Chunk':
         """Checks that this chunk's circuit actually implements its flows."""
-        from gen._flows._flow_verifier import FlowStabilizerVerifier
 
-        return FlowStabilizerVerifier.invert(self)
+        stim_flows = []
+        for flow in self.flows:
+            inp = stim.PauliString(len(self.q2i))
+            out = stim.PauliString(len(self.q2i))
+            for q, p in flow.start.qubits.items():
+                inp[self.q2i[q]] = p
+            for q, p in flow.end.qubits.items():
+                out[self.q2i[q]] = p
+            stim_flows.append(stim.Flow(
+                input=inp,
+                output=out,
+                measurements=flow.measurement_indices,
+            ))
+        rev_circuit, rev_flows = self.circuit.time_reversed_for_flows(stim_flows)
+        nm = rev_circuit.num_measurements
+        return Chunk(
+            circuit=rev_circuit,
+            q2i=self.q2i,
+            flows=[
+                Flow(
+                    center=flow.center,
+                    start=flow.end,
+                    end=flow.start,
+                    measurement_indices=[m + nm for m in rev_flow.measurements_copy()],
+                    flags=flow.flags,
+                    obs_index=flow.obs_index,
+                )
+                for flow, rev_flow in zip(self.flows, rev_flows, strict=True)
+            ],
+            discarded_inputs=self.discarded_outputs,
+            discarded_outputs=self.discarded_inputs,
+        )
 
-    def with_xz_flipped(self) -> "Chunk":
+    def with_xz_flipped(self) -> 'Chunk':
         return Chunk(
             q2i=self.q2i,
-            magic=self.magic,
             circuit=circuit_with_xz_flipped(self.circuit),
             flows=[flow.with_xz_flipped() for flow in self.flows],
-            discarded_inputs=[p.with_xz_flipped() for p in self.discarded_inputs],
-            discarded_outputs=[p.with_xz_flipped() for p in self.discarded_outputs],
+            discarded_inputs=[(p.with_xz_flipped(), k) for p, k in self.discarded_inputs],
+            discarded_outputs=[(p.with_xz_flipped(), k) for p, k in self.discarded_outputs],
         )
 
     def with_transformed_coords(
         self, transform: Callable[[complex], complex]
-    ) -> "Chunk":
+    ) -> 'Chunk':
         return Chunk(
             q2i={transform(q): i for q, i in self.q2i.items()},
-            magic=self.magic,
             circuit=stim_circuit_with_transformed_coords(self.circuit, transform),
             flows=[flow.with_transformed_coords(transform) for flow in self.flows],
-            discarded_inputs=[
-                p.with_transformed_coords(transform) for p in self.discarded_inputs
-            ],
-            discarded_outputs=[
-                p.with_transformed_coords(transform) for p in self.discarded_outputs
-            ],
+            discarded_inputs=[p.with_transformed_coords(transform) for p in self.discarded_inputs],
+            discarded_outputs=[p.with_transformed_coords(transform) for p in self.discarded_outputs],
         )
 
-    def magic_init_chunk(self) -> "Chunk":
-        """Returns a chunk that initializes the stabilizers needed by this one.
-
-        The stabilizers are initialized using direct measurement by MPP, with
-        no care for connectivity or physical limitations of hardware.
-        """
-        from gen._flows._flow_util import magic_init_for_chunk
-
-        return magic_init_for_chunk(self)
-
-    def magic_end_chunk(self) -> "Chunk":
-        """Returns a chunk that terminates the stabilizers produced by this one.
-
-        The stabilizers are initialized using direct measurement by MPP, with
-        no care for connectivity or physical limitations of hardware.
-        """
-        from gen._flows._flow_util import magic_measure_for_chunk
-
-        return magic_measure_for_chunk(self)
-
-    def _boundary_patch(self, end: bool) -> Patch:
-        tiles = []
-        for flow in self.flows:
-            r = flow.end if end else flow.start
-            if r.qubits and flow.obs_index is None:
-                tiles.append(
-                    Tile(
-                        ordered_data_qubits=r.qubits.keys(),
-                        bases="".join(r.qubits.values()),
-                        measurement_qubit=list(r.qubits.keys())[0],
-                    )
-                )
-        return Patch(tiles)
-
-    def start_patch(self) -> Patch:
-        return self._boundary_patch(False)
-
-    def flattened(self) -> list["Chunk"]:
+    def flattened(self) -> list['Chunk']:
+        """This is here for duck-type compatibility with ChunkLoop."""
         return [self]
 
-    def end_patch(self) -> Patch:
-        return self._boundary_patch(True)
+    def mpp_init_chunk(self) -> 'Chunk':
+        return self.start_interface().mpp_init_chunk()
+
+    def mpp_end_chunk(self) -> 'Chunk':
+        return self.end_interface().mpp_end_chunk()
+
+    def start_interface(self, *, skip_passthroughs: bool = False) -> 'ChunkInterface':
+        from gen._flows._chunk_interface import ChunkInterface
+        return ChunkInterface(
+            ports=[
+                flow.key_start
+                for flow in self.flows
+                if flow.start
+                if not (skip_passthroughs and flow.end)
+            ],
+            discards=self.discarded_inputs,
+        )
+
+    def end_interface(self, *, skip_passthroughs: bool = False) -> 'ChunkInterface':
+        from gen._flows._chunk_interface import ChunkInterface
+        return ChunkInterface(
+            ports=[
+                flow.key_end
+                for flow in self.flows
+                if flow.end
+                if not (skip_passthroughs and flow.start)
+            ],
+            discards=self.discarded_outputs,
+        )
 
     def tick_count(self) -> int:
         return self.circuit.num_ticks + 1
-
-
-class ChunkLoop:
-    def __init__(self, chunks: Iterable[Union[Chunk, "ChunkLoop"]], repetitions: int):
-        self.chunks = tuple(chunks)
-        self.repetitions = repetitions
-
-    @property
-    def magic(self) -> bool:
-        return any(c.magic for c in self.chunks)
-
-    def verify(self):
-        for c in self.chunks:
-            c.verify()
-        for k in range(len(self.chunks)):
-            before: Chunk = self.chunks[k - 1]
-            after: Chunk = self.chunks[k]
-            after_in = {}
-            before_out = {}
-            for flow in before.flows:
-                if flow.end:
-                    before_out[flow.end] = flow.obs_index
-            for flow in after.flows:
-                if flow.start:
-                    after_in[flow.start] = flow.obs_index
-            for ps in before.discarded_outputs:
-                after_in.pop(ps)
-            for ps in after.discarded_inputs:
-                before_out.pop(ps)
-            if after_in != before_out:
-                raise ValueError("Flows don't match between chunks.")
-
-    def __mul__(self, other: int) -> "ChunkLoop":
-        return self.with_repetitions(other * self.repetitions)
-
-    def with_repetitions(self, new_repetitions: int) -> "ChunkLoop":
-        return ChunkLoop(chunks=self.chunks, repetitions=new_repetitions)
-
-    def magic_init_chunk(self) -> "Chunk":
-        return self.chunks[0].magic_init_chunk()
-
-    def magic_end_chunk(self) -> "Chunk":
-        return self.chunks[-1].magic_end_chunk()
-
-    def start_patch(self) -> Patch:
-        return self.chunks[0].start_patch()
-
-    def end_patch(self) -> Patch:
-        return self.chunks[-1].end_patch()
-
-    def tick_count(self) -> int:
-        return sum(e.tick_count() for e in self.chunks) * self.repetitions
-
-    def flattened(self) -> list["Chunk"]:
-        return [e for c in self.chunks for e in c.flattened()]
-
-
-XZ_FLIPPED = {
-    "I": "I",
-    "X": "Z",
-    "Y": "Y",
-    "Z": "X",
-    "C_XYZ": "C_ZYX",
-    "C_ZYX": "C_XYZ",
-    "H": "H",
-    "H_XY": "H_YZ",
-    "H_XZ": "H_XZ",
-    "H_YZ": "H_XY",
-    "S": "SQRT_X",
-    "SQRT_X": "S",
-    "SQRT_X_DAG": "S_DAG",
-    "SQRT_Y": "SQRT_Y",
-    "SQRT_Y_DAG": "SQRT_Y_DAG",
-    "S_DAG": "SQRT_X_DAG",
-    "CX": "XCZ",
-    "CY": "XCY",
-    "CZ": "XCX",
-    "ISWAP": None,
-    "ISWAP_DAG": None,
-    "SQRT_XX": "SQRT_ZZ",
-    "SQRT_XX_DAG": "SQRT_ZZ_DAG",
-    "SQRT_YY": "SQRT_YY",
-    "SQRT_YY_DAG": "SQRT_YY_DAG",
-    "SQRT_ZZ": "SQRT_XX",
-    "SQRT_ZZ_DAG": "SQRT_XX_DAG",
-    "SWAP": "SWAP",
-    "XCX": "CZ",
-    "XCY": "CY",
-    "XCZ": "CX",
-    "YCX": "YCZ",
-    "YCY": "YCY",
-    "YCZ": "YCX",
-    "DEPOLARIZE1": "DEPOLARIZE1",
-    "DEPOLARIZE2": "DEPOLARIZE2",
-    "E": None,
-    "ELSE_CORRELATED_ERROR": None,
-    "PAULI_CHANNEL_1": None,
-    "PAULI_CHANNEL_2": None,
-    "X_ERROR": "Z_ERROR",
-    "Y_ERROR": "Y_ERROR",
-    "Z_ERROR": "X_ERROR",
-    "M": "MX",
-    "MPP": None,
-    "MR": "MRX",
-    "MRX": "MRZ",
-    "MRY": "MRY",
-    "MX": "M",
-    "MY": "MY",
-    "R": "RX",
-    "RX": "R",
-    "RY": "RY",
-    "DETECTOR": "DETECTOR",
-    "OBSERVABLE_INCLUDE": "OBSERVABLE_INCLUDE",
-    "QUBIT_COORDS": "QUBIT_COORDS",
-    "SHIFT_COORDS": "SHIFT_COORDS",
-    "TICK": "TICK",
-}
-
-
-def circuit_with_xz_flipped(circuit: stim.Circuit) -> stim.Circuit:
-    result = stim.Circuit()
-    for inst in circuit:
-        if isinstance(inst, stim.CircuitRepeatBlock):
-            result.append(
-                stim.CircuitRepeatBlock(
-                    body=circuit_with_xz_flipped(inst.body_copy()),
-                    repeat_count=inst.repeat_count,
-                )
-            )
-        else:
-            other = XZ_FLIPPED.get(inst.name)
-            if other is None:
-                raise NotImplementedError(f"{inst=}")
-            result.append(
-                stim.CircuitInstruction(
-                    other, inst.targets_copy(), inst.gate_args_copy()
-                )
-            )
-    return result

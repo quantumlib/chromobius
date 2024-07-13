@@ -1,17 +1,3 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import dataclasses
 from typing import TypeVar, Type, cast, Literal
 
@@ -565,6 +551,138 @@ class LayerCircuit:
                 layer.body = layer.body.with_rotations_merged_earlier()
             cur_layer_index += 1
         return LayerCircuit([layer for layer in new_layers if not layer.is_vacuous()])
+
+    def with_whole_rotation_layers_slid_earlier(self) -> "LayerCircuit":
+        rev_layers = []
+        cur_rot_layer: RotationLayer | None = None
+        cur_rot_touched: set[int] | None = None
+        for layer in self.layers[::-1]:
+            if cur_rot_layer is not None and not layer.touched().isdisjoint(cur_rot_touched):
+                rev_layers.append(cur_rot_layer)
+                cur_rot_layer = None
+                cur_rot_touched = None
+            if isinstance(layer, RotationLayer):
+                layer = layer.copy()
+                if cur_rot_layer is not None:
+                    layer.rotations.update(cur_rot_layer.rotations)
+                cur_rot_layer = layer
+                cur_rot_touched = cur_rot_layer.touched()
+            else:
+                rev_layers.append(layer)
+        if cur_rot_layer is not None:
+            rev_layers.append(cur_rot_layer)
+        return LayerCircuit(rev_layers[::-1])
+
+    def with_ejected_loop_iterations(self) -> "LayerCircuit":
+        new_layers = []
+        for layer in self.layers:
+            if isinstance(layer, LoopLayer):
+                if layer.repetitions == 0:
+                    pass
+                elif layer.repetitions == 1:
+                    new_layers.extend(layer.body.layers)
+                elif layer.repetitions == 2:
+                    new_layers.extend(layer.body.layers)
+                    new_layers.extend(layer.body.layers)
+                else:
+                    new_layers.extend(layer.body.layers)
+                    new_layers.append(LoopLayer(body=layer.body.copy(), repetitions=layer.repetitions - 2))
+                    new_layers.extend(layer.body.layers)
+                    assert layer.repetitions > 2
+            else:
+                new_layers.append(layer)
+        return LayerCircuit(new_layers)
+
+    def without_empty_layers(self) -> "LayerCircuit":
+        new_layers = []
+        for layer in self.layers:
+            if isinstance(layer, EmptyLayer):
+                pass
+            elif isinstance(layer, LoopLayer):
+                new_layers.append(LoopLayer(layer.body.without_empty_layers(), layer.repetitions))
+            else:
+                new_layers.append(layer)
+        return LayerCircuit(new_layers)
+
+    def with_cleaned_up_loop_iterations(self) -> "LayerCircuit":
+        new_layers = list(self.without_empty_layers().layers)
+        k = 0
+        while k < len(new_layers):
+            if isinstance(new_layers[k], LoopLayer):
+                body_layers = new_layers[k].body.layers
+                reps = new_layers[k].repetitions
+                while k >= len(body_layers) and new_layers[k - len(body_layers):k] == body_layers:
+                    new_layers[k - len(body_layers):k] = []
+                    k -= len(body_layers)
+                    reps += 1
+                while k + len(body_layers) < len(new_layers) and new_layers[k + 1:k + 1 + len(body_layers)] == body_layers:
+                    new_layers[k + 1:k + 1 + len(body_layers)] = []
+                    reps += 1
+                new_layers[k] = LoopLayer(LayerCircuit(body_layers), reps)
+            k += 1
+        return LayerCircuit(new_layers)
+
+    def with_whole_measurement_layers_slid_earlier(self) -> "LayerCircuit":
+        rev_layers = []
+        cur_meas_layer: MeasureLayer | None = None
+        cur_meas_touched: set[int] | None = None
+        for layer in self.layers[::-1]:
+            if cur_meas_layer is not None and not layer.touched().isdisjoint(cur_meas_touched):
+                rev_layers.append(cur_meas_layer)
+                cur_meas_layer = None
+                cur_meas_touched = None
+
+            if cur_meas_layer is not None and isinstance(layer, (FeedbackLayer, DetObsAnnotationLayer)):
+                layer = layer.with_rec_targets_shifted_by(-len(cur_meas_layer.targets))
+
+            if isinstance(layer, MeasureLayer):
+                layer = layer.copy()
+                if cur_meas_layer is not None:
+                    layer.bases.extend(cur_meas_layer.bases)
+                    layer.targets.extend(cur_meas_layer.targets)
+                cur_meas_layer = layer
+                cur_meas_touched = cur_meas_layer.touched()
+            else:
+                rev_layers.append(layer)
+        if cur_meas_layer is not None:
+            rev_layers.append(cur_meas_layer)
+        return LayerCircuit(rev_layers[::-1])
+
+    def with_whole_layers_slid_as_to_merge_with_previous_layer_of_same_type(self, layer_types: type | tuple[type, ...]) -> "LayerCircuit":
+        new_layers = list(self.layers)
+        k = 0
+        while k < len(new_layers):
+            if isinstance(new_layers[k], layer_types):
+                touched = new_layers[k].touched()
+                k_prev = k
+                while k_prev > 0 and new_layers[k_prev - 1].touched().isdisjoint(touched):
+                    k_prev -= 1
+                    if k_prev != k and type(new_layers[k_prev]) == type(new_layers[k]):
+                        new_layer, = [e for e in new_layers[k_prev].locally_optimized(new_layers[k]) if e is not None]
+                        del new_layers[k]
+                        new_layers[k_prev] = new_layer
+                        break
+            k += 1
+        return LayerCircuit(new_layers)
+
+    def with_whole_layers_slid_as_early_as_possible_for_merge_with_same_layer(self, layer_types: type | tuple[type, ...]) -> "LayerCircuit":
+        new_layers = list(self.layers)
+        k = 0
+        while k < len(new_layers):
+            if isinstance(new_layers[k], layer_types):
+                touched = new_layers[k].touched()
+                k_prev = k
+                while k_prev > 0 and new_layers[k_prev - 1].touched().isdisjoint(touched):
+                    k_prev -= 1
+                while k_prev < k and type(new_layers[k_prev]) != type(new_layers[k]):
+                    k_prev += 1
+                if k_prev != k:
+                    new_layer, = [e for e in new_layers[k_prev].locally_optimized(new_layers[k]) if e is not None]
+                    del new_layers[k]
+                    new_layers[k_prev] = new_layer
+                    continue
+            k += 1
+        return LayerCircuit(new_layers)
 
     def with_irrelevant_tail_layers_removed(self) -> "LayerCircuit":
         irrelevant_layer_types_at_end = (

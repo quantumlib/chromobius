@@ -46,23 +46,24 @@ def make_rep_code_circuit(
     for cur_round in range(rounds):
         if cur_round > 0:
             builder.tick()
-        builder.gate(
+        builder.append(
             "R", code.patch.used_set if cur_round == 0 else code.patch.measure_set
         )
         builder.tick()
-        builder.gate2("CX", [(m - 0.5, m) for m in code.patch.measure_set])
+        builder.append("CX", [(m - 0.5, m) for m in code.patch.measure_set])
         builder.tick()
-        builder.gate2(
+        builder.append(
             "CX", [((m.real + 0.5) % distance, m) for m in code.patch.measure_set]
         )
         builder.tick()
-        builder.measure(
+        builder.append(
+            'MZ',
             code.patch.used_set if cur_round == rounds - 1 else code.patch.measure_set,
-            save_layer=cur_round,
+            measure_key_func=lambda e: (e, cur_round),
         )
         for m in gen.sorted_complex(code.patch.measure_set):
-            m_key = gen.AtLayer(m, cur_round)
-            other_key = [] if cur_round == 0 else [gen.AtLayer(m, cur_round - 1)]
+            m_key = (m, cur_round)
+            other_key = [] if cur_round == 0 else [(m, cur_round - 1)]
             rc = round_colorings[cur_round % len(round_colorings)]
             c = color_indices[rc[int(m.real % len(rc) - 0.5)]]
             builder.detector([m_key] + other_key, pos=m, extra_coords=c)
@@ -72,12 +73,12 @@ def make_rep_code_circuit(
         c = color_indices[rc[int(m.real % len(rc) - 0.5)]]
         builder.detector(
             [
-                gen.AtLayer(m, rounds - 1),
-                gen.AtLayer((m.real + 0.5) % distance, rounds - 1),
-                gen.AtLayer(m - 0.5, rounds - 1),
+                (m, rounds - 1),
+                ((m.real + 0.5) % distance, rounds - 1),
+                (m - 0.5, rounds - 1),
             ],
             pos=m,
             extra_coords=c,
         )
-    builder.obs_include([gen.AtLayer(0, rounds - 1)], obs_index=0)
+    builder.obs_include([(0, rounds - 1)], obs_index=0)
     return builder.circuit

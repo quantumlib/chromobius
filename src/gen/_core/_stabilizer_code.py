@@ -1,28 +1,25 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+import collections
+import functools
+import itertools
 import pathlib
-from typing import Iterable, Literal, Any, Callable, Sequence
+from typing import Iterable, Literal, Any, Callable, Sequence, Union, \
+    TYPE_CHECKING
 
 import stim
 
+import gen
 from gen._core._builder import Builder, AtLayer
-from gen._core._noise import NoiseRule, NoiseModel
+from gen._core._noise import NoiseRule
 from gen._core._patch import Patch
 from gen._core._pauli_string import PauliString
 from gen._core._util import sorted_complex
+from gen._core._keyed_pauli_string import KeyedPauliString
 from gen._util import write_file
+
+if TYPE_CHECKING:
+    from gen._flows._chunk import Chunk
+    from gen._flows._flow import Flow
+    from gen._flows._chunk_interface import ChunkInterface
 
 
 class StabilizerCode:
@@ -38,28 +35,193 @@ class StabilizerCode:
     The stabilizers are defined by the 'tiles' of the code's 'patch'. Each tile
     defines data qubits and a measurement qubit. The measurement qubit is also a
     very loose concept; it may literally represent a single ancilla qubit used
-    for measuring the stabilizer. Or it may be more like a unique key identifying
-    the tile, with no relation to any real qubit.
+    for measuring the stabilizer or it may be more like a unique key identifying
+    the tile with no relation to any real qubit.
     """
 
     def __init__(
         self,
         *,
-        patch: Patch,
-        observables_x: Iterable[PauliString],
-        observables_z: Iterable[PauliString],
+        patch: Patch | None = None,
+        observables_x: Iterable[PauliString] = (),
+        observables_z: Iterable[PauliString] = (),
     ):
-        self.patch = patch
-        self.observables_x = tuple(observables_x)
-        self.observables_z = tuple(observables_z)
+        self.patch = Patch([]) if patch is None else patch
+        self.observables_x: tuple[PauliString, ...] = tuple(observables_x)
+        self.observables_z: tuple[PauliString, ...] = tuple(observables_z)
+
+    def x_basis_subset(self) -> 'StabilizerCode':
+        return StabilizerCode(
+            patch=self.patch.with_only_x_tiles(),
+            observables_x=self.observables_x,
+        )
+
+    def z_basis_subset(self) -> 'StabilizerCode':
+        return StabilizerCode(
+            patch=self.patch.with_only_z_tiles(),
+            observables_x=self.observables_x if not self.observables_z else (),
+            observables_z=self.observables_z,
+        )
+
+    @property
+    def tiles(self) -> tuple['gen.Tile', ...]:
+        return self.patch.tiles
+
+    def find_distance(self, *, max_search_weight: int) -> int:
+        return len(self.find_logical_error(max_search_weight=max_search_weight))
+
+    def find_logical_error(self, *, max_search_weight: int) -> list[stim.ExplainedError]:
+        circuit = self.make_code_capacity_circuit(noise=1e-3)
+        if max_search_weight == 2:
+            return circuit.shortest_graphlike_error()
+        return circuit.search_for_undetectable_logical_errors(
+            dont_explore_edges_with_degree_above=max_search_weight,
+            dont_explore_detection_event_sets_with_size_above=max_search_weight,
+            dont_explore_edges_increasing_symptom_degree=False,
+            canonicalize_circuit_errors=True,
+        )
+
+    def with_observables_from_basis(self, basis: Literal['X', 'Y', 'Z']) -> 'StabilizerCode':
+        if basis == 'X':
+            return gen.StabilizerCode(
+                patch=self.patch,
+                observables_x=self.observables_x,
+                observables_z=[],
+            )
+        elif basis == 'Y':
+            return gen.StabilizerCode(
+                patch=self.patch,
+                observables_x=[x * z for x, z in zip(self.observables_x, self.observables_z)],
+                observables_z=[],
+            )
+        elif basis == 'Z':
+            return gen.StabilizerCode(
+                patch=self.patch,
+                observables_x=[],
+                observables_z=self.observables_z,
+            )
+        else:
+            raise NotImplementedError(f'{basis=}')
+
+    def mpp_init_chunk(self) -> 'Chunk':
+        return self.mpp_chunk(flow_style='init')
+
+    def mpp_end_chunk(self) -> 'Chunk':
+        return self.mpp_chunk(flow_style='end')
+
+    def mpp_chunk(
+            self,
+            *,
+            noise: float | NoiseRule | None = None,
+            flow_style: Literal['passthrough', 'end', 'init'] = 'passthrough',
+            resolve_anticommutations: bool = False,
+    ) -> 'Chunk':
+        assert flow_style in ['init', 'end', 'passthrough']
+        if resolve_anticommutations:
+            observables, immune = self.entangled_observables(ancilla_qubits_for_xz_pairs=None)
+            immune = set(immune)
+        else:
+            observables = self.observables_x + self.observables_z
+            immune = set()
+
+        from gen._flows import Flow, Chunk
+        builder = Builder.for_qubits(self.data_set | immune)
+        flows = []
+        discards = []
+
+        if noise is None or noise == 0:
+            noise = NoiseRule()
+        elif isinstance(noise, (float, int)):
+            noise = NoiseRule(before={'DEPOLARIZE1': noise}, flip_result=noise)
+
+        for k, obs in enumerate(observables):
+            if flow_style != 'passthrough':
+                builder.measure_pauli_string(obs, key=f'obs{k}')
+            flows.append(Flow(
+                center=-1,
+                start=None if flow_style == 'init' else obs,
+                end=None if flow_style == 'end' else obs,
+                measurement_indices=builder.lookup_rec(f'obs{k}') if flow_style != 'passthrough' else (),
+                obs_index=k,
+            ))
+
+        for gate, strength in noise.before.items():
+            builder.append(gate, self.data_set, arg=strength)
+        for m, tile in enumerate(self.patch.tiles):
+            if tile.data_set:
+                ps = tile.to_data_pauli_string()
+                builder.measure_pauli_string(ps, key=f'det{m}', noise=noise.flip_result)
+                if flow_style != 'init':
+                    flows.append(Flow(
+                        center=tile.measurement_qubit,
+                        start=ps,
+                        measurement_indices=builder.lookup_rec(f'det{m}'),
+                        flags=tile.flags,
+                    ))
+                if flow_style != 'end':
+                    flows.append(Flow(
+                        center=tile.measurement_qubit,
+                        end=ps,
+                        measurement_indices=builder.lookup_rec(f'det{m}'),
+                        flags=tile.flags,
+                    ))
+        for gate, strength in noise.after.items():
+            builder.append(gate, self.data_set, arg=strength)
+
+        return Chunk(
+            circuit=builder.circuit,
+            q2i=builder.q2i,
+            flows=flows,
+            discarded_inputs=discards,
+        )
+
+    def as_interface(self) -> 'ChunkInterface':
+        from gen._flows._chunk_interface import ChunkInterface
+        ports = []
+        for tile in self.patch.tiles:
+            if tile.data_set:
+                ports.append(tile.to_data_pauli_string())
+        for k, ps in enumerate(self.observables_x):
+            ports.append(KeyedPauliString(pauli_string=ps, key=k))
+        for k, ps in enumerate(self.observables_z):
+            ports.append(KeyedPauliString(pauli_string=ps, key=k))
+        return ChunkInterface(ports=ports, discards=[])
+
+    def with_edits(
+            self,
+            *,
+            patch: Patch | None = None,
+            observables_x: Iterable[PauliString] | None = None,
+            observables_z: Iterable[PauliString] | None = None,
+    ) -> 'StabilizerCode':
+        return StabilizerCode(
+            patch=self.patch if patch is None else patch,
+            observables_x=self.observables_x if observables_x is None else observables_x,
+            observables_z=self.observables_z if observables_z is None else observables_z,
+        )
+
+    @functools.cached_property
+    def data_set(self) -> frozenset[complex]:
+        result = set(self.patch.data_set)
+        for obs in self.observables_x, self.observables_z:
+            for e in obs:
+                result |= e.qubits.keys()
+        return frozenset(result)
+
+    @functools.cached_property
+    def measure_set(self) -> frozenset[complex]:
+        return self.patch.measure_set
+
+    @functools.cached_property
+    def used_set(self) -> frozenset[complex]:
+        result = set(self.patch.used_set)
+        for obs in self.observables_x, self.observables_z:
+            for e in obs:
+                result |= e.qubits.keys()
+        return frozenset(result)
 
     @staticmethod
     def from_patch_with_inferred_observables(patch: Patch) -> "StabilizerCode":
-        """Creates a code by finding degrees of freedom leftover from stabilizers.
-
-        If there are M linearly independent stabilizers covering N qubits, then the
-        returned code will have N-M observables.
-        """
         q2i = {q: i for i, q in enumerate(sorted_complex(patch.data_set))}
         i2q = {i: q for q, i in q2i.items()}
 
@@ -97,6 +259,20 @@ class StabilizerCode:
 
         return StabilizerCode(patch=patch, observables_x=obs_xs, observables_z=obs_zs)
 
+    def with_epr_observables(self) -> 'StabilizerCode':
+        r = min([e.real for e in self.patch.used_set], default=0)
+        new_obs_x = []
+        new_obs_z = []
+        for k in range(min(len(self.observables_x), len(self.observables_z))):
+            if self.observables_x[k].anticommutes(self.observables_z[k]):
+                new_obs_x.append(self.observables_x[k] * PauliString({r - 0.25 - 0.25j: 'X'}))
+                new_obs_z.append(self.observables_z[k] * PauliString({r - 0.25 - 0.25j: 'Z'}))
+                r -= 1
+            else:
+                new_obs_x.append(self.observables_x[k])
+                new_obs_z.append(self.observables_z[k])
+        return StabilizerCode(patch=self.patch, observables_x=new_obs_x, observables_z=new_obs_z)
+
     def entangled_observables(
         self, ancilla_qubits_for_xz_pairs: Sequence[complex] | None
     ) -> tuple[list[PauliString], list[complex]]:
@@ -130,8 +306,33 @@ class StabilizerCode:
             observables.append(obs)
         return observables, list(ancilla_qubits_for_xz_pairs)
 
-    def check_commutation_relationships(self) -> None:
-        """Verifies observables and stabilizers relate as a stabilizer code."""
+    def verify(self) -> None:
+        """Verifies observables and stabilizers relate as a stabilizer code.
+
+        All stabilizers should commute with each other.
+        All stabilizers should commute with all observables.
+        Same-index X and Z observables should anti-commute.
+        All other observable pairs should commute.
+        """
+
+        q2tiles = collections.defaultdict(list)
+        for tile in self.patch.tiles:
+            for q in tile.data_set:
+                q2tiles[q].append(tile)
+        for tile1 in self.patch.tiles:
+            overlapping = {
+                tile2
+                for q in tile1.data_set
+                for tile2 in q2tiles[q]
+            }
+            for tile2 in overlapping:
+                t1 = tile1.to_data_pauli_string()
+                t2 = tile2.to_data_pauli_string()
+                if not t1.commutes(t2):
+                    raise ValueError(
+                        f"Tile stabilizer {t1=} anticommutes with tile stabilizer {t2=}."
+                    )
+
         for tile in self.patch.tiles:
             t = tile.to_data_pauli_string()
             for obs in self.observables_x + self.observables_z:
@@ -158,6 +359,13 @@ class StabilizerCode:
                             f"Unpaired observables should commute: {obs1=}, {obs2=}."
                         )
 
+    def with_xz_flipped(self) -> 'StabilizerCode':
+        return StabilizerCode(
+            patch=self.patch.with_xz_flipped(),
+            observables_x=[obs_x.with_xz_flipped() for obs_x in self.observables_x],
+            observables_z=[obs_z.with_xz_flipped() for obs_z in self.observables_z],
+        )
+
     def write_svg(
         self,
         path: str | pathlib.Path,
@@ -167,33 +375,36 @@ class StabilizerCode:
         show_data_qubits: bool = True,
         system_qubits: Iterable[complex] = (),
         opacity: float = 1,
+        show_coords: bool = True,
+        show_obs: bool = True,
+        other: Union[None, 'StabilizerCode', 'Patch', Iterable[Union['StabilizerCode', 'Patch']]] = None,
+        tile_color_func: Callable[['gen.Tile'], str] | None = None,
+        rows: int | None = None,
+        cols: int | None = None,
+        find_logical_err_max_weight: int | None = None,
     ) -> None:
-        if not system_qubits:
-            if show_measure_qubits and show_data_qubits:
-                system_qubits = self.patch.used_set
-            elif show_measure_qubits:
-                system_qubits = self.patch.measure_set
-            elif show_data_qubits:
-                system_qubits = self.patch.data_set
+        flat = [self]
+        if isinstance(other, (StabilizerCode, Patch)):
+            flat.append(other)
+        elif other is not None:
+            flat.extend(other)
 
-        obs_patches = []
-        for k in range(max(len(self.observables_x), len(self.observables_z))):
-            obs_tiles = []
-            if k < len(self.observables_x):
-                obs_tiles.append(self.observables_x[k].to_tile())
-            if k < len(self.observables_z):
-                obs_tiles.append(self.observables_z[k].to_tile())
-            obs_patches.append(Patch(obs_tiles))
-
-        self.patch.write_svg(
-            path=path,
-            show_order=show_order,
-            show_data_qubits=show_data_qubits,
+        from gen._viz_patch_svg import patch_svg_viewer
+        viewer = patch_svg_viewer(
+            patches=flat,
+            show_obs=show_obs,
             show_measure_qubits=show_measure_qubits,
-            system_qubits=system_qubits,
+            show_data_qubits=show_data_qubits,
+            show_order=show_order,
+            find_logical_err_max_weight=find_logical_err_max_weight,
+            expected_points=system_qubits,
             opacity=opacity,
-            other=obs_patches,
+            show_coords=show_coords,
+            tile_color_func=tile_color_func,
+            cols=cols,
+            rows=rows,
         )
+        write_file(path, viewer)
 
     def with_transformed_coords(
         self, coord_transform: Callable[[complex], complex]
@@ -212,133 +423,31 @@ class StabilizerCode:
         self,
         *,
         noise: float | NoiseRule,
-        debug_out_dir: pathlib.Path | None = None,
+        extra_coords_func: Callable[['Flow'], Iterable[float]] = lambda _: (),
     ) -> stim.Circuit:
-        """Creates a circuit implementing this code with a code capacity noise model.
-
-        A code capacity noise model represents transmission over a noisy network
-        with a noiseless sender and noiseless receiver. There is no noise from
-        applying operations or measuring stabilizers, and there aren't multiple rounds.
-        Encoding is done perfectly, then noise is applied to every data qubit, then
-        decoding is done perfectly.
-
-        Args:
-            noise: Noise to apply to each data qubit, between the perfect encoding and
-                perfect decoding. If this is a float, it refers to the strength of a
-                `DEPOLARIZE1` noise channel. If it's a noise rule, the `after` specifies
-                the noise to apply to each data qubit (whereas any `flip_result` noise
-                specified by the rule will have no effect).
-            debug_out_dir: A location to write files useful for debugging, like a
-                picture of the stabilizers.
-
-        Returns:
-            A stim circuit that encodes the code perfectly, applies code capacity noise,
-            then decodes the code. The circuit will check all observables simultaneously,
-            using noiseless ancilla qubits if necessary in order to turn anticommuting
-            observable pairs into commuting observables.
-        """
         if isinstance(noise, (int, float)):
             noise = NoiseRule(after={"DEPOLARIZE1": noise})
-        assert noise.flip_result == 0
-        if debug_out_dir is not None:
-            self.write_svg(debug_out_dir / "code.svg")
-            self.patch.without_wraparound_tiles().write_svg(
-                debug_out_dir / "patch.svg", show_order=False
-            )
-        circuit = _make_code_capacity_circuit_for_stabilizer_code(
-            code=self,
-            noise=noise,
-        )
-        if debug_out_dir is not None:
-            from gen._viz_circuit_html import stim_circuit_html_viewer
-
-            write_file(debug_out_dir / "detslice.svg", circuit.diagram("detslice-svg"))
-            write_file(
-                debug_out_dir / "graph.html", circuit.diagram("match-graph-3d-html")
-            )
-            write_file(
-                debug_out_dir / "ideal_circuit.html",
-                stim_circuit_html_viewer(circuit, patch=self.patch),
-            )
-            write_file(
-                debug_out_dir / "circuit.html",
-                stim_circuit_html_viewer(circuit.without_noise(), patch=self.patch),
-            )
-        return circuit
+        if noise.flip_result:
+            raise ValueError(f"{noise=} includes measurement noise.")
+        chunk1 = self.mpp_chunk(noise=NoiseRule(after=noise.after), flow_style='init', resolve_anticommutations=True)
+        chunk3 = self.mpp_chunk(noise=NoiseRule(before=noise.before), flow_style='end', resolve_anticommutations=True)
+        from gen._flows._flow_util import compile_chunks_into_circuit
+        return compile_chunks_into_circuit([chunk1, chunk3], flow_to_extra_coords_func=extra_coords_func)
 
     def make_phenom_circuit(
         self,
         *,
-        noise: float | NoiseRule | NoiseModel,
+        noise: float | NoiseRule,
         rounds: int,
-        debug_out_dir: pathlib.Path | None = None,
+        extra_coords_func: Callable[['gen.Flow'], Iterable[float]] = lambda _: (),
     ) -> stim.Circuit:
-        """Creates a circuit implementing this code with a phenomenological noise model.
-
-        A phenomenological noise model applies noise to data qubits between layers of
-        stabilizer measurements and to the measurement results produced by those
-        measurements. There is no noise accumulated between stabilizer measurements
-        in the same layer, or within one stabilizer measurement (like would happen
-        in a full circuit noise model where it was decomposed into multiple gates).
-
-        Args:
-            noise: If this is a float, it refers to the strength of a `DEPOLARIZE1` noise
-                channel applied between each round and also the probability of flipping
-                each measurement result.  If it's a noise rule, its `after` specifies
-                the noise to apply to each data qubit between each round, and its
-                `flip_result` is the probability of flipping each measurement result.
-            rounds: The number of times that the patch stabilizers are noisily measured.
-                There is an additional noiseless layer of measurements at the start and
-                at the end, to terminate the problem. Note that data noise is applied
-                both between normal rounds, and also between a round and one of these
-                special start/end layers. This means measurement noise is applied `rounds`
-                times, whereas between-round measurement is applied `rounds+1` times. So
-                code capacity noise occurs at `rounds=0`.
-
-                TODO: redefine this so code cap noise is at rounds=1.
-            debug_out_dir: A location to write files useful for debugging, like a
-                picture of the stabilizers.
-
-        Returns:
-            A stim circuit that encodes the code perfectly, performs R rounds of
-            phenomenological noise. then decodes the code perfect;y. The circuit
-            will check all observables simultaneously, using noiseless ancilla qubits
-            if necessary in order to turn anticommuting observable pairs into commuting observables.
-        """
-
-        if isinstance(noise, NoiseModel):
-            noise = NoiseRule(
-                after=noise.idle_noise.after,
-                flip_result=(noise.any_measurement_rule or noise.measure_rules['Z']).flip_result,
-            )
         if isinstance(noise, (int, float)):
             noise = NoiseRule(after={"DEPOLARIZE1": noise}, flip_result=noise)
-        if debug_out_dir is not None:
-            self.write_svg(debug_out_dir / "code.svg")
-            self.patch.without_wraparound_tiles().write_svg(
-                debug_out_dir / "patch.svg", show_order=False
-            )
-        circuit = _make_phenom_circuit_for_stabilizer_code(
-            code=self,
-            noise=noise,
-            rounds=rounds,
-        )
-        if debug_out_dir is not None:
-            from gen._viz_circuit_html import stim_circuit_html_viewer
-
-            write_file(debug_out_dir / "detslice.svg", circuit.diagram("detslice-svg"))
-            write_file(
-                debug_out_dir / "graph.html", circuit.diagram("match-graph-3d-html")
-            )
-            write_file(
-                debug_out_dir / "ideal_circuit.html",
-                stim_circuit_html_viewer(circuit, patch=self.patch),
-            )
-            write_file(
-                debug_out_dir / "circuit.html",
-                stim_circuit_html_viewer(circuit.without_noise(), patch=self.patch),
-            )
-        return circuit
+        chunk1 = self.mpp_chunk(noise=NoiseRule(after=noise.after), flow_style='init', resolve_anticommutations=True)
+        chunk2 = self.mpp_chunk(noise=noise, resolve_anticommutations=True)
+        chunk3 = self.mpp_chunk(noise=NoiseRule(before=noise.before), flow_style='end', resolve_anticommutations=True)
+        from gen._flows._flow_util import compile_chunks_into_circuit
+        return compile_chunks_into_circuit([chunk1, chunk2 * rounds, chunk3], flow_to_extra_coords_func=extra_coords_func)
 
     def __repr__(self) -> str:
         def indented(x: str) -> str:
@@ -368,75 +477,3 @@ class StabilizerCode:
 
     def __ne__(self, other) -> bool:
         return not (self == other)
-
-
-def _make_phenom_circuit_for_stabilizer_code(
-    *,
-    code: StabilizerCode,
-    noise: NoiseRule,
-    suggested_ancilla_qubits: list[complex] | None = None,
-    rounds: int,
-) -> stim.Circuit:
-    observables, immune = code.entangled_observables(
-        ancilla_qubits_for_xz_pairs=suggested_ancilla_qubits,
-    )
-    immune = set(immune)
-    builder = Builder.for_qubits(code.patch.data_set | immune)
-
-    for k, obs in enumerate(observables):
-        builder.measure_pauli_string(obs, key=f"OBS_START{k}")
-        builder.obs_include([f"OBS_START{k}"], obs_index=k)
-    builder.measure_patch(code.patch, save_layer="init")
-    builder.tick()
-
-    loop = builder.fork()
-    for k, p in noise.after.items():
-        loop.circuit.append(
-            k, [builder.q2i[q] for q in sorted_complex(code.patch.data_set - immune)], p
-        )
-    loop.measure_patch(
-        code.patch, save_layer="loop", cmp_layer="init", noise=noise.flip_result
-    )
-    loop.shift_coords(dt=1)
-    loop.tick()
-    builder.circuit += loop.circuit * rounds
-
-    builder.measure_patch(code.patch, save_layer="end", cmp_layer="loop")
-    for k, obs in enumerate(observables):
-        builder.measure_pauli_string(obs, key=f"OBS_END{k}")
-        builder.obs_include([f"OBS_END{k}"], obs_index=k)
-
-    return builder.circuit
-
-
-def _make_code_capacity_circuit_for_stabilizer_code(
-    *,
-    code: StabilizerCode,
-    noise: NoiseRule,
-    suggested_ancilla_qubits: list[complex] | None = None,
-) -> stim.Circuit:
-    assert noise.flip_result == 0
-    observables, immune = code.entangled_observables(
-        ancilla_qubits_for_xz_pairs=suggested_ancilla_qubits,
-    )
-    immune = set(immune)
-    builder = Builder.for_qubits(code.patch.data_set | immune)
-
-    for k, obs in enumerate(observables):
-        builder.measure_pauli_string(obs, key=f"OBS_START{k}")
-        builder.obs_include([f"OBS_START{k}"], obs_index=k)
-    builder.measure_patch(code.patch, save_layer="init")
-    builder.tick()
-
-    for k, p in noise.after.items():
-        builder.circuit.append(
-            k, [builder.q2i[q] for q in sorted_complex(code.patch.data_set - immune)], p
-        )
-    builder.tick()
-
-    builder.measure_patch(code.patch, save_layer="end", cmp_layer="init")
-    for k, obs in enumerate(observables):
-        builder.measure_pauli_string(obs, key=f"OBS_END{k}")
-        builder.obs_include([f"OBS_END{k}"], obs_index=k)
-
-    return builder.circuit

@@ -58,22 +58,18 @@ def make_mxyz_phenom_color_code(
     ancilla = -1 - 1j
     builder = gen.Builder.for_qubits(code.patch.data_set | {ancilla})
 
-    builder.measure_observables_and_include(
-        code.entangled_observables([ancilla])[0],
-    )
+    for k, obs in enumerate(code.entangled_observables([ancilla])[0]):
+        builder.measure_pauli_string(obs, key=f'obs{k}')
+        builder.obs_include([f'obs{k}'], obs_index=k)
     builder.tick()
     x_tiles = gen.Patch(tile for tile in code.patch.tiles if tile.basis == "X")
     y_tiles = x_tiles.after_basis_transform(lambda _: cast(Literal["X", "Y", "Z"], "Y"))
     z_tiles = x_tiles.after_basis_transform(lambda _: cast(Literal["X", "Y", "Z"], "Z"))
-    builder.measure_patch(
-        y_tiles,
-        save_layer=-2,
-    )
+    for tile in y_tiles.tiles:
+        builder.measure_pauli_string(tile.to_data_pauli_string(), key=(tile.measurement_qubit, -2))
     builder.tick()
-    builder.measure_patch(
-        z_tiles,
-        save_layer=-1,
-    )
+    for tile in z_tiles.tiles:
+        builder.measure_pauli_string(tile.to_data_pauli_string(), key=(tile.measurement_qubit, -1))
     builder.tick()
 
     round_index = 0
@@ -86,16 +82,20 @@ def make_mxyz_phenom_color_code(
                 out.circuit.append(
                     k, [builder.q2i[q] for q in gen.sorted_complex(tiles.data_set)], p
                 )
-        out.measure_patch(
-            tiles,
-            save_layer=round_index,
-            noise=noise.flip_result if round_noise else None,
-        )
         for tile in tiles.tiles:
-            rgb = int(tile.extra_coords[0]) % 3
+            builder.measure_pauli_string(tile.to_data_pauli_string(), key=(tile.measurement_qubit, round_index), noise=noise.flip_result if round_noise else None)
+        for tile in tiles.tiles:
+            if 'color=r' in tile.flags:
+                rgb = 0
+            elif 'color=g' in tile.flags:
+                rgb = 1
+            elif 'color=b' in tile.flags:
+                rgb = 2
+            else:
+                raise NotImplementedError(f'{tile=}')
             m = tile.measurement_qubit
             out.detector(
-                [gen.AtLayer(m, round_index + offset) for offset in [-2, -1, 0]],
+                [(m, round_index + offset) for offset in [-2, -1, 0]],
                 pos=m,
                 extra_coords=[(rgb + round_index) % 3],
             )
@@ -103,19 +103,20 @@ def make_mxyz_phenom_color_code(
         out.tick()
         round_index += 1
 
-    loop = builder.fork()
-    append_round(loop, True)
-    append_round(loop, True)
-    append_round(loop, True)
-    builder.circuit += loop.circuit * (rounds // 3)
+    prefix = builder.circuit
+    builder.circuit = stim.Circuit()
+    append_round(builder, True)
+    append_round(builder, True)
+    append_round(builder, True)
+    builder.circuit = prefix + builder.circuit * (rounds // 3)
     for _ in range(rounds % 3):
         append_round(builder, True)
 
     append_round(builder, False)
     append_round(builder, False)
-    builder.measure_observables_and_include(
-        code.entangled_observables([ancilla])[0],
-    )
+    for k, obs in enumerate(code.entangled_observables([ancilla])[0]):
+        builder.measure_pauli_string(obs, key=f'obs_end{k}')
+        builder.obs_include([f'obs_end{k}'], obs_index=k)
     return builder.circuit
 
 

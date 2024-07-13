@@ -214,12 +214,12 @@ def test_exact_circuit_x():
         DETECTOR(1.5, 1.5, 0, 3) rec[-19] rec[-2]
         DETECTOR(1.5, 2.5, 0, 0) rec[-22] rec[-14]
         DETECTOR(2.5, 0.5, 0, 4) rec[-18] rec[-1]
-        DETECTOR(0.5, -0.5, 0, 1) rec[-17] rec[-13] rec[-10]
-        DETECTOR(0.5, 1.5, 0, 1) rec[-16] rec[-12] rec[-11] rec[-9] rec[-8]
-        DETECTOR(1.5, 0.5, 0, 0) rec[-15] rec[-10] rec[-9] rec[-7] rec[-6]
-        DETECTOR(1.5, 2.5, 0, 0) rec[-14] rec[-8] rec[-5]
+        DETECTOR(0.5, -0.5, 1, 1) rec[-17] rec[-13] rec[-10]
+        DETECTOR(0.5, 1.5, 1, 1) rec[-16] rec[-12] rec[-11] rec[-9] rec[-8]
+        DETECTOR(1.5, 0.5, 1, 0) rec[-15] rec[-10] rec[-9] rec[-7] rec[-6]
+        DETECTOR(1.5, 2.5, 1, 0) rec[-14] rec[-8] rec[-5]
         OBSERVABLE_INCLUDE(0) rec[-13] rec[-12] rec[-11]
-        SHIFT_COORDS(0, 0, 1)
+        SHIFT_COORDS(0, 0, 2)
         DEPOLARIZE1(0.001) 10 12 13 15 0 1 2 3 4 5 6 7 8 9 11 14 16
     """
     )
