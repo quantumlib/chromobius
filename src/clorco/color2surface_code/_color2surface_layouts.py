@@ -23,10 +23,10 @@ def rgb2xyz(patch: gen.Patch, basis: str) -> gen.Patch:
     return gen.Patch(
         [
             gen.Tile(
-                bases="XYZXYZ"[int(tile.extra_coords[0])],
+                bases='X' if 'color=r' in tile.flags else 'Y' if 'color=g' in tile.flags else 'Z',
                 ordered_data_qubits=tile.ordered_data_qubits,
                 measurement_qubit=tile.measurement_qubit,
-                extra_coords=tile.extra_coords,
+                flags=tile.flags,
             )
             for tile in patch.tiles
             if tile.basis == basis
@@ -64,9 +64,7 @@ def make_color2surface_layout(
             measurement_qubit=tile.measurement_qubit,
             ordered_data_qubits=tile.ordered_data_qubits,
             bases=tile.bases,
-            extra_coords=tile.extra_coords
-            if tile.measurement_qubit.real != 5
-            else [2 + 3 * (tile.basis == "Z")],
+            flags=tile.flags if tile.measurement_qubit.real != 5 else {'color=b', f'basis={tile.basis}'}
         )
         for tile in surface_patch.tiles
     )
@@ -94,7 +92,7 @@ def make_color2surface_layout(
                         m + 1j + 1,
                     ],
                     bases="X",
-                    extra_coords=[0],
+                    flags={'color=r', 'basis=X'},
                 )
                 for tile in dropped_tiles
             ],
@@ -108,7 +106,7 @@ def make_color2surface_layout(
                         m + 3,
                     ],
                     bases="Z",
-                    extra_coords=[5],
+                    flags={'color=b', 'basis=Z'},
                 )
                 for tile in dropped_tiles
             ],
@@ -116,7 +114,7 @@ def make_color2surface_layout(
                 measurement_qubit=-1 - 1j,
                 ordered_data_qubits=[0, -2j],
                 bases="Z",
-                extra_coords=[5],
+                flags={'color=b', 'basis=Z'},
             ),
         ]
     )

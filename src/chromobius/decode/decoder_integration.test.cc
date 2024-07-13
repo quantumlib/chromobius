@@ -207,3 +207,13 @@ TEST(ConfigureDecoder, hard_config) {
     Decoder decoder = Decoder::from_dem(src_dem, DecoderConfigOptions{});
     decoder.check_invariants();
 }
+
+TEST(ConfigureDecoder, fail_config) {
+    auto src_dem = stim::DetectorErrorModel(R"DEM(
+        error(0.1) D0
+        detector D0
+    )DEM");
+    EXPECT_THROW({
+        Decoder::from_dem(src_dem, DecoderConfigOptions{});
+    }, std::invalid_argument);
+}

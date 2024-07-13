@@ -206,10 +206,12 @@ def _simplified_noise_surface_code_constructions() -> (
             return code.make_phenom_circuit(
                 noise=params.noise_model.idle_depolarization,
                 rounds=params.rounds,
+                extra_coords_func=f2c,
             )
         assert params.rounds == 1
         return code.make_code_capacity_circuit(
             noise=params.noise_model.idle_depolarization,
+            extra_coords_func=f2c,
         )
 
     constructions["transit_surface_code"] = lambda params: _make_simple_circuit(

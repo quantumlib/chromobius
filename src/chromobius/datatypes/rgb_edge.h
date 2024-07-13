@@ -43,6 +43,7 @@ struct RgbEdge {
         return (&red_node)[c - 1];
     }
     inline node_offset_int &color_node(Charge c) {
+        assert(c != NEUTRAL);
         return (&red_node)[c - 1];
     }
 

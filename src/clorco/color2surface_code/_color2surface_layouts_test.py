@@ -24,7 +24,7 @@ def test_make_color2surface_layout(d: int):
     code = make_color2surface_layout(base_data_width=d)
     code.verify()
     for tile in code.patch.tiles:
-        assert (tile.extra_coords[0] >= 3) == (tile.basis == "Z")
+        assert ('basis=Z' in tile.flags) == (tile.basis == "Z")
     err = code.make_code_capacity_circuit(
         noise=1e-3
     ).search_for_undetectable_logical_errors(

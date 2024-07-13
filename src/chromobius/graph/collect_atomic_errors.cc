@@ -74,6 +74,13 @@ void chromobius::extract_obs_and_dets_from_error_instruction(
                 throw std::invalid_argument(ss.str());
             }
             if (!node_colors[u].ignored) {
+                if (node_colors[u].color == NEUTRAL) {
+                    throw std::invalid_argument(
+                        "Expected all detectors to have at least 4 coordinates, with the 4th "
+                        "identifying the basis and color "
+                        "(RedX=0, GreenX=1, BlueX=2, RedZ=3, GreenZ=4, BlueZ=5), but got " +
+                        instruction.str());
+                }
                 out_xor_detectors_buffer->xor_item((node_offset_int)u);
             }
         } else if (t.is_observable_id()) {
