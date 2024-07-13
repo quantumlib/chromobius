@@ -96,8 +96,8 @@ static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n4(
             try_grow_decomposition(
                 AtomicErrorKey{dets[k1], dets[k2], BOUNDARY_NODE},
                 AtomicErrorKey{
-                    dets[0 + (k1 <= 0) + (k2 <= 0)],
-                    dets[1 + (k1 <= 1) + (k2 <= 1)],
+                    dets[0 + (k1 <= 0) + (k2 <= 1)],
+                    dets[1 + (k1 <= 1) + (k2 <= 2)],
                     BOUNDARY_NODE,
                 },
                 node_colors,
@@ -139,9 +139,9 @@ static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n5(
             try_grow_decomposition(
                 AtomicErrorKey{dets[k1], dets[k2], BOUNDARY_NODE},
                 AtomicErrorKey{
-                    dets[0 + (k1 <= 0) + (k2 <= 0)],
-                    dets[1 + (k1 <= 1) + (k2 <= 1)],
-                    dets[2 + (k1 <= 2) + (k2 <= 2)],
+                    dets[0 + (k1 <= 0) + (k2 <= 1)],
+                    dets[1 + (k1 <= 1) + (k2 <= 2)],
+                    dets[2 + (k1 <= 2) + (k2 <= 3)],
                 },
                 node_colors,
                 atomic_errors,
@@ -168,9 +168,9 @@ static AtomicErrorKey decompose_single_basis_dets_into_atoms_helper_n6(
                 try_grow_decomposition(
                     AtomicErrorKey{dets[k1], dets[k2], dets[k3]},
                     AtomicErrorKey{
-                        dets[0 + (k1 <= 0) + (k2 <= 0) + (k3 <= 0)],
-                        dets[1 + (k1 <= 1) + (k2 <= 1) + (k3 <= 1)],
-                        dets[2 + (k1 <= 2) + (k2 <= 2) + (k3 <= 2)],
+                        dets[0 + (k1 <= 0) + (k2 <= 1) + (k3 <= 2)],
+                        dets[1 + (k1 <= 1) + (k2 <= 2) + (k3 <= 3)],
+                        dets[2 + (k1 <= 2) + (k2 <= 3) + (k3 <= 4)],
                     },
                     node_colors,
                     atomic_errors,
