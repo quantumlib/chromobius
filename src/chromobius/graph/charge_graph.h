@@ -17,12 +17,12 @@
 #ifndef _CHROMOBIUS_CHARGE_GRAPH_H
 #define _CHROMOBIUS_CHARGE_GRAPH_H
 
+#include <map>
 #include <span>
 #include <unordered_map>
 #include <vector>
 
 #include "chromobius/datatypes/rgb_edge.h"
-#include "stim.h"
 
 namespace chromobius {
 

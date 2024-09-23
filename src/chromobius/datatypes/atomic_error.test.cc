@@ -14,6 +14,8 @@
 
 #include "chromobius/datatypes/atomic_error.h"
 
+#include <random>
+
 #include "gtest/gtest.h"
 
 using namespace chromobius;

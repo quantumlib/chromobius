@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef _CHROMOBIUS_CHOOSE_RGB_REPS_H
-#define _CHROMOBIUS_CHOOSE_RGB_REPS_H
+#ifndef _CHROMOBIUS_STIM_INTEGRATION_H
+#define _CHROMOBIUS_STIM_INTEGRATION_H
 
-#include <map>
+#include <ostream>
+#include <span>
 
-#include "chromobius/datatypes/atomic_error.h"
-#include "chromobius/datatypes/rgb_edge.h"
+#include "chromobius/datatypes/conf.h"
+#include "chromobius/datatypes/color_basis.h"
+#include "stim.h"
 
 namespace chromobius {
 
-std::vector<RgbEdge> choose_rgb_reps_from_atomic_errors(
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors, std::span<const ColorBasis> node_colors);
+ColorBasis detector_instruction_to_color_basis(
+    const stim::DemInstruction &instruction, std::span<const double> coord_offsets);
 
 }  // namespace chromobius
 

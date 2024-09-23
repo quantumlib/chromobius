@@ -17,6 +17,7 @@
 #ifndef _CHROMOBIUS_COLLECT_ATOMIC_EDGES_H
 #define _CHROMOBIUS_COLLECT_ATOMIC_EDGES_H
 
+#include <map>
 #include <span>
 
 #include "chromobius/datatypes/atomic_error.h"

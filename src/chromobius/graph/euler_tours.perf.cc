@@ -14,8 +14,10 @@
 
 #include "chromobius/graph/euler_tours.h"
 
+#include <iostream>
+#include <random>
+
 #include "chromobius/util.perf.h"
-#include "stim.h"
 
 using namespace chromobius;
 

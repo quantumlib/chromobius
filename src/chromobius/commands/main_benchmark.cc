@@ -17,7 +17,6 @@
 #include <chrono>
 
 #include "chromobius/decode/decoder.h"
-#include "stim.h"
 
 using namespace chromobius;
 

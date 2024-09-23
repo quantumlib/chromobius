@@ -22,7 +22,6 @@
 #include "chromobius/datatypes/atomic_error.h"
 #include "chromobius/datatypes/color_basis.h"
 #include "chromobius/graph/collect_atomic_errors.h"
-#include "stim.h"
 
 namespace chromobius {
 

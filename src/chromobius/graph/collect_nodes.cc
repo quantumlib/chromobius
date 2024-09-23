@@ -14,6 +14,8 @@
 
 #include "chromobius/graph/collect_nodes.h"
 
+#include "chromobius/datatypes/stim_integration.h"
+
 using namespace chromobius;
 
 static void collect_nodes_from_dem_helper_process_detector_instruction(

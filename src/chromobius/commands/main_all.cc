@@ -14,10 +14,13 @@
 
 #include "chromobius/commands/main_all.h"
 
+#include <cstring>
+#include <iostream>
+#include <sstream>
+
 #include "chromobius/commands/main_benchmark.h"
 #include "chromobius/commands/main_describe_decoder.h"
 #include "chromobius/commands/main_predict.h"
-#include "stim.h"
 
 using namespace chromobius;
 

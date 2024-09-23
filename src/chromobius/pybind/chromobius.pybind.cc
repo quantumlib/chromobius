@@ -20,8 +20,6 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 
-#include "stim.h"
-
 #define str_literal(s) #s
 #define xstr_literal(s) str_literal(s)
 

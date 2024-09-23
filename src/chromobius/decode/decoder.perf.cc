@@ -17,7 +17,6 @@
 #include <span>
 
 #include "chromobius/util.perf.h"
-#include "stim.h"
 
 using namespace chromobius;
 

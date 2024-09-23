@@ -21,7 +21,6 @@
 #include <span>
 
 #include "chromobius/datatypes/conf.h"
-#include "stim.h"
 
 namespace chromobius {
 
@@ -75,8 +74,6 @@ std::ostream &operator<<(std::ostream &out, const Charge &val);
 std::ostream &operator<<(std::ostream &out, const SubGraphCoord &val);
 std::ostream &operator<<(std::ostream &out, const Basis &val);
 
-ColorBasis detector_instruction_to_color_basis(
-    const stim::DemInstruction &instruction, std::span<const double> coord_offsets);
 std::tuple<node_offset_int, Charge, SubGraphCoord> mobius_node_to_detector(
     uint64_t mobius_node, std::span<const ColorBasis> colors);
 uint64_t detector_to_mobius_node(node_offset_int node, SubGraphCoord subgraph, std::span<const ColorBasis> colors);

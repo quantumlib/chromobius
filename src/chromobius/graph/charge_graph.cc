@@ -18,6 +18,8 @@
 #include <map>
 #include <sstream>
 
+#include "chromobius/datatypes/xor_vec.h"
+
 using namespace chromobius;
 
 bool ChargeGraphNode::operator==(const ChargeGraphNode &other) const {
@@ -112,7 +114,7 @@ ChargeGraph ChargeGraph::from_atomic_errors(
     }
 
     // Form more graphlike edges by pairing overlapping errors.
-    stim::SparseXorVec<node_offset_int> xor_buf;
+    std::vector<node_offset_int> xor_buf;
     for (const auto &[_, neighbors] : node2neighbors) {
         for (size_t k1 = 0; k1 < neighbors.size(); k1++) {
             for (size_t k2 = k1 + 1; k2 < neighbors.size(); k2++) {
@@ -125,24 +127,25 @@ ChargeGraph ChargeGraph::from_atomic_errors(
 
                 // Merge the errors.
                 xor_buf.clear();
-                xor_buf.xor_item(e1.dets[0]);
-                xor_buf.xor_item(e1.dets[1]);
-                xor_buf.xor_item(e1.dets[2]);
-                xor_buf.xor_item(e2.dets[0]);
-                xor_buf.xor_item(e2.dets[1]);
-                xor_buf.xor_item(e2.dets[2]);
+                xor_buf.push_back(e1.dets[0]);
+                xor_buf.push_back(e1.dets[1]);
+                xor_buf.push_back(e1.dets[2]);
+                xor_buf.push_back(e2.dets[0]);
+                xor_buf.push_back(e2.dets[1]);
+                xor_buf.push_back(e2.dets[2]);
+                auto xor_items = inplace_xor_sort(std::span(xor_buf));
 
                 // Check if the resulting error is graphlike, pulling out its symptoms.
                 node_offset_int a;
                 node_offset_int b;
-                if (xor_buf.sorted_items.size() == 1) {
-                    a = xor_buf.sorted_items[0];
+                if (xor_items.size() == 1) {
+                    a = xor_items[0];
                     b = BOUNDARY_NODE;
                 } else if (
-                    xor_buf.sorted_items.size() == 2 ||
-                    (xor_buf.sorted_items.size() == 3 && xor_buf.sorted_items.back() == BOUNDARY_NODE)) {
-                    a = xor_buf.sorted_items[0];
-                    b = xor_buf.sorted_items[1];
+                    xor_items.size() == 2 ||
+                    (xor_items.size() == 3 && xor_items.back() == BOUNDARY_NODE)) {
+                    a = xor_items[0];
+                    b = xor_items[1];
                 } else {
                     continue;
                 }

@@ -17,12 +17,12 @@
 #ifndef _CHROMOBIUS_DEM_GRAPH_H
 #define _CHROMOBIUS_DEM_GRAPH_H
 
+#include <cassert>
 #include <ostream>
 #include <string>
 
 #include "chromobius/datatypes/atomic_error.h"
 #include "chromobius/datatypes/color_basis.h"
-#include "stim.h"
 
 namespace chromobius {
 

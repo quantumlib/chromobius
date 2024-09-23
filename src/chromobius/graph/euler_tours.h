@@ -21,7 +21,6 @@
 
 #include "chromobius/datatypes/atomic_error.h"
 #include "chromobius/datatypes/color_basis.h"
-#include "stim.h"
 
 namespace chromobius {
 

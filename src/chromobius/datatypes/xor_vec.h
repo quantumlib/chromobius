@@ -14,18 +14,30 @@
  * limitations under the License.
  */
 
-#ifndef _CHROMOBIUS_CHOOSE_RGB_REPS_H
-#define _CHROMOBIUS_CHOOSE_RGB_REPS_H
+#ifndef _CHROMOBIUS_XOR_VEC_H
+#define _CHROMOBIUS_XOR_VEC_H
 
-#include <map>
-
-#include "chromobius/datatypes/atomic_error.h"
-#include "chromobius/datatypes/rgb_edge.h"
+#include <algorithm>
+#include <span>
 
 namespace chromobius {
 
-std::vector<RgbEdge> choose_rgb_reps_from_atomic_errors(
-    const std::map<AtomicErrorKey, obsmask_int> &atomic_errors, std::span<const ColorBasis> node_colors);
+template <typename T>
+inline std::span<T> inplace_xor_sort(std::span<T> items) {
+    std::sort(items.begin(), items.end());
+    size_t new_size = 0;
+    for (size_t k = 0; k < items.size(); k++) {
+        if (new_size > 0 && items[k] == items[new_size - 1]) {
+            new_size--;
+        } else {
+            if (k != new_size) {
+                std::swap(items[new_size], items[k]);
+            }
+            new_size++;
+        }
+    }
+    return items.subspan(0, new_size);
+}
 
 }  // namespace chromobius
 

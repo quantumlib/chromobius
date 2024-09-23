@@ -17,10 +17,11 @@
 #ifndef _CHROMOBIUS_ATOMIC_ERROR_H
 #define _CHROMOBIUS_ATOMIC_ERROR_H
 
+#include <cassert>
+#include <functional>
 #include <span>
 
 #include "chromobius/datatypes/color_basis.h"
-#include "stim.h"
 
 namespace chromobius {
 

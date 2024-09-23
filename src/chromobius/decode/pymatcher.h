@@ -19,6 +19,7 @@
 
 #include "chromobius/decode/matcher_interface.h"
 #include "pymatching/sparse_blossom/driver/mwpm_decoding.h"
+#include "stim.h"
 
 namespace chromobius {
 
