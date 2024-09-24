@@ -11,6 +11,8 @@
 #include "chromobius/datatypes/color_basis.h"
 #include "chromobius/datatypes/conf.h"
 #include "chromobius/datatypes/rgb_edge.h"
+#include "chromobius/datatypes/stim_integration.h"
+#include "chromobius/datatypes/xor_vec.h"
 #include "chromobius/decode/decoder.h"
 #include "chromobius/decode/matcher_interface.h"
 #include "chromobius/decode/pymatcher.h"

@@ -1,17 +1,3 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import collections
 import dataclasses
 
@@ -89,5 +75,14 @@ class InteractLayer(Layer):
         if isinstance(next_layer, SwapLayer):
             return [
                 InteractSwapLayer(i_layer=self.copy(), swap_layer=next_layer.copy())
+            ]
+        elif isinstance(next_layer, InteractLayer) and self.touched().isdisjoint(next_layer.touched()):
+            return [
+                InteractLayer(
+                    targets1=self.targets1 + next_layer.targets1,
+                    targets2=self.targets2 + next_layer.targets2,
+                    bases1=self.bases1 + next_layer.bases1,
+                    bases2=self.bases2 + next_layer.bases2,
+                )
             ]
         return [self, next_layer]

@@ -96,6 +96,25 @@ def _make_circuit(
     return circuit
 
 
+def f2c(flow: gen.Flow) -> list[float]:
+    c = 0
+    if 'color=r' in flow.flags:
+        c += 0
+    elif 'color=g' in flow.flags:
+        c += 1
+    elif 'color=b' in flow.flags:
+        c += 2
+    else:
+        raise NotImplementedError(f'{flow=}')
+    if 'basis=X' in flow.flags:
+        c += 0
+    elif 'basis=Z' in flow.flags:
+        c += 3
+    else:
+        raise NotImplementedError(f'{flow=}')
+    return [c]
+
+
 def _simplified_noise_rep_code_constructions() -> (
     dict[str, Callable[[Params], stim.Circuit]]
 ):
@@ -115,14 +134,14 @@ def _simplified_noise_rep_code_constructions() -> (
         )
         if phenom:
             return code.make_phenom_circuit(
-                noise=params.noise_model,
+                noise=params.noise_model.idle_depolarization,
                 rounds=params.rounds,
-                debug_out_dir=params.debug_out_dir,
+                extra_coords_func=f2c,
             )
         assert params.rounds == 1
         return code.make_code_capacity_circuit(
-            noise=params.noise_model.idle_noise,
-            debug_out_dir=params.debug_out_dir
+            noise=params.noise_model.idle_depolarization,
+            extra_coords_func=f2c,
         )
 
     for coloring in ["r", "rg", "rbrrr"]:

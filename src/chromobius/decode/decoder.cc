@@ -230,25 +230,28 @@ void Decoder::check_invariants() const {
 
 static void detection_events_to_mobius_detection_events(
     std::span<const uint8_t> bit_packed_detection_events,
-    std::vector<uint64_t> *out_mobius_detection_events) {
+    std::vector<uint64_t> *out_mobius_detection_events,
+    std::span<const ColorBasis> node_colors) {
     // Derive the mobius matching problem.
     for (size_t k = 0; k < bit_packed_detection_events.size(); k++) {
         for (uint8_t b = bit_packed_detection_events[k], k2 = 0; b; b >>= 1, k2++) {
             if (b & 1) {
                 auto d = k * 8 + k2;
-                out_mobius_detection_events->push_back(d * 2 + 0);
-                out_mobius_detection_events->push_back(d * 2 + 1);
+                if (!node_colors[d].ignored) {
+                    out_mobius_detection_events->push_back(d * 2 + 0);
+                    out_mobius_detection_events->push_back(d * 2 + 1);
+                }
             }
         }
     }
 }
 
-obsmask_int Decoder::decode_detection_events(std::span<const uint8_t> bit_packed_detection_events) {
+obsmask_int Decoder::decode_detection_events(std::span<const uint8_t> bit_packed_detection_events, float *weight_out) {
     // Derive and decode the mobius matching problem.
     sparse_det_buffer.clear();
     matcher_edge_buf.clear();
-    detection_events_to_mobius_detection_events(bit_packed_detection_events, &sparse_det_buffer);
-    matcher->match_edges(sparse_det_buffer, &matcher_edge_buf);
+    detection_events_to_mobius_detection_events(bit_packed_detection_events, &sparse_det_buffer, node_colors);
+    matcher->match_edges(sparse_det_buffer, &matcher_edge_buf, weight_out);
 
     // Write solution to stderr if requested.
     if (write_mobius_match_to_std_err) {

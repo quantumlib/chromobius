@@ -20,8 +20,6 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 
-#include "stim.h"
-
 #define str_literal(s) #s
 #define xstr_literal(s) str_literal(s)
 
@@ -30,7 +28,6 @@ struct CompiledDecoder {
     uint64_t num_detectors;
     uint64_t num_detector_bytes;
     uint64_t num_observable_bytes;
-    std::vector<chromobius::obsmask_int> result_buffer;
 
     static CompiledDecoder from_dem(const pybind11::object &dem) {
         auto type_name = pybind11::str(dem.get_type());
@@ -46,11 +43,10 @@ struct CompiledDecoder {
             .num_detectors = num_dets,
             .num_detector_bytes = (num_dets + 7) / 8,
             .num_observable_bytes = (converted_dem.count_observables() + 7) / 8,
-            .result_buffer = {},
         };
     }
 
-    pybind11::object predict_obs_flips_from_dets_bit_packed(const pybind11::object &dets_obj) {
+    pybind11::object predict_obs_flips_from_dets_bit_packed(const pybind11::object &dets_obj, bool include_weight) {
         if (!pybind11::isinstance<pybind11::array_t<uint8_t>>(dets_obj)) {
             throw std::invalid_argument("Expected bit packed detection event data, but dets.dtype wasn't np.uint8.");
         }
@@ -59,10 +55,17 @@ struct CompiledDecoder {
         size_t num_shots;
         size_t shot_stride;
         size_t det_shape;
+        auto numpy = pybind11::module::import("numpy");
+        pybind11::array_t<uint8_t> result_buf;
+        pybind11::array_t<float> weight_buf;
         if (dets.ndim() == 2) {
             num_shots = dets.shape(0);
             shot_stride = dets.strides(0);
             det_shape = dets.shape(1);
+            result_buf = numpy.attr("empty")(pybind11::make_tuple(num_shots, num_observable_bytes), numpy.attr("uint8"));
+            if (include_weight) {
+                weight_buf = numpy.attr("empty")(pybind11::make_tuple(num_shots), numpy.attr("float32"));
+            }
             if (dets.strides(1) != 1) {
                 std::stringstream ss;
                 ss << "Bit packed shot data must be contiguous in memory, but dets.stride[1] wasn't equal to 1.\n";
@@ -73,6 +76,10 @@ struct CompiledDecoder {
             num_shots = 1;
             shot_stride = 0;
             det_shape = dets.shape(0);
+            result_buf = numpy.attr("empty")(pybind11::make_tuple(num_observable_bytes), numpy.attr("uint8"));
+            if (include_weight) {
+                weight_buf = numpy.attr("empty")(pybind11::make_tuple(), numpy.attr("float32"));
+            }
         } else {
             throw std::invalid_argument("dets.shape not in [1, 2]");
         }
@@ -85,38 +92,27 @@ struct CompiledDecoder {
             throw std::invalid_argument(ss.str());
         }
 
-        result_buffer.clear();
+        uint8_t *result_ptr = result_buf.mutable_data();
+        float *weight_ptr = nullptr;
+        if (include_weight) {
+            weight_ptr = weight_buf.mutable_data();
+        }
         for (size_t shot = 0; shot < num_shots; shot++) {
             const uint8_t *data = dets.data() + shot_stride * shot;
             chromobius::obsmask_int prediction =
-                decoder.decode_detection_events({data, data + num_detector_bytes});
-            result_buffer.push_back(prediction);
-        }
-
-        // Write predictions into output numpy array.
-        uint8_t *buffer = new uint8_t[num_observable_bytes * num_shots];
-        size_t offset = 0;
-        for (chromobius::obsmask_int obs : result_buffer) {
+                decoder.decode_detection_events({data, data + num_detector_bytes}, weight_ptr);
             for (size_t k = 0; k < num_observable_bytes; k++) {
-                buffer[offset++] = obs & 255;
-                obs >>= 8;
+                *result_ptr++ = (prediction >> (8*k)) & 0xFF;
+            }
+            if (weight_ptr != nullptr) {
+                weight_ptr++;
             }
         }
-        pybind11::capsule free_when_done(buffer, [](void *f) {
-            delete[] reinterpret_cast<uint8_t *>(f);
-        });
-        if (dets.ndim() == 2) {
-            return pybind11::array_t<uint8_t>(
-                {(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_observable_bytes},
-                {(pybind11::ssize_t)num_observable_bytes, (pybind11::ssize_t)1},
-                buffer,
-                free_when_done);
+
+        if (include_weight) {
+            return pybind11::make_tuple(result_buf, weight_buf);
         } else {
-            return pybind11::array_t<uint8_t>(
-                {(pybind11::ssize_t)num_observable_bytes},
-                {(pybind11::ssize_t)1},
-                buffer,
-                free_when_done);
+            return result_buf;
         }
     }
 };
@@ -156,7 +152,9 @@ PYBIND11_MODULE(chromobius, m) {
 
     compiled_decoder.def(
         "predict_obs_flips_from_dets_bit_packed",
-        &CompiledDecoder::predict_obs_flips_from_dets_bit_packed,
+        [](CompiledDecoder &self, const pybind11::object &dets_obj) -> pybind11::object{
+            return self.predict_obs_flips_from_dets_bit_packed(dets_obj, false);
+        },
         pybind11::arg("dets"),
         stim::clean_doc_string(R"DOC(
             @signature def predict_obs_flips_from_dets_bit_packed(dets: np.ndarray) -> np.ndarray:
@@ -235,6 +233,93 @@ PYBIND11_MODULE(chromobius, m) {
         )DOC")
             .data());
 
+    compiled_decoder.def(
+        "predict_weighted_obs_flips_from_dets_bit_packed",
+        [](CompiledDecoder &self, const pybind11::object &dets_obj) -> pybind11::object{
+            return self.predict_obs_flips_from_dets_bit_packed(dets_obj, true);
+        },
+        pybind11::arg("dets"),
+        stim::clean_doc_string(R"DOC(
+            @signature def predict_weighted_obs_flips_from_dets_bit_packed(dets: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+            Predicts observable flips and weights from detection events.
+
+            The returned weight comes directly from the underlying call to pymatching, not
+            accounting for the lifting process.
+
+            Args:
+                dets: A bit packed numpy array of detection event data. The array can either
+                    be 1-dimensional (a single shot to decode) or 2-dimensional (multiple
+                    shots to decode, with the first axis being the shot axis and the second
+                    axis being the detection event byte axis).
+
+                    The array's dtype must be np.uint8. If you have an array of dtype
+                    np.bool_, you have data that's not bit packed. You can pack it by
+                    using `np.packbits(array, bitorder='little')`. But ideally you
+                    should attempt to never have unpacked data in the first place,
+                    since it's 8x larger which can be a large performance loss. For
+                    example, stim's sampler methods all have a `bit_packed=True` argument
+                    that cause them to return bit packed data.
+
+            Returns:
+                A tuple (obs, weights).
+                Obs is a bit packed numpy array of observable flip data.
+                Weights is a numpy array (or scalar) of floats.
+
+                If dets is a 1D array, then the result has:
+                    obs.shape = (math.ceil(num_obs / 8),)
+                    obs.dtype = np.uint8
+                    weights.shape = ()
+                    weights.dtype = np.float32
+                If dets is a 2D array, then the result has:
+                    shape = (dets.shape[0], math.ceil(num_obs / 8),)
+                    dtype = np.uint8
+                    weights.shape = (dets.shape[0],)
+                    weights.dtype = np.float32
+
+                To determine if the observable with index k was flipped in shot s, compute:
+                    `bool((obs[s, k // 8] >> (k % 8)) & 1)`
+
+            Example:
+                >>> import stim
+                >>> import chromobius
+                >>> import numpy as np
+
+                >>> repetition_color_code = stim.Circuit('''
+                ...     # Apply noise.
+                ...     X_ERROR(0.1) 0 1 2 3 4 5 6 7
+                ...     # Measure three-body stabilizers to catch errors.
+                ...     MPP Z0*Z1*Z2 Z1*Z2*Z3 Z2*Z3*Z4 Z3*Z4*Z5 Z4*Z5*Z6 Z5*Z6*Z7
+                ...
+                ...     # Annotate detectors, with a coloring in the 4th coordinate.
+                ...     DETECTOR(0, 0, 0, 2) rec[-6]
+                ...     DETECTOR(1, 0, 0, 0) rec[-5]
+                ...     DETECTOR(2, 0, 0, 1) rec[-4]
+                ...     DETECTOR(3, 0, 0, 2) rec[-3]
+                ...     DETECTOR(4, 0, 0, 0) rec[-2]
+                ...     DETECTOR(5, 0, 0, 1) rec[-1]
+                ...
+                ...     # Check on the message.
+                ...     M 0
+                ...     OBSERVABLE_INCLUDE(0) rec[-1]
+                ... ''')
+
+                >>> # Sample the circuit.
+                >>> shots = 4096
+                >>> sampler = repetition_color_code.compile_detector_sampler()
+                >>> dets, actual_obs_flips = sampler.sample(
+                ...     shots=shots,
+                ...     separate_observables=True,
+                ...     bit_packed=True,
+                ... )
+
+                >>> # Decode with Chromobius.
+                >>> dem = repetition_color_code.detector_error_model()
+                >>> decoder = chromobius.compile_decoder_for_dem(dem)
+                >>> result = decoder.predict_weighted_obs_flips_from_dets_bit_packed(dets)
+                >>> pred, weights = result
+        )DOC")
+            .data());
+
     m.def(
         "compile_decoder_for_dem",
         &CompiledDecoder::from_dem,
@@ -255,6 +340,7 @@ PYBIND11_MODULE(chromobius, m) {
                             3 = Red Z
                             4 = Green Z
                             5 = Blue Z
+                            -1 = Ignore this Detector
                     2. Rainbow triplets. Bulk errors with three symptoms in one basis should
                         have one symptom of each color. Errors with three symptoms that
                         repeat a color will cause an exception unless they can be decomposed
@@ -313,6 +399,7 @@ PYBIND11_MODULE(chromobius, m) {
                             3 = Red Z
                             4 = Green Z
                             5 = Blue Z
+                            -1 = Ignore this Detector
                     2. Rainbow triplets. Bulk errors with three symptoms in one basis should
                         have one symptom of each color. Errors with three symptoms that
                         repeat a color will cause an exception unless they can be decomposed

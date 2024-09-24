@@ -1,28 +1,16 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import base64
 import collections
 import dataclasses
 import math
 import random
 import sys
-from typing import Iterable
+from typing import Optional, Union, Iterable
 
 import stim
 
-from gen._core._patch import Patch
+from gen._viz_patch_svg import svg_path_directions_for_tile
+from gen._core import StabilizerCode, Patch
+from gen._flows import ChunkInterface
 
 PITCH = 48 * 2
 DIAM = 32
@@ -107,10 +95,13 @@ TWO_QUBIT_GATE_STYLES = {
     "SWAP": ("SWAP", "SWAP"),
     "CXSWAP": ("ZSWAP", "XSWAP"),
     "SWAPCX": ("XSWAP", "ZSWAP"),
+    "MXX": ("MXX", "MXX"),
+    "MYY": ("MYY", "MYY"),
+    "MZZ": ("MZZ", "MZZ"),
 }
 
 
-def tag_str(tag, *, content: bool | str = False, **kwargs) -> str:
+def tag_str(tag, *, content: Union[bool, str] = False, **kwargs) -> str:
     parts = [f"<{tag}"]
     for k, v in kwargs.items():
         parts.append(f"{k.replace('_', '-')}={str(v)!r}")
@@ -128,21 +119,23 @@ def tag_str(tag, *, content: bool | str = False, **kwargs) -> str:
 
 
 class _SvgLayer:
-    def __init__(self):
+    def __init__(self, patch: Patch):
         self.svg_instructions: list[str] = []
         self.q2i_dict: dict[int, tuple[float, float]] = {}
         self.used_indices: set[int] = set()
         self.used_positions: set[tuple[float, float]] = set()
         self.measurement_positions: dict[int, tuple[float, float]] = {}
+        if patch is not None:
+            self.add_patch(patch)
 
-    def add(self, tag, *, content: bool | str = False, **kwargs) -> None:
+    def add(self, tag, *, content: Union[bool, str] = False, **kwargs) -> None:
         self.svg_instructions.append("    " + tag_str(tag, content=content, **kwargs))
 
     def bounds(self) -> tuple[float, float, float, float]:
-        min_y = min(e for _, e in self.used_positions)
-        max_y = max(e for _, e in self.used_positions)
-        min_x = min(e for e, _ in self.used_positions)
-        max_x = max(e for e, _ in self.used_positions)
+        min_y = min([e for _, e in self.used_positions], default=0)
+        max_y = max([e for _, e in self.used_positions], default=0)
+        min_x = min([e for e, _ in self.used_positions], default=0)
+        max_x = max([e for e, _ in self.used_positions], default=0)
         min_x -= PITCH
         min_y -= PITCH
         max_x += PITCH
@@ -187,10 +180,32 @@ class _SvgLayer:
                 font_size=24,
             )
 
+    def add_patch(self, patch: Patch):
+        BASE_COLORS = {"X": "#FF8080", "Z": "#8080FF", "Y": "#80FF80", None: "gray"}
+
+        for tile in patch.tiles:
+            path_directions = svg_path_directions_for_tile(
+                tile=tile,
+                draw_coord=lambda pt: pt * PITCH,
+            )
+            if path_directions is not None:
+                self.svg_instructions.append(
+                    f'''<path d="{path_directions}" fill="{BASE_COLORS[tile.basis]}" opacity="0.3" stroke="none" />'''
+                )
+        for tile in patch.tiles:
+            path_directions = svg_path_directions_for_tile(
+                tile=tile,
+                draw_coord=lambda pt: pt * PITCH,
+            )
+            if path_directions is not None:
+                self.svg_instructions.append(
+                    f'''<path d="{path_directions}" fill="none" stroke="#808080" stroke-width="0.1" />'''
+                )
+
     def svg(
         self,
         *,
-        html_id: str | None = None,
+        html_id: Optional[str] = None,
         as_img_with_data_uri: bool = False,
         width: int,
         height: int,
@@ -225,8 +240,9 @@ class _SvgLayer:
 
 
 class _SvgState:
-    def __init__(self):
-        self.layers: list[_SvgLayer] = [_SvgLayer()]
+    def __init__(self, patch: Patch | None):
+        self.patch: Patch | None = patch
+        self.layers: list[_SvgLayer] = [_SvgLayer(self.patch)]
         self.coord_shift: list[int] = [0, 0]
         self.measurement_layer_indices: list[int] = []
         self.detector_index = 0
@@ -239,10 +255,10 @@ class _SvgState:
         self.control_count = 0
 
     def tick(self) -> None:
-        self.layers.append(_SvgLayer())
+        self.layers.append(_SvgLayer(self.patch))
         self.layers[-1].q2i_dict = dict(self.layers[-2].q2i_dict)
 
-    def q2i(self, i: int) -> tuple[float, float]:
+    def i2xy(self, i: int) -> tuple[float, float]:
         x, y = self.layers[-1].q2i_dict.setdefault(i, (i, 0))
         pt = x * PITCH, y * PITCH
         self.layers[-1].used_indices.add(i)
@@ -283,19 +299,28 @@ class _SvgState:
             alignment_baseline="central",
         )
 
-    def add_measurement(self, target: stim.GateTarget) -> None:
-        assert (
-            target.is_qubit_target
-            or target.is_x_target
-            or target.is_y_target
-            or target.is_z_target
-        )
+    def add_measurement(self, *targets: stim.GateTarget) -> None:
+        for target in targets:
+            assert (
+                target.is_qubit_target
+                or target.is_x_target
+                or target.is_y_target
+                or target.is_z_target
+            )
         m_index = len(self.measurement_layer_indices)
         self.measurement_layer_indices.append(len(self.layers) - 1)
-        self.layers[-1].measurement_positions[m_index] = self.q2i(target.value)
+        x = 0
+        y = 0
+        for target in targets:
+            dx, dy = self.i2xy(target.value)
+            x += dx
+            y += dy
+        x /= len(targets)
+        y /= len(targets)
+        self.layers[-1].measurement_positions[m_index] = (x, y)
 
     def mark_measurements(
-        self, targets: list[stim.GateTarget], prefix: str, index: int | None
+        self, targets: list[stim.GateTarget], prefix: str, index: Optional[int]
     ) -> None:
         if index is None:
             assert prefix == "D"
@@ -364,6 +389,12 @@ def _draw_endpoint(x: float, y: float, style: str, *, out: _SvgState) -> None:
         add("circle", cx=x, cy=y, r=RAD / 2, fill="gray")
         add("line", x1=x - r, x2=x + r, y1=y - r, y2=y + r, stroke="black")
         add("line", x1=x - r, x2=x + r, y1=y + r, y2=y - r, stroke="black")
+    elif style == "MXX":
+        out.add_box(x=x, y=y, text="Mxx", fill='black', text_color='white')
+    elif style == "MYY":
+        out.add_box(x=x, y=y, text="Myy", fill='black', text_color='white')
+    elif style == "MZZ":
+        out.add_box(x=x, y=y, text="Mzz", fill='black', text_color='white')
     elif style == "SQRT_ZZ":
         out.add_box(x=x, y=y, text="√ZZ")
     elif style == "SQRT_YY":
@@ -419,12 +450,15 @@ def _draw_endpoint(x: float, y: float, style: str, *, out: _SvgState) -> None:
 def _draw_2q(instruction: stim.CircuitInstruction, *, out: _SvgState) -> None:
     style1, style2 = TWO_QUBIT_GATE_STYLES[instruction.name]
     targets = instruction.targets_copy()
-    q2i = out.q2i
+    i2qq = out.i2xy
+    is_measurement = stim.gate_data(instruction.name).produces_measurements
 
     assert len(targets) % 2 == 0
     for k in range(0, len(targets), 2):
         t1 = targets[k]
         t2 = targets[k + 1]
+        if is_measurement:
+            out.add_measurement(t1, t2)
         if t1.is_measurement_record_target or t2.is_measurement_record_target:
             if t1.is_qubit_target:
                 t = t1.value
@@ -443,7 +477,7 @@ def _draw_2q(instruction: stim.CircuitInstruction, *, out: _SvgState) -> None:
                 if instruction.name == "CZ"
                 else "?"
             )
-            x, y = q2i(t)
+            x, y = i2qq(t)
             out.add(
                 "text",
                 x=x - RAD + 1,
@@ -469,8 +503,8 @@ def _draw_2q(instruction: stim.CircuitInstruction, *, out: _SvgState) -> None:
             continue
         assert t1.is_qubit_target
         assert t2.is_qubit_target
-        x1, y1 = q2i(t1.value)
-        x2, y2 = q2i(t2.value)
+        x1, y1 = i2qq(t1.value)
+        x2, y2 = i2qq(t2.value)
         dx = x2 - x1
         dy = y2 - y1
         r = (dx * dx + dy * dy) ** 0.5
@@ -501,7 +535,7 @@ def _draw_mpp(instruction: stim.CircuitInstruction, *, out: _SvgState) -> None:
     targets = instruction.targets_copy()
     add = out.add
     add_box = out.add_box
-    q2i = out.q2i
+    q2i = out.i2xy
 
     chunks = []
     start = 0
@@ -513,7 +547,7 @@ def _draw_mpp(instruction: stim.CircuitInstruction, *, out: _SvgState) -> None:
         start = end
         end = start + 1
     for chunk in chunks:
-        out.add_measurement(chunk[0])
+        out.add_measurement(*chunk)
         tx, ty = 0, 0
         for t in chunk:
             x, y = q2i(t.value)
@@ -555,7 +589,7 @@ def _draw_1q(instruction: stim.CircuitInstruction, *, out: _SvgState):
             out.add_measurement(t)
     for t in targets:
         assert t.is_qubit_target
-        x, y = out.q2i(t.value)
+        x, y = out.i2xy(t.value)
         style = GATE_BOX_LABELS[instruction.name]
         out.add_box(
             x, y, style.label, fill=style.fill_color, text_color=style.text_color
@@ -603,6 +637,9 @@ def _stim_circuit_to_svg_helper(circuit: stim.Circuit, state: _SvgState) -> None
             elif instruction.name in NOISY_GATES:
                 for t in instruction.targets_copy():
                     state.noted_errors.append((t.value, len(state.layers) - 1, "E"))
+            elif instruction.name == "MPAD":
+                for t in instruction.targets_copy():
+                    state.add_measurement(t)
             else:
                 raise NotImplementedError(repr(instruction))
         else:
@@ -634,16 +671,20 @@ def append_patch_polygons(*, out: list[str], patch: Patch, q2i: dict[complex, in
 def stim_circuit_html_viewer(
     circuit: stim.Circuit,
     *,
-    patch: None | Patch | dict[int, Patch] = None,
+    patch: dict[int, Patch | StabilizerCode | ChunkInterface] | ChunkInterface | StabilizerCode | Patch | None  = None,
     width: int = 500,
     height: int = 500,
-    known_error: Iterable[stim.ExplainedError] | None = None,
+    known_error: Optional[Iterable[stim.ExplainedError]] = None,
 ) -> str:
     q2i = {
         v[0] + 1j * v[1]: k for k, v in circuit.get_final_qubit_coordinates().items()
     }
 
-    state = _SvgState()
+    if isinstance(patch, StabilizerCode):
+        patch = patch.patch
+    if isinstance(patch, ChunkInterface):
+        patch = patch.to_patch()
+    state = _SvgState(patch)
     state.detector_coords = circuit.get_detector_coordinates()
     if known_error is None:
         # noinspection PyBroadException
@@ -686,22 +727,22 @@ def stim_circuit_html_viewer(
         x, y = layer.measurement_positions[m]
         layer.add(
             "rect",
-            x=x - RAD,
-            y=y - RAD,
-            width=DIAM,
-            height=DIAM,
+            x=x - RAD*2,
+            y=y - RAD*2,
+            width=DIAM*2,
+            height=DIAM*2,
             fill="#FF000080",
             stroke="#FF0000",
         )
     for qubit, time, basis in state.highlighted_errors:
         layer = state.layers[time]
-        x, y = state.q2i(qubit)
+        x, y = state.i2xy(qubit)
         layer.add(
             "text",
             x=x,
             y=y,
             fill="red",
-            content=basis,
+            content="," + basis,
             text_anchor="middle",
             dominant_baseline="middle",
             font_size=64,
@@ -711,7 +752,7 @@ def stim_circuit_html_viewer(
             print(f"Error time is past end of circuit: {time}", file=sys.stderr)
             continue
         layer = state.layers[time]
-        x, y = state.q2i(qubit)
+        x, y = state.i2xy(qubit)
         layer.add(
             "text",
             x=x - RAD,
@@ -768,8 +809,8 @@ def stim_circuit_html_viewer(
 
     return (
         f"""<div id="step">Loading...</div>
-    <button id="btnPrev">Previous Layer (hotkey: a)</button>
-    <button id="btnNext">Next Layer (hotkey: d)</button>
+    <button id="btnPrev">Previous Layer (hotkey: q)</button>
+    <button id="btnNext">Next Layer (hotkey: e)</button>
     <a href="{local_server_crumble_url}">Open in Crumble</a>
     <div id="viewer" style="border: 1px solid black; margin-bottom: 50px; width: 100%; height: 90%; 
              resize: both; overflow: auto">
@@ -816,11 +857,11 @@ def stim_circuit_html_viewer(
         handleLayerIndexChange();
     });
     document.addEventListener('keydown', ev => {
-        if (ev.code == "KeyA" && !ev.getModifierState("Control")) {
+        if (ev.code == "KeyQ" && !ev.getModifierState("Control")) {
             layer_index -= 1;
             ev.preventDefault();
             handleLayerIndexChange();
-        } else if (ev.code == "KeyD") {
+        } else if (ev.code == "KeyE") {
             layer_index += 1;
             ev.preventDefault();
             handleLayerIndexChange();

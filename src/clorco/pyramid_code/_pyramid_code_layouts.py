@@ -36,7 +36,7 @@ def make_toric_pyramid_code_layout(
                     bases=b,
                     ordered_data_qubits=[wrap(c + d) for d in [1, -1, 1j, -1j, 0]],
                     measurement_qubit=c,
-                    extra_coords=[y % 3 + 3 * (b == "Z")],
+                    flags=[f'color={"rgb"[y % 3]}', f'basis={b}'],
                 )
             )
     patch = gen.Patch(tiles)
@@ -90,7 +90,7 @@ def make_planar_pyramid_code_layout(
                     bases=b,
                     ordered_data_qubits=qs,
                     measurement_qubit=c,
-                    extra_coords=[y % 3 + 3 * (b == "Z")],
+                    flags=[f'color={"rgb"[y % 3]}', f'basis={b}'],
                 )
             )
     patch = gen.Patch(tiles)

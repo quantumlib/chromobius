@@ -17,10 +17,11 @@
 #ifndef _CHROMOBIUS_ATOMIC_ERROR_H
 #define _CHROMOBIUS_ATOMIC_ERROR_H
 
+#include <cassert>
+#include <functional>
 #include <span>
 
 #include "chromobius/datatypes/color_basis.h"
-#include "stim.h"
 
 namespace chromobius {
 
@@ -58,6 +59,13 @@ struct AtomicErrorKey {
     std::array<node_offset_int, 3> dets;
     inline AtomicErrorKey(node_offset_int det1, node_offset_int det2, node_offset_int det3)
         : dets(sort3(det1, det2, det3)) {
+    }
+    inline AtomicErrorKey(std::span<const node_offset_int> dets)
+        : dets(sort3(
+              dets.size() > 0 ? dets[0] : BOUNDARY_NODE,
+              dets.size() > 1 ? dets[1] : BOUNDARY_NODE,
+              dets.size() > 2 ? dets[2] : BOUNDARY_NODE)) {
+        assert(dets.size() <= 3);
     }
     inline bool operator<(const AtomicErrorKey &other) const {
         for (size_t k = 0; k < 3; k++) {

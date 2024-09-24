@@ -17,6 +17,7 @@
 #ifndef _CHROMOBIUS_COLLECT_ATOMIC_EDGES_H
 #define _CHROMOBIUS_COLLECT_ATOMIC_EDGES_H
 
+#include <map>
 #include <span>
 
 #include "chromobius/datatypes/atomic_error.h"
@@ -44,7 +45,14 @@ std::map<AtomicErrorKey, obsmask_int> collect_atomic_errors(
 void extract_obs_and_dets_from_error_instruction(
     stim::DemInstruction instruction,
     stim::SparseXorVec<node_offset_int> *out_xor_detectors_buffer,
-    obsmask_int *out_obs_flip);
+    obsmask_int *out_obs_flip,
+    std::span<const ColorBasis> node_colors);
+
+AtomicErrorKey extract_atomic_errors_from_dem_error_instruction_dets(
+    std::span<const node_offset_int> dets,
+    obsmask_int obs_flip,
+    std::span<const ColorBasis> node_colors,
+    std::map<AtomicErrorKey, obsmask_int> *out_atomic_errors);
 
 }  // namespace chromobius
 

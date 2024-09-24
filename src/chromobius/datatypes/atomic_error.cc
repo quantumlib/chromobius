@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
+
 #include "chromobius/datatypes/atomic_error.h"
 
 using namespace chromobius;

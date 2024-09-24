@@ -1,18 +1,4 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from typing import Callable, Literal, TYPE_CHECKING, cast, Iterable, Dict
+from typing import Callable, Literal, TYPE_CHECKING, cast, Iterable, Dict, Any, Union
 
 import stim
 
@@ -20,14 +6,77 @@ from gen._core._util import sorted_complex
 
 if TYPE_CHECKING:
     import gen
+    from gen._core import KeyedPauliString
+
+
+_multiplication_table: dict[Literal['X', 'Y', 'Z'] | None, dict[Literal['X', 'Y', 'Z'] | None, Literal['X', 'Y', 'Z'] | None]] = {
+    None: {None: None, "X": "X", "Y": "Y", "Z": "Z"},
+    "X": {None: "X", "X": None, "Y": "Z", "Z": "Y"},
+    "Y": {None: "Y", "X": "Z", "Y": None, "Z": "X"},
+    "Z": {None: "Z", "X": "Y", "Y": "X", "Z": None},
+}
 
 
 class PauliString:
     """A qubit-to-pauli mapping."""
 
-    def __init__(self, qubits: dict[complex, Literal["X", "Y", "Z"]]):
-        self.qubits = {q: qubits[q] for q in sorted_complex(qubits.keys())}
+    def __init__(
+            self,
+            mapping: Union[dict[complex, Literal["X", "Y", "Z"]],  dict[Literal["X", "Y", "Z"], complex | Iterable[complex]], 'PauliString', 'KeyedPauliString', None] = None,
+            *,
+            xs: Iterable[complex] = (),
+            ys: Iterable[complex] = (),
+            zs: Iterable[complex] = (),
+    ):
+        self.qubits: dict[complex, Literal["X", "Y", "Z"]] = {}
+
+        from gen._core import KeyedPauliString
+        if isinstance(mapping, (PauliString, KeyedPauliString)) and not xs and not ys and not zs:
+            self.qubits = dict(mapping.qubits)
+            self._hash = mapping._hash if isinstance(mapping, PauliString) else mapping.pauli_string._hash
+            return
+
+        for q in xs:
+            self._mul_term(q, 'X')
+        for q in ys:
+            self._mul_term(q, 'Y')
+        for q in zs:
+            self._mul_term(q, 'Z')
+        if mapping is not None:
+            if isinstance(mapping, (PauliString, KeyedPauliString)):
+                mapping = mapping.qubits
+            for k, v in mapping.items():
+                if isinstance(k, str):
+                    assert k == 'X' or k == 'Y' or k == 'Z'
+                    b = cast(Literal['X', 'Y', 'Z'], k)
+                    if isinstance(v, (int, float, complex)):
+                        self._mul_term(v, b)
+                    else:
+                        for q in v:
+                            assert isinstance(q, (int, float, complex))
+                            self._mul_term(q, b)
+                elif isinstance(v, str):
+                    assert v == 'X' or v == 'Y' or v == 'Z'
+                    assert isinstance(k, (int, float, complex))
+                    b = cast(Literal['X', 'Y', 'Z'], v)
+                    self._mul_term(k, b)
+
+        self.qubits = {complex(q): self.qubits[q] for q in sorted_complex(self.qubits.keys())}
         self._hash: int = hash(tuple(self.qubits.items()))
+
+    @property
+    def pauli_string(self) -> 'PauliString':
+        """Duck-typing compatibility with KeyedPauliString."""
+        return self
+
+    def keyed(self, key: int) -> 'KeyedPauliString':
+        from gen._core import KeyedPauliString
+        return KeyedPauliString(key=key, pauli_string=self)
+
+    def _mul_term(self, q: complex, b: Literal["X", "Y", "Z"]):
+        new_b = _multiplication_table[self.qubits.pop(q, None)][b]
+        if new_b is not None:
+            self.qubits[q] = new_b
 
     @staticmethod
     def from_stim_pauli_string(stim_pauli_string: stim.PauliString) -> "PauliString":
@@ -49,45 +98,8 @@ class PauliString:
             }
         )
 
-    @staticmethod
-    def from_xyzs(
-        *,
-        xs: Iterable[complex] = (),
-        ys: Iterable[complex] = (),
-        zs: Iterable[complex] = (),
-    ) -> "PauliString":
-        qs: dict[complex, Literal["X", "Y", "Z"]] = {}
-        for q in xs:
-            qs[q] = "X"
-        for q in ys:
-            p = qs.get(q)
-            if p is None:
-                qs[q] = "Y"
-            elif p == "X":
-                qs[q] = "Z"
-            else:
-                raise NotImplementedError(f"{p=}")
-        for q in zs:
-            p = qs.get(q)
-            if p is None:
-                qs[q] = "Z"
-            elif p == "X":
-                qs[q] = "Y"
-            elif p == "Y":
-                qs[q] = "X"
-            else:
-                raise NotImplementedError(f"{p=}")
-        return PauliString(qs)
-
-    @staticmethod
-    def from_b2q(
-        b2q: dict[Literal["X", "Y", "Z"], Iterable[complex]],
-    ) -> "PauliString":
-        return PauliString.from_xyzs(
-            xs=b2q.get("X", ()),
-            ys=b2q.get("Y", ()),
-            zs=b2q.get("Z", ()),
-        )
+    def with_basis(self, basis: Literal['X', 'Y', 'Z']) -> 'PauliString':
+        return PauliString({q: basis for q in self.qubits.keys()})
 
     def __bool__(self) -> bool:
         return bool(self.qubits)
@@ -109,7 +121,8 @@ class PauliString:
         return PauliString(result)
 
     def __repr__(self) -> str:
-        return f"gen.PauliString(qubits={self.qubits!r})"
+        s = {q: self.qubits[q] for q in sorted_complex(self.qubits)}
+        return f"gen.PauliString({s!r})"
 
     def __str__(self) -> str:
         return "*".join(
@@ -117,12 +130,18 @@ class PauliString:
         )
 
     def with_xz_flipped(self) -> "PauliString":
-        return PauliString(
-            {
-                q: "Z" if p == "X" else "X" if p == "Z" else p
-                for q, p in self.qubits.items()
-            }
-        )
+        remap = {'X': 'Z', 'Y': 'Y', 'Z': 'X'}
+        return PauliString({
+            q: remap[p]
+            for q, p in self.qubits.items()
+        })
+
+    def with_xy_flipped(self) -> "PauliString":
+        remap = {'X': 'Y', 'Y': 'X', 'Z': 'Z'}
+        return PauliString({
+            q: remap[p]
+            for q, p in self.qubits.items()
+        })
 
     def commutes(self, other: "PauliString") -> bool:
         return not self.anticommutes(other)
@@ -156,3 +175,11 @@ class PauliString:
         if not isinstance(other, PauliString):
             return NotImplemented
         return self.qubits == other.qubits
+
+    def _sort_key(self) -> Any:
+        return tuple((q.real, q.imag, p) for q, p in self.qubits.items())
+
+    def __lt__(self, other) -> bool:
+        if not isinstance(other, PauliString):
+            return NotImplemented
+        return self._sort_key() < other._sort_key()

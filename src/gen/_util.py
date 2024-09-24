@@ -1,20 +1,6 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+import io
 import pathlib
-import sys
-from typing import Callable, Any
+from typing import Callable, Any, TypeVar, Iterable
 
 import stim
 
@@ -173,11 +159,42 @@ def estimate_qubit_count_during_postselection(circuit: stim.Circuit) -> int:
     return len(used_qubits)
 
 
-def write_file(path: str | pathlib.Path, content: Any):
-    if isinstance(content, bytes):
+def write_file(path: str | pathlib.Path | io.IOBase, content: Any):
+    if isinstance(path, io.IOBase):
+        path.write(content)
+        return
+    elif isinstance(content, bytes):
         with open(path, "wb") as f:
             print(content, file=f)
     else:
         with open(path, "w") as f:
             print(content, file=f)
-    print(f"wrote file://{pathlib.Path(path).absolute()}", file=sys.stderr)
+    print(f"wrote file://{pathlib.Path(path).absolute()}")
+
+
+TItem = TypeVar('TItem')
+
+
+def xor_sorted(vals: Iterable[TItem], *, key: Callable[[TItem], Any] = lambda e: e) -> list[TItem]:
+    """Sorts items and then cancels pairs of equal items.
+
+    An item will be in the result once if it appeared an odd number of times.
+    An item won't be in the result if it appeared an even number of times.
+    """
+    result = sorted(vals, key=key)
+    n = len(result)
+    skipped = 0
+    k = 0
+    while k + 1 < n:
+        if result[k] == result[k + 1]:
+            skipped += 2
+            k += 2
+        else:
+            result[k - skipped] = result[k]
+            k += 1
+    if k < n:
+        result[k - skipped] = result[k]
+    while skipped:
+        result.pop()
+        skipped -= 1
+    return result

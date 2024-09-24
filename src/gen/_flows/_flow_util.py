@@ -1,29 +1,21 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from typing import Union, Any, Literal, Iterable
+import collections
+import dataclasses
+from typing import Union, Any, Literal, Iterable, Callable
 
 import stim
 
-from gen._core._builder import MeasurementTracker, Builder, AtLayer
-from gen._core._util import sorted_complex
-from gen._flows._chunk import Chunk, ChunkLoop
+import gen
+from gen._core import KeyedPauliString, MeasurementTracker, Builder, AtLayer, sorted_complex
+from gen._flows._chunk import Chunk
+from gen._flows._chunk_loop import ChunkLoop
+from gen._flows._chunk_reflow import ChunkReflow
 from gen._flows._flow import PauliString, Flow
 
 
 def magic_init_for_chunk(
     chunk: Chunk,
+    *,
+    single_kept_obs_basis: str | None = None,
 ) -> Chunk:
     builder = Builder(
         q2i=chunk.q2i,
@@ -32,36 +24,44 @@ def magic_init_for_chunk(
     )
     index = 0
     flows = []
+    discards = []
     for flow in chunk.flows:
         if flow.start:
-            builder.measure_pauli_string(flow.start, key=AtLayer(index, "solo"))
-            flows.append(
-                Flow(
-                    center=flow.center,
-                    end=flow.start,
-                    measurement_indices=[index],
-                    obs_index=flow.obs_index,
-                    additional_coords=flow.additional_coords,
+            if flow.obs_index is not None and single_kept_obs_basis is not None and set(flow.start.qubits.values()) != set(single_kept_obs_basis):
+                discards.append((flow.start, flow.obs_index))
+            else:
+                builder.measure_pauli_string(flow.start, key=AtLayer(index, "solo"))
+                flows.append(
+                    Flow(
+                        center=flow.center,
+                        end=flow.start,
+                        measurement_indices=[index],
+                        obs_index=flow.obs_index,
+                        flags=flow.flags,
+                    )
                 )
-            )
-            index += 1
+                index += 1
 
     return Chunk(
         circuit=builder.circuit,
         q2i=builder.q2i,
         flows=flows,
-        magic=True,
+        discarded_outputs=discards,
     )
 
 
 def magic_measure_for_chunk(
     chunk: Chunk,
+    *,
+    single_kept_obs_basis: str | None = None,
 ) -> Chunk:
-    return magic_measure_for_flows(chunk.flows)
+    return magic_measure_for_flows(chunk.flows, single_kept_obs_basis=single_kept_obs_basis)
 
 
 def magic_measure_for_flows(
     flows: list[Flow],
+    *,
+    single_kept_obs_basis: str | None = None,
 ) -> Chunk:
     all_qubits = sorted_complex({q for flow in flows for q in (flow.end.qubits or [])})
     q2i = {q: i for i, q in enumerate(all_qubits)}
@@ -72,26 +72,30 @@ def magic_measure_for_flows(
     )
     index = 0
     out_flows = []
+    discards = []
     for flow in flows:
         if flow.end:
-            key = AtLayer(index, "solo")
-            builder.measure_pauli_string(flow.end, key=key)
-            out_flows.append(
-                Flow(
-                    center=flow.center,
-                    start=flow.end,
-                    measurement_indices=[index],
-                    obs_index=flow.obs_index,
-                    additional_coords=flow.additional_coords,
+            if flow.obs_index is not None and single_kept_obs_basis is not None and set(flow.end.qubits.values()) != set(single_kept_obs_basis):
+                discards.append((flow.start, flow.obs_index))
+            else:
+                key = AtLayer(index, "solo")
+                builder.measure_pauli_string(flow.end, key=key)
+                out_flows.append(
+                    Flow(
+                        center=flow.center,
+                        start=flow.end,
+                        measurement_indices=[index],
+                        obs_index=flow.obs_index,
+                        flags=flow.flags,
+                    )
                 )
-            )
-            index += 1
+                index += 1
 
     return Chunk(
         circuit=builder.circuit,
         q2i=builder.q2i,
         flows=out_flows,
-        magic=True,
+        discarded_inputs=discards,
     )
 
 
@@ -144,11 +148,95 @@ class _ChunkCompileState:
     def __init__(
         self,
         *,
-        open_flows: dict[tuple[PauliString, Any], Union[Flow, Literal["discard"]]],
+        open_flows: dict[PauliString | KeyedPauliString, Union[Flow, Literal["discard"]]],
         measure_offset: int,
     ):
         self.open_flows = open_flows
         self.measure_offset = measure_offset
+
+    def verify(self):
+        for (k1, k2), v in self.open_flows.items():
+            assert isinstance(k1, (PauliString, KeyedPauliString))
+            assert v == "discard" or isinstance(v, Flow)
+
+    def __str__(self) -> str:
+        lines = []
+        lines.append("_ChunkCompileState {")
+
+        lines.append("    discard_flows {")
+        for key, flow in self.open_flows.items():
+            if flow == "discard":
+                lines.append(f"        {key}")
+        lines.append("    }")
+
+        lines.append("    det_flows {")
+        for key, flow in self.open_flows.items():
+            if flow != "discard" and flow.obs_index is None:
+                lines.append(f"        {flow.end}, ms={flow.measurement_indices}")
+        lines.append("    }")
+
+        lines.append("    obs_flows {")
+        for key, flow in self.open_flows.items():
+            if flow != "discard" and flow.obs_index is not None:
+                lines.append(f"        {flow.end}: ms={flow.measurement_indices}")
+        lines.append("    }")
+
+        lines.append(f"    measure_offset = {self.measure_offset}")
+        lines.append("}")
+        return '\n'.join(lines)
+
+
+def _compile_chunk_reflow_into_circuit(
+    *,
+    chunk_reflow: ChunkReflow,
+    state: _ChunkCompileState,
+) -> _ChunkCompileState:
+    next_flows: dict[PauliString | KeyedPauliString, Union[Flow, Literal["discard"]]] = {}
+    for output, inputs in chunk_reflow.out2in.items():
+        measurements = set()
+        centers = []
+        flags = set()
+        discarded = False
+        for inp_key in inputs:
+            if inp_key not in state.open_flows:
+                msg = []
+                msg.append(f"Missing reflow input: {inp_key=}")
+                msg.append("Needed inputs {")
+                for ps in inputs:
+                    msg.append(f"    {ps}")
+                msg.append("}")
+                msg.append("Actual inputs {")
+                for ps in state.open_flows.keys():
+                    msg.append(f"    {ps}")
+                msg.append("}")
+                raise ValueError('\n'.join(msg))
+            inp = state.open_flows[inp_key]
+            if inp == 'discard':
+                discarded = True
+            else:
+                assert isinstance(inp, Flow)
+                assert not inp.start
+                measurements ^= frozenset(inp.measurement_indices)
+                centers.append(inp.center)
+                flags |= inp.flags
+        next_flows[output] = 'discard' if discarded else gen.Flow(
+            start=None,
+            end=output.pauli_string if isinstance(output, KeyedPauliString) else output,
+            measurement_indices=tuple(sorted(measurements)),
+            obs_index=output.key if isinstance(output, KeyedPauliString) else None,
+            flags=flags,
+            center=sum(centers) / len(centers),
+        )
+    for k, v in state.open_flows.items():
+        if k in chunk_reflow.removed_inputs:
+            continue
+        assert k not in next_flows
+        next_flows[k] = v
+
+    return _ChunkCompileState(
+        measure_offset=state.measure_offset,
+        open_flows=next_flows,
+    )
 
 
 def _compile_chunk_into_circuit_many_repetitions(
@@ -159,6 +247,7 @@ def _compile_chunk_into_circuit_many_repetitions(
     ignore_errors: bool,
     out_circuit: stim.Circuit,
     q2i: dict[complex, int],
+    flow_to_extra_coords_func: Callable[[Flow], Iterable[float]],
 ) -> _ChunkCompileState:
     if chunk_loop.repetitions == 0:
         return state
@@ -170,6 +259,7 @@ def _compile_chunk_into_circuit_many_repetitions(
             ignore_errors=ignore_errors,
             out_circuit=out_circuit,
             q2i=q2i,
+            flow_to_extra_coords_func=flow_to_extra_coords_func,
         )
     assert chunk_loop.repetitions > 1
 
@@ -199,6 +289,7 @@ def _compile_chunk_into_circuit_many_repetitions(
             ignore_errors=ignore_errors,
             out_circuit=circuits[-1],
             q2i=q2i,
+            flow_to_extra_coords_func=flow_to_extra_coords_func,
         )
 
         if fully_in_loop:
@@ -230,6 +321,7 @@ def _compile_chunk_into_circuit_sequence(
     ignore_errors: bool,
     out_circuit: stim.Circuit,
     q2i: dict[complex, int],
+    flow_to_extra_coords_func: Callable[[Flow], Iterable[float]],
 ) -> _ChunkCompileState:
     for sub_chunk in chunks:
         state = _compile_chunk_into_circuit(
@@ -239,6 +331,7 @@ def _compile_chunk_into_circuit_sequence(
             ignore_errors=ignore_errors,
             out_circuit=out_circuit,
             q2i=q2i,
+            flow_to_extra_coords_func=flow_to_extra_coords_func,
         )
     return state
 
@@ -251,9 +344,10 @@ def _compile_chunk_into_circuit_atomic(
     ignore_errors: bool,
     out_circuit: stim.Circuit,
     q2i: dict[complex, int],
+    flow_to_extra_coords_func: Callable[[Flow], Iterable[float]],
 ) -> _ChunkCompileState:
     prev_flows = dict(state.open_flows)
-    next_flows: dict[tuple[PauliString, Any], Union[Flow, Literal["discard"]]] = {}
+    next_flows: dict[PauliString | KeyedPauliString, Union[Flow, Literal["discard"]]] = {}
     dumped_flows: list[Flow] = []
     if include_detectors:
         for flow in chunk.flows:
@@ -265,19 +359,25 @@ def _compile_chunk_into_circuit_atomic(
                 measurement_indices=[
                     m + state.measure_offset for m in flow.measurement_indices
                 ],
-                postselect=flow.postselect,
-                additional_coords=flow.additional_coords,
+                flags=flow.flags,
             )
             if flow.start:
-                prev = prev_flows.pop((flow.start, flow.obs_index), None)
+                prev = prev_flows.pop(flow.key_start, None)
                 if prev is None:
                     if ignore_errors:
                         continue
                     else:
-                        raise ValueError(f"Missing prev {flow!r} have {prev_flows!r}")
+                        lines = [
+                            "A flow input wasn't satisfied.",
+                            f"   Expected input: {flow.key_start}",
+                            f"   Available inputs:",
+                        ]
+                        for prev_avail in prev_flows.keys():
+                            lines.append(f"       {prev_avail}")
+                        raise ValueError('\n'.join(lines))
                 elif prev == "discard":
                     if flow.end:
-                        next_flows[(flow.end, flow.obs_index)] = "discard"
+                        next_flows[flow.key_end] = "discard"
                     continue
                 flow = prev.concat(flow, 0)
             if flow.end:
@@ -289,42 +389,48 @@ def _compile_chunk_into_circuit_atomic(
                         obs_index=flow.obs_index,
                         center=flow.center,
                     )
-                next_flows[(flow.end, flow.obs_index)] = flow
+                next_flows[flow.key_end] = flow
             else:
                 dumped_flows.append(flow)
         for discarded in chunk.discarded_inputs:
-            prev_flows.pop((discarded, None), None)
+            prev_flows.pop(discarded, None)
         for discarded in chunk.discarded_outputs:
-            assert (discarded, None) not in next_flows
-            next_flows[(discarded, None)] = "discard"
+            assert discarded not in next_flows
+            next_flows[discarded] = "discard"
+        unused_output = False
         for flow, val in prev_flows.items():
             if val != "discard" and not ignore_errors:
-                raise ValueError(
-                    f"Some flows were left over (not matched) when moving into chunk: {list(prev_flows.values())!r}"
-                )
+                unused_output = True
+        if unused_output:
+            lines = ["Some flow outputs were unused:"]
+            for flow, val in prev_flows.items():
+                if val != "discard" and not ignore_errors:
+                    lines.append(f"   {flow}")
+            raise ValueError('\n'.join(lines))
 
     new_measure_offset = state.measure_offset + chunk.circuit.num_measurements
     _append_circuit_with_reindexed_qubits_to_circuit(
         circuit=chunk.circuit, out=out_circuit, old_q2i=chunk.q2i, new_q2i=q2i
     )
     if include_detectors:
-        any_detectors = False
+        det_offset_within_circuit = max([e[2] + 1 for e in chunk.circuit.get_detector_coordinates().values()], default=0)
+        if det_offset_within_circuit > 0:
+            out_circuit.append("SHIFT_COORDS", [], (0, 0, det_offset_within_circuit))
+        coord_use_counts = collections.Counter()
         for flow in dumped_flows:
             targets = []
             for m in flow.measurement_indices:
                 targets.append(stim.target_rec(m - new_measure_offset))
             if flow.obs_index is None:
-                coords = (flow.center.real, flow.center.imag, 0)
-                if flow.additional_coords:
-                    coords += flow.additional_coords
-                if flow.postselect:
-                    coords += (999,)
+                dt = coord_use_counts[flow.center]
+                coord_use_counts[flow.center] += 1
+                coords = (flow.center.real, flow.center.imag, dt) + tuple(flow_to_extra_coords_func(flow))
                 out_circuit.append("DETECTOR", targets, coords)
-                any_detectors = True
             else:
                 out_circuit.append("OBSERVABLE_INCLUDE", targets, flow.obs_index)
-        if any_detectors:
-            out_circuit.append("SHIFT_COORDS", [], (0, 0, 1))
+        det_offset = max(coord_use_counts.values(), default=0)
+        if det_offset > 0:
+            out_circuit.append("SHIFT_COORDS", [], (0, 0, det_offset))
     if len(out_circuit) > 0 and out_circuit[-1].name != "TICK":
         out_circuit.append("TICK")
 
@@ -334,16 +440,99 @@ def _compile_chunk_into_circuit_atomic(
     )
 
 
+@dataclasses.dataclass
+class _EditFlow:
+    inp: stim.PauliString
+    meas: set[int]
+    out: stim.PauliString
+    key: int | None
+
+
+def solve_flow_auto_measurements(*, flows: Iterable[Flow], circuit: stim.Circuit, q2i: dict[complex, int]) -> tuple[Flow, ...]:
+    flows = tuple(flows)
+    if all(flow.measurement_indices != 'auto' for flow in flows):
+        return flows
+
+    table: list[_EditFlow] = []
+    num_qubits = circuit.num_qubits
+    for flow in circuit.flow_generators():
+        inp = flow.input_copy()
+        out = flow.output_copy()
+        if len(inp) == 0:
+            inp = stim.PauliString(num_qubits)
+        if len(out) == 0:
+            out = stim.PauliString(num_qubits)
+        table.append(_EditFlow(
+            inp=inp,
+            meas=set(flow.measurements_copy()),
+            out=out,
+            key=None,
+        ))
+
+    for k in range(len(flows)):
+        if flows[k].measurement_indices == 'auto':
+            inp = stim.PauliString(num_qubits)
+            for q, p in flows[k].start.qubits.items():
+                inp[q2i[q]] = p
+            out = stim.PauliString(num_qubits)
+            for q, p in flows[k].end.qubits.items():
+                out[q2i[q]] = p
+            table.append(_EditFlow(inp=inp, meas=set(), out=out, key=k))
+
+    num_solved = 0
+
+    def partial_elim(predicate: Callable[[_EditFlow], bool]):
+        nonlocal num_solved
+        for k in range(num_solved, len(table)):
+            if predicate(table[k]):
+                pivot = k
+                break
+        else:
+            return
+
+        for k in range(len(table)):
+            if k != pivot and predicate(table[k]):
+                table[k].inp *= table[pivot].inp
+                table[k].meas ^= table[pivot].meas
+                table[k].out *= table[pivot].out
+        t0 = table[pivot]
+        t1 = table[num_solved]
+        table[pivot] = t1
+        table[num_solved] = t0
+        num_solved += 1
+
+    for q in range(num_qubits):
+        partial_elim(lambda f: f.inp[q] & 1)
+        partial_elim(lambda f: f.inp[q] & 2)
+    for q in range(num_qubits):
+        partial_elim(lambda f: f.out[q] & 1)
+        partial_elim(lambda f: f.out[q] & 2)
+
+    flows = list(flows)
+    for t in table:
+        if t.key is not None:
+            if t.inp.weight > 0 or t.out.weight > 0:
+                raise ValueError(f"Failed to solve {flows[t.key]}")
+            flows[t.key] = flows[t.key].with_edits(measurement_indices=t.meas)
+    return tuple(flows)
+
+
 def _compile_chunk_into_circuit(
     *,
-    chunk: Union[Chunk, ChunkLoop],
+    chunk: Union[Chunk, ChunkLoop, ChunkReflow],
     state: _ChunkCompileState,
     include_detectors: bool,
     ignore_errors: bool,
     out_circuit: stim.Circuit,
     q2i: dict[complex, int],
+    flow_to_extra_coords_func: Callable[[Flow], Iterable[float]],
 ) -> _ChunkCompileState:
-    if isinstance(chunk, ChunkLoop):
+    if isinstance(chunk, ChunkReflow):
+        return _compile_chunk_reflow_into_circuit(
+            chunk_reflow=chunk,
+            state=state,
+        )
+    elif isinstance(chunk, ChunkLoop):
         return _compile_chunk_into_circuit_many_repetitions(
             chunk_loop=chunk,
             state=state,
@@ -351,16 +540,29 @@ def _compile_chunk_into_circuit(
             ignore_errors=ignore_errors,
             out_circuit=out_circuit,
             q2i=q2i,
+            flow_to_extra_coords_func=flow_to_extra_coords_func,
         )
+    elif isinstance(chunk, Chunk):
+        return _compile_chunk_into_circuit_atomic(
+            chunk=chunk,
+            state=state,
+            include_detectors=include_detectors,
+            ignore_errors=ignore_errors,
+            out_circuit=out_circuit,
+            q2i=q2i,
+            flow_to_extra_coords_func=flow_to_extra_coords_func,
+        )
+    else:
+        raise NotImplementedError(f'{chunk=}')
 
-    return _compile_chunk_into_circuit_atomic(
-        chunk=chunk,
-        state=state,
-        include_detectors=include_detectors,
-        ignore_errors=ignore_errors,
-        out_circuit=out_circuit,
-        q2i=q2i,
-    )
+
+def _fail_if_flags(flow: Flow):
+    flags = flow.flags
+    if len(flags) == 1 and 'postselect' in flags:
+        return 999,
+    if flags:
+        raise ValueError(f"Flow has {flags=}, but `flow_to_extra_coords_func` wasn't specified.")
+    return ()
 
 
 def compile_chunks_into_circuit(
@@ -368,21 +570,27 @@ def compile_chunks_into_circuit(
     *,
     include_detectors: bool = True,
     ignore_errors: bool = False,
+    add_magic_boundaries: bool = False,
+    flow_to_extra_coords_func: Callable[[Flow], Iterable[float]] = _fail_if_flags,
 ) -> stim.Circuit:
     all_qubits = set()
+    if add_magic_boundaries:
+        chunks = [chunks[0].mpp_init_chunk(), *chunks, chunks[-1].mpp_end_chunk()]
 
-    def _process(sub_chunk: Union[Chunk, ChunkLoop]):
+    def _compute_all_qubits(sub_chunk: Union[Chunk, ChunkLoop, ChunkReflow]):
         nonlocal all_qubits
         if isinstance(sub_chunk, ChunkLoop):
             for sub_sub_chunk in sub_chunk.chunks:
-                _process(sub_sub_chunk)
+                _compute_all_qubits(sub_sub_chunk)
         elif isinstance(sub_chunk, Chunk):
             all_qubits |= sub_chunk.q2i.keys()
+        elif isinstance(sub_chunk, ChunkReflow):
+            pass
         else:
             raise NotImplementedError(f"{sub_chunk=}")
 
     for c in chunks:
-        _process(c)
+        _compute_all_qubits(c)
 
     q2i = {q: i for i, q in enumerate(sorted_complex(set(all_qubits)))}
     full_circuit = stim.Circuit()
@@ -398,6 +606,7 @@ def compile_chunks_into_circuit(
             ignore_errors=ignore_errors,
             out_circuit=full_circuit,
             q2i=q2i,
+            flow_to_extra_coords_func=flow_to_extra_coords_func,
         )
     if include_detectors:
         if state.open_flows:

@@ -116,7 +116,7 @@ struct Decoder {
     /// events.
     ///
     /// As part of running, this method clears the detection event data back to 0.
-    obsmask_int decode_detection_events(std::span<const uint8_t> bit_packed_detection_events);
+    obsmask_int decode_detection_events(std::span<const uint8_t> bit_packed_detection_events, float *weight_out = nullptr);
 
    private:
     /// Handles getting rid of excitation events within a cycle found by the

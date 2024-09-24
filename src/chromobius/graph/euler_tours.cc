@@ -98,7 +98,14 @@ bool EulerTourGraph::rotate_cycle_to_end_with_unfinished_node() {
 
 std::ostream &chromobius::operator<<(std::ostream &out, const EulerTourGraph &val) {
     out << "EulerTourGraph{\n";
-    out << "    .cycle_buf={" << stim::comma_sep(val.cycle_buf) << "}\n";
+    out << "    .cycle_buf={";
+    for (size_t k = 0; k < val.cycle_buf.size(); k++) {
+        if (k > 0) {
+            out << ", ";
+        }
+        out << val.cycle_buf[k];
+    }
+    out << "}\n";
     out << "    .nodes.size()=" << val.nodes.size() << "\n";
     for (size_t k = 0; k < val.nodes.size(); k++) {
         if (!val.nodes[k].neighbors.empty()) {

@@ -20,8 +20,6 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 
-#include "stim.h"
-
 struct ChromobiusSinterCompiledDecoder {
     chromobius::Decoder decoder;
     uint64_t num_detectors;
@@ -31,9 +29,15 @@ struct ChromobiusSinterCompiledDecoder {
 
     pybind11::array_t<uint8_t> decode_shots_bit_packed(
         const pybind11::array_t<uint8_t> &bit_packed_detection_event_data) {
-        assert(bit_packed_detection_event_data.ndim() == 2);
-        assert(bit_packed_detection_event_data.strides(1) == 1);
-        assert(bit_packed_detection_event_data.shape(1) == num_detector_bytes);
+        if (bit_packed_detection_event_data.ndim() != 2) {
+            throw std::invalid_argument("bit_packed_detection_event_data.ndim() != 2");
+        }
+        if (bit_packed_detection_event_data.strides(1) != 1) {
+            throw std::invalid_argument("bit_packed_detection_event_data.strides(1) != 1");
+        }
+        if (bit_packed_detection_event_data.shape(1) != (pybind11::ssize_t)num_detector_bytes) {
+            throw std::invalid_argument("bit_packed_detection_event_data.shape(1) != num_detector_bytes");
+        }
         size_t stride = bit_packed_detection_event_data.strides(0);
         size_t num_shots = bit_packed_detection_event_data.shape(0);
 

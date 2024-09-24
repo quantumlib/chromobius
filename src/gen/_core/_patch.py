@@ -1,21 +1,8 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import functools
 import pathlib
-from typing import Iterable, Callable, Literal
+from typing import Iterable, Callable, Literal, Union
 
+import gen
 from gen._core._util import sorted_complex, min_max_complex
 from gen._core._tile import Tile
 from gen._util import write_file
@@ -36,6 +23,15 @@ class Patch:
             self.tiles = tuple(tiles)
         else:
             self.tiles = tuple(sorted_complex(tiles, key=lambda e: e.measurement_qubit))
+
+    def with_edits(
+            self,
+            *,
+            tiles: Iterable[Tile] | None = None,
+    ) -> 'Patch':
+        return gen.Patch(
+            tiles=self.tiles if tiles is None else tiles,
+        )
 
     def with_transformed_coords(
         self, coord_transform: Callable[[complex], complex]
@@ -100,39 +96,35 @@ class Patch:
         self,
         path: str | pathlib.Path,
         *,
-        split_xz: bool = False,
-        other: Iterable["Patch"] | "Patch" = (),
+        other: Union['gen.Patch', 'gen.StabilizerCode', Iterable[Union['gen.Patch', 'gen.StabilizerCode']]] = (),
         show_order: bool | Literal["undirected", "3couplerspecial"] = False,
         show_measure_qubits: bool = False,
         show_data_qubits: bool = False,
-        system_qubits: Iterable[complex] = (),
+        expected_points: Iterable[complex] = (),
+        show_coords: bool = True,
         opacity: float = 1,
-        wraparound_clip: bool = False,
+        show_obs: bool = False,
+        rows: int | None = None,
+        cols: int | None = None,
+        tile_color_func: Callable[[Tile], str] | None = None
     ) -> None:
         from gen._viz_patch_svg import patch_svg_viewer
 
-        patches = [self] + ([other] if isinstance(other, Patch) else list(other))
-        if split_xz:
-            patches = [
-                p2
-                for p in patches
-                for p2 in [
-                    p,
-                    p.with_only_x_tiles(),
-                    p.with_only_y_tiles(),
-                    p.with_only_z_tiles(),
-                ]
-                if p2.tiles
-            ]
+        from gen._core._stabilizer_code import StabilizerCode
+        patches = [self] + ([other] if isinstance(other, (Patch, StabilizerCode)) else list(other))
 
         viewer = patch_svg_viewer(
             patches=patches,
             show_measure_qubits=show_measure_qubits,
             show_data_qubits=show_data_qubits,
             show_order=show_order,
-            available_qubits=system_qubits,
+            expected_points=expected_points,
             opacity=opacity,
-            wraparound_clip=wraparound_clip
+            show_coords=show_coords,
+            show_obs=show_obs,
+            rows=rows,
+            cols=cols,
+            tile_color_func=tile_color_func,
         )
         write_file(path, viewer)
 

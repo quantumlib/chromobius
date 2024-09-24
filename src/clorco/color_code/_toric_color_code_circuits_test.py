@@ -162,11 +162,11 @@ def test_make_toric_color_code_circuit_with_magic_time_boundaries_exact_circuit(
         QUBIT_COORDS(5, 5) 47
         QUBIT_COORDS(5, 6) 48
         QUBIT_COORDS(5, 7) 49
-        MPP X4*X9*X10*X11*X42*X43 Z4*Z9*Z10*Z11*Z42*Z43 X5*X8*X14*X15*X46*X47 Z5*Z8*Z14*Z15*Z46*Z47 X4*X5*X11*X14*X20*X21 Z4*Z5*Z11*Z14*Z20*Z21 X8*X9*X10*X15*X24*X25 Z8*Z9*Z10*Z15*Z24*Z25 X10*X11*X20*X25*X26*X27 Z10*Z11*Z20*Z25*Z26*Z27 X14*X15*X21*X24*X30*X31 Z14*Z15*Z21*Z24*Z30*Z31 X20*X21*X27*X30*X36*X37 Z20*Z21*Z27*Z30*Z36*Z37 X24*X25*X26*X31*X40*X41 Z24*Z25*Z26*Z31*Z40*Z41 X26*X27*X36*X41*X42*X43 Z26*Z27*Z36*Z41*Z42*Z43 X30*X31*X37*X40*X46*X47 Z30*Z31*Z37*Z40*Z46*Z47 X4*X5*X36*X37*X43*X46 Z4*Z5*Z36*Z37*Z43*Z46 X8*X9*X40*X41*X42*X47 Z8*Z9*Z40*Z41*Z42*Z47 X1*X4*X5*X8*X9 X0*X14*X21*X37*X46 Z1*Z4*Z11*Z27*Z36 Z0*Z20*Z21*Z24*Z25
-        OBSERVABLE_INCLUDE(0) rec[-4]
-        OBSERVABLE_INCLUDE(1) rec[-3]
-        OBSERVABLE_INCLUDE(2) rec[-2]
-        OBSERVABLE_INCLUDE(3) rec[-1]
+        MPP X1*X4*X5*X8*X9 X0*X14*X21*X37*X46 Z1*Z4*Z11*Z27*Z36 Z0*Z20*Z21*Z24*Z25 X4*X5*X11*X14*X20*X21 X4*X5*X36*X37*X43*X46 X4*X9*X10*X11*X42*X43 Z4*Z5*Z11*Z14*Z20*Z21 Z4*Z5*Z36*Z37*Z43*Z46 Z4*Z9*Z10*Z11*Z42*Z43 X5*X8*X14*X15*X46*X47 Z5*Z8*Z14*Z15*Z46*Z47 X8*X9*X10*X15*X24*X25 X8*X9*X40*X41*X42*X47 Z8*Z9*Z10*Z15*Z24*Z25 Z8*Z9*Z40*Z41*Z42*Z47 X10*X11*X20*X25*X26*X27 Z10*Z11*Z20*Z25*Z26*Z27 X14*X15*X21*X24*X30*X31 Z14*Z15*Z21*Z24*Z30*Z31 X20*X21*X27*X30*X36*X37 Z20*Z21*Z27*Z30*Z36*Z37 X24*X25*X26*X31*X40*X41 Z24*Z25*Z26*Z31*Z40*Z41 X26*X27*X36*X41*X42*X43 Z26*Z27*Z36*Z41*Z42*Z43 X30*X31*X37*X40*X46*X47 Z30*Z31*Z37*Z40*Z46*Z47
+        OBSERVABLE_INCLUDE(0) rec[-28]
+        OBSERVABLE_INCLUDE(1) rec[-27]
+        OBSERVABLE_INCLUDE(2) rec[-26]
+        OBSERVABLE_INCLUDE(3) rec[-25]
         TICK
         RX 2 6 12 16 18 22 28 32 34 38 44 48
         R 3 7 13 17 19 23 29 33 35 39 45 49
@@ -203,32 +203,32 @@ def test_make_toric_color_code_circuit_with_magic_time_boundaries_exact_circuit(
         MX(0.001) 2 6 12 16 18 22 28 32 34 38 44 48
         M(0.001) 3 7 13 17 19 23 29 33 35 39 45 49
         DEPOLARIZE1(0.001) 2 6 12 16 18 22 28 32 34 38 44 48 3 7 13 17 19 23 29 33 35 39 45 49 4 5 8 9 10 11 14 15 20 21 24 25 26 27 30 31 36 37 40 41 42 43 46 47
-        DETECTOR(0, 0, 0, 0) rec[-52] rec[-24]
-        DETECTOR(0, 1, 0, 3) rec[-51] rec[-12]
-        DETECTOR(0, 4, 0, 0) rec[-50] rec[-23]
-        DETECTOR(0, 5, 0, 3) rec[-49] rec[-11]
-        DETECTOR(1, 2, 0, 1) rec[-48] rec[-22]
-        DETECTOR(1, 3, 0, 4) rec[-47] rec[-10]
-        DETECTOR(1, 6, 0, 1) rec[-46] rec[-21]
-        DETECTOR(1, 7, 0, 4) rec[-45] rec[-9]
-        DETECTOR(2, 0, 0, 2) rec[-44] rec[-20]
-        DETECTOR(2, 1, 0, 5) rec[-43] rec[-8]
-        DETECTOR(2, 4, 0, 2) rec[-42] rec[-19]
-        DETECTOR(2, 5, 0, 5) rec[-41] rec[-7]
-        DETECTOR(3, 2, 0, 0) rec[-40] rec[-18]
-        DETECTOR(3, 3, 0, 3) rec[-39] rec[-6]
-        DETECTOR(3, 6, 0, 0) rec[-38] rec[-17]
-        DETECTOR(3, 7, 0, 3) rec[-37] rec[-5]
-        DETECTOR(4, 0, 0, 1) rec[-36] rec[-16]
-        DETECTOR(4, 1, 0, 4) rec[-35] rec[-4]
-        DETECTOR(4, 4, 0, 1) rec[-34] rec[-15]
-        DETECTOR(4, 5, 0, 4) rec[-33] rec[-3]
-        DETECTOR(5, 2, 0, 2) rec[-32] rec[-14]
-        DETECTOR(5, 3, 0, 5) rec[-31] rec[-2]
-        DETECTOR(5, 6, 0, 2) rec[-30] rec[-13]
-        DETECTOR(5, 7, 0, 5) rec[-29] rec[-1]
+        DETECTOR(0, 1, 0, 0) rec[-46] rec[-24]
+        DETECTOR(0, 1.5, 0, 3) rec[-43] rec[-12]
+        DETECTOR(0, 3.5, 0, 0) rec[-42] rec[-23]
+        DETECTOR(0, 4, 0, 3) rec[-41] rec[-11]
+        DETECTOR(0.5, 2, 0, 1) rec[-48] rec[-22]
+        DETECTOR(0.5, 2.5, 0, 4) rec[-45] rec[-10]
+        DETECTOR(0.5, 6, 0, 1) rec[-40] rec[-21]
+        DETECTOR(0.5, 6.5, 0, 4) rec[-38] rec[-9]
+        DETECTOR(1.5, 0, 0, 2) rec[-36] rec[-20]
+        DETECTOR(1.5, 0.5, 0, 5) rec[-35] rec[-8]
+        DETECTOR(1.5, 4, 0, 2) rec[-34] rec[-19]
+        DETECTOR(1.5, 4.5, 0, 5) rec[-33] rec[-7]
+        DETECTOR(2.5, 2, 0, 0) rec[-32] rec[-18]
+        DETECTOR(2.5, 2.5, 0, 3) rec[-31] rec[-6]
+        DETECTOR(2.5, 6, 0, 0) rec[-30] rec[-17]
+        DETECTOR(2.5, 6.5, 0, 3) rec[-29] rec[-5]
+        DETECTOR(3.5, 0, 0, 1) rec[-28] rec[-16]
+        DETECTOR(3.5, 0.5, 0, 4) rec[-27] rec[-4]
+        DETECTOR(3.5, 4, 0, 1) rec[-26] rec[-15]
+        DETECTOR(3.5, 4.5, 0, 4) rec[-25] rec[-3]
+        DETECTOR(2.5, 2, 1, 2) rec[-47] rec[-14]
+        DETECTOR(2.5, 2.5, 1, 5) rec[-44] rec[-2]
+        DETECTOR(2.5, 6, 1, 2) rec[-39] rec[-13]
+        DETECTOR(2.5, 6.5, 1, 5) rec[-37] rec[-1]
         OBSERVABLE_INCLUDE(3) rec[-10] rec[-9] rec[-8] rec[-7] rec[-6] rec[-5]
-        SHIFT_COORDS(0, 0, 1)
+        SHIFT_COORDS(0, 0, 2)
         TICK
         REPEAT 4 {
             RX 2 6 12 16 18 22 28 32 34 38 44 48
@@ -294,36 +294,36 @@ def test_make_toric_color_code_circuit_with_magic_time_boundaries_exact_circuit(
             SHIFT_COORDS(0, 0, 1)
             TICK
         }
-        MPP X4*X9*X10*X11*X42*X43 Z4*Z9*Z10*Z11*Z42*Z43 X5*X8*X14*X15*X46*X47 Z5*Z8*Z14*Z15*Z46*Z47 X4*X5*X11*X14*X20*X21 Z4*Z5*Z11*Z14*Z20*Z21 X8*X9*X10*X15*X24*X25 Z8*Z9*Z10*Z15*Z24*Z25 X10*X11*X20*X25*X26*X27 Z10*Z11*Z20*Z25*Z26*Z27 X14*X15*X21*X24*X30*X31 Z14*Z15*Z21*Z24*Z30*Z31 X20*X21*X27*X30*X36*X37 Z20*Z21*Z27*Z30*Z36*Z37 X24*X25*X26*X31*X40*X41 Z24*Z25*Z26*Z31*Z40*Z41 X26*X27*X36*X41*X42*X43 Z26*Z27*Z36*Z41*Z42*Z43 X30*X31*X37*X40*X46*X47 Z30*Z31*Z37*Z40*Z46*Z47 X4*X5*X36*X37*X43*X46 Z4*Z5*Z36*Z37*Z43*Z46 X8*X9*X40*X41*X42*X47 Z8*Z9*Z40*Z41*Z42*Z47 X1*X4*X5*X8*X9 X0*X14*X21*X37*X46 Z1*Z4*Z11*Z27*Z36 Z0*Z20*Z21*Z24*Z25
-        DETECTOR(0, 0, 0, 0) rec[-52] rec[-28]
-        DETECTOR(0, 1, 0, 3) rec[-36] rec[-32] rec[-27]
-        DETECTOR(0, 4, 0, 0) rec[-51] rec[-26]
-        DETECTOR(0, 5, 0, 3) rec[-35] rec[-31] rec[-25]
-        DETECTOR(1, 2, 0, 1) rec[-50] rec[-24]
-        DETECTOR(1, 3, 0, 4) rec[-34] rec[-30] rec[-23]
-        DETECTOR(1, 6, 0, 1) rec[-49] rec[-22]
-        DETECTOR(1, 7, 0, 4) rec[-33] rec[-29] rec[-21]
-        DETECTOR(2, 0, 0, 2) rec[-48] rec[-20]
-        DETECTOR(2, 1, 0, 5) rec[-40] rec[-32] rec[-19]
-        DETECTOR(2, 4, 0, 2) rec[-47] rec[-18]
-        DETECTOR(2, 5, 0, 5) rec[-39] rec[-31] rec[-17]
-        DETECTOR(3, 2, 0, 0) rec[-46] rec[-16]
-        DETECTOR(3, 3, 0, 3) rec[-38] rec[-30] rec[-15]
-        DETECTOR(3, 6, 0, 0) rec[-45] rec[-14]
-        DETECTOR(3, 7, 0, 3) rec[-37] rec[-29] rec[-13]
-        DETECTOR(4, 0, 0, 1) rec[-44] rec[-12]
-        DETECTOR(4, 1, 0, 4) rec[-40] rec[-36] rec[-11]
-        DETECTOR(4, 4, 0, 1) rec[-43] rec[-10]
-        DETECTOR(4, 5, 0, 4) rec[-39] rec[-35] rec[-9]
-        DETECTOR(5, 2, 0, 2) rec[-42] rec[-8]
-        DETECTOR(5, 3, 0, 5) rec[-38] rec[-34] rec[-7]
-        DETECTOR(5, 6, 0, 2) rec[-41] rec[-6]
-        DETECTOR(5, 7, 0, 5) rec[-37] rec[-33] rec[-5]
-        OBSERVABLE_INCLUDE(0) rec[-4]
-        OBSERVABLE_INCLUDE(1) rec[-3]
-        OBSERVABLE_INCLUDE(2) rec[-2]
-        OBSERVABLE_INCLUDE(3) rec[-1]
-        SHIFT_COORDS(0, 0, 1)
+        MPP X1*X4*X5*X8*X9 X0*X14*X21*X37*X46 Z1*Z4*Z11*Z27*Z36 Z0*Z20*Z21*Z24*Z25 X4*X5*X11*X14*X20*X21 X4*X5*X36*X37*X43*X46 X4*X9*X10*X11*X42*X43 Z4*Z5*Z11*Z14*Z20*Z21 Z4*Z5*Z36*Z37*Z43*Z46 Z4*Z9*Z10*Z11*Z42*Z43 X5*X8*X14*X15*X46*X47 Z5*Z8*Z14*Z15*Z46*Z47 X8*X9*X10*X15*X24*X25 X8*X9*X40*X41*X42*X47 Z8*Z9*Z10*Z15*Z24*Z25 Z8*Z9*Z40*Z41*Z42*Z47 X10*X11*X20*X25*X26*X27 Z10*Z11*Z20*Z25*Z26*Z27 X14*X15*X21*X24*X30*X31 Z14*Z15*Z21*Z24*Z30*Z31 X20*X21*X27*X30*X36*X37 Z20*Z21*Z27*Z30*Z36*Z37 X24*X25*X26*X31*X40*X41 Z24*Z25*Z26*Z31*Z40*Z41 X26*X27*X36*X41*X42*X43 Z26*Z27*Z36*Z41*Z42*Z43 X30*X31*X37*X40*X46*X47 Z30*Z31*Z37*Z40*Z46*Z47
+        OBSERVABLE_INCLUDE(0) rec[-28]
+        OBSERVABLE_INCLUDE(1) rec[-27]
+        OBSERVABLE_INCLUDE(2) rec[-26]
+        OBSERVABLE_INCLUDE(3) rec[-25]
+        DETECTOR(0.5, 2, 0, 1) rec[-50] rec[-24]
+        DETECTOR(2.5, 2, 0, 2) rec[-42] rec[-23]
+        DETECTOR(0, 1, 0, 0) rec[-52] rec[-22]
+        DETECTOR(0.5, 2.5, 0, 4) rec[-34] rec[-30] rec[-21]
+        DETECTOR(2.5, 2.5, 0, 5) rec[-38] rec[-34] rec[-20]
+        DETECTOR(0, 1.5, 0, 3) rec[-36] rec[-32] rec[-19]
+        DETECTOR(0, 3.5, 0, 0) rec[-51] rec[-18]
+        DETECTOR(0, 4, 0, 3) rec[-35] rec[-31] rec[-17]
+        DETECTOR(0.5, 6, 0, 1) rec[-49] rec[-16]
+        DETECTOR(2.5, 6, 0, 2) rec[-41] rec[-15]
+        DETECTOR(0.5, 6.5, 0, 4) rec[-33] rec[-29] rec[-14]
+        DETECTOR(2.5, 6.5, 0, 5) rec[-37] rec[-33] rec[-13]
+        DETECTOR(1.5, 0, 0, 2) rec[-48] rec[-12]
+        DETECTOR(1.5, 0.5, 0, 5) rec[-40] rec[-32] rec[-11]
+        DETECTOR(1.5, 4, 0, 2) rec[-47] rec[-10]
+        DETECTOR(1.5, 4.5, 0, 5) rec[-39] rec[-31] rec[-9]
+        DETECTOR(2.5, 2, 1, 0) rec[-46] rec[-8]
+        DETECTOR(2.5, 2.5, 1, 3) rec[-38] rec[-30] rec[-7]
+        DETECTOR(2.5, 6, 1, 0) rec[-45] rec[-6]
+        DETECTOR(2.5, 6.5, 1, 3) rec[-37] rec[-29] rec[-5]
+        DETECTOR(3.5, 0, 0, 1) rec[-44] rec[-4]
+        DETECTOR(3.5, 0.5, 0, 4) rec[-40] rec[-36] rec[-3]
+        DETECTOR(3.5, 4, 0, 1) rec[-43] rec[-2]
+        DETECTOR(3.5, 4.5, 0, 4) rec[-39] rec[-35] rec[-1]
+        SHIFT_COORDS(0, 0, 2)
         TICK
     """
     )

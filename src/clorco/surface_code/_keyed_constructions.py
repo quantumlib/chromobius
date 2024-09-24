@@ -85,13 +85,32 @@ def make_named_surface_code_constructions() -> (
     return constructions
 
 
+def f2c(flow: gen.Flow) -> list[float]:
+    c = 0
+    if 'color=r' in flow.flags:
+        c += 0
+    elif 'color=g' in flow.flags:
+        c += 1
+    elif 'color=b' in flow.flags:
+        c += 2
+    else:
+        raise NotImplementedError(f'{flow=}')
+    if 'basis=X' in flow.flags:
+        c += 0
+    elif 'basis=Z' in flow.flags:
+        c += 3
+    else:
+        raise NotImplementedError(f'{flow=}')
+    return [c]
+
+
 def _chunks_to_circuit(params: Params, chunks: list[gen.Chunk]) -> stim.Circuit:
     assert len(chunks) >= 2
     if "magic" not in params.style:
-        assert not any(chunk.magic for chunk in chunks)
+        assert not any(inst.name == 'MPP' for chunk in chunks if isinstance(chunk, gen.Chunk) for inst in chunk.circuit)
 
     if params.debug_out_dir is not None:
-        patches = [chunk.end_patch() for chunk in chunks[:-1]]
+        patches = [chunk.end_interface().to_patch() for chunk in chunks[:-1]]
         changed_patches = [
             patches[k]
             for k in range(len(patches))
@@ -103,7 +122,7 @@ def _chunks_to_circuit(params: Params, chunks: list[gen.Chunk]) -> stim.Circuit:
             gen.patch_svg_viewer(
                 changed_patches,
                 show_order=False,
-                available_qubits=allowed_qubits,
+                expected_points=allowed_qubits,
             ),
         )
 
@@ -114,16 +133,16 @@ def _chunks_to_circuit(params: Params, chunks: list[gen.Chunk]) -> stim.Circuit:
         patch_dict = {}
         cur_tick = 0
         last_patch = gen.Patch([])
-        if chunks[0].start_patch() != last_patch:
-            patch_dict[0] = chunks[0].start_patch()
-            last_patch = chunks[0].start_patch()
+        if chunks[0].start_interface().to_patch() != last_patch:
+            patch_dict[0] = chunks[0].start_interface().to_patch()
+            last_patch = chunks[0].start_interface().to_patch()
             cur_tick += 1
 
         for c in gen.ChunkLoop(chunks, repetitions=1).flattened():
             cur_tick += c.tick_count()
-            if c.end_patch() != last_patch:
-                patch_dict[cur_tick] = c.end_patch()
-                last_patch = c.end_patch()
+            if c.end_interface().to_patch() != last_patch:
+                patch_dict[cur_tick] = c.end_interface().to_patch()
+                last_patch = c.end_interface().to_patch()
                 cur_tick += 1
         gen.write_file(
             params.debug_out_dir / "ideal_circuit.html",
@@ -140,53 +159,39 @@ def _chunks_to_circuit(params: Params, chunks: list[gen.Chunk]) -> stim.Circuit:
             ignore_errors_ideal_circuit.diagram("time+detector-slice-svg"),
         )
 
-    body = gen.compile_chunks_into_circuit(chunks)
-    mpp_indices = [
-        k
-        for k, inst in enumerate(body)
-        if isinstance(inst, stim.CircuitInstruction) and inst.name == "MPP"
-    ]
-    skip_mpp_head = chunks[0].magic
-    skip_mpp_tail = chunks[-1].magic
-    body_start = mpp_indices[0] + 2 if skip_mpp_head else 0
-    body_end = mpp_indices[-1] if skip_mpp_tail else len(body)
-    magic_head = body[:body_start]
-    magic_tail = body[body_end:]
-    body = body[body_start:body_end]
+    body = gen.compile_chunks_into_circuit(chunks, flow_to_extra_coords_func=f2c)
 
     if params.convert_to_cz:
         body = gen.transpile_to_z_basis_interaction_circuit(body)
         if params.debug_out_dir is not None:
-            ideal_circuit = magic_head + body + magic_tail
             gen.write_file(
                 params.debug_out_dir / "ideal_cz_circuit.html",
                 gen.stim_circuit_html_viewer(
-                    ideal_circuit,
-                    patch=chunks[0].end_patch(),
+                    body,
+                    patch=chunks[0].end_interface().to_patch(),
                 ),
             )
             gen.write_file(
-                params.debug_out_dir / "ideal_cz_circuit.stim", ideal_circuit
+                params.debug_out_dir / "ideal_cz_circuit.stim", body
             )
             gen.write_file(
                 params.debug_out_dir / "ideal_cz_circuit_dets.svg",
-                ideal_circuit.diagram("time+detector-slice-svg"),
+                body.diagram("time+detector-slice-svg"),
             )
 
     if params.noise_model is not None:
-        body = params.noise_model.noisy_circuit(body)
-    noisy_circuit = magic_head + body + magic_tail
+        body = params.noise_model.noisy_circuit_skipping_mpp_boundaries(body)
 
     if params.debug_out_dir is not None:
         gen.write_file(
             params.debug_out_dir / "noisy_circuit.html",
             gen.stim_circuit_html_viewer(
-                noisy_circuit,
-                patch=chunks[0].end_patch(),
+                body,
+                patch=chunks[0].end_interface().to_patch(),
             ),
         )
 
-    return noisy_circuit
+    return body
 
 
 def _simplified_noise_surface_code_constructions() -> (
@@ -199,14 +204,14 @@ def _simplified_noise_surface_code_constructions() -> (
     ) -> stim.Circuit:
         if phenom:
             return code.make_phenom_circuit(
-                noise=params.noise_model,
+                noise=params.noise_model.idle_depolarization,
                 rounds=params.rounds,
-                debug_out_dir=params.debug_out_dir,
+                extra_coords_func=f2c,
             )
         assert params.rounds == 1
         return code.make_code_capacity_circuit(
-            noise=params.noise_model.idle_noise,
-            debug_out_dir=params.debug_out_dir
+            noise=params.noise_model.idle_depolarization,
+            extra_coords_func=f2c,
         )
 
     constructions["transit_surface_code"] = lambda params: _make_simple_circuit(

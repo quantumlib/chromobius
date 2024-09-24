@@ -4,6 +4,6 @@ numpy
 pymatching ~= 2.0
 pytest
 scipy
-sinter ~= 1.12.0
-stim ~= 1.12.0
+sinter ~= 1.14
+stim ~= 1.14
 pygltflib

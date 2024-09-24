@@ -1,17 +1,3 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import dataclasses
 from typing import Iterable, Any
 
@@ -49,17 +35,20 @@ class MeasurementTracker:
         self.next_measurement_index += 1
 
     def make_measurement_group(self, sub_keys: Iterable[Any], *, key: Any) -> None:
-        self._rec(key, self.measurement_indices(sub_keys))
+        self._rec(key, self.lookup_recs(sub_keys))
 
     def record_obstacle(self, key: Any) -> None:
         self._rec(key, None)
 
-    def measurement_indices(self, keys: Iterable[Any]) -> list[int]:
+    def lookup_recs(self, keys: Iterable[Any]) -> list[int] | None:
         result = set()
         for key in keys:
             if key not in self.recorded:
                 raise ValueError(f"No such measurement: {key=}")
-            for v in self.recorded[key]:
+            r = self.recorded[key]
+            if r is None:
+                return None
+            for v in r:
                 if v is None:
                     raise ValueError(f"Obstacle at {key=}")
                 if v in result:
@@ -70,7 +59,9 @@ class MeasurementTracker:
 
     def current_measurement_record_targets_for(
         self, keys: Iterable[Any]
-    ) -> list[stim.GateTarget]:
+    ) -> list[stim.GateTarget] | None:
         t0 = self.next_measurement_index
-        times = self.measurement_indices(keys)
+        times = self.lookup_recs(keys)
+        if times is None:
+            return None
         return [stim.target_rec(t - t0) for t in sorted(times)]

@@ -14,6 +14,9 @@ src/chromobius/datatypes/color_basis.h
 src/chromobius/datatypes/conf.h
 src/chromobius/datatypes/rgb_edge.cc
 src/chromobius/datatypes/rgb_edge.h
+src/chromobius/datatypes/stim_integration.cc
+src/chromobius/datatypes/stim_integration.h
+src/chromobius/datatypes/xor_vec.h
 src/chromobius/decode/decoder.cc
 src/chromobius/decode/decoder.h
 src/chromobius/decode/matcher_interface.h

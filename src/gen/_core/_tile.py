@@ -1,17 +1,3 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import functools
 from typing import Iterable, Callable, Literal, TYPE_CHECKING
 from typing import cast
@@ -33,7 +19,7 @@ class Tile:
         bases: str,
         measurement_qubit: complex,
         ordered_data_qubits: Iterable[complex | None],
-        extra_coords: Iterable[float] = (),
+        flags: Iterable[str] = (),
     ):
         """
         Args:
@@ -47,15 +33,14 @@ class Tile:
                 that they are interacted with. Some entries may be None,
                 indicating that no data qubit is interacted with during the
                 corresponding interaction layer.
-            extra_coords: Extra coordinate data that can be used for custom
-                purposes.
         """
+        assert isinstance(bases, str)
         self.ordered_data_qubits = tuple(ordered_data_qubits)
         self.measurement_qubit = measurement_qubit
         if len(bases) == 1:
             bases *= len(self.ordered_data_qubits)
         self.bases: str = bases
-        self.extra_coords = tuple(extra_coords)
+        self.flags: frozenset[str] = frozenset(flags)
         if len(self.bases) != len(self.ordered_data_qubits):
             raise ValueError("len(self.bases_2) != len(self.data_qubits_order)")
 
@@ -71,22 +56,40 @@ class Tile:
         )
 
     def with_data_qubit_cleared(self, q: complex) -> "Tile":
+        return self.with_edits(ordered_data_qubits=[
+            None if d == q else d for d in self.ordered_data_qubits
+        ])
+
+    def with_edits(
+            self,
+            *,
+            bases: str | None = None,
+            measurement_qubit: complex | None = None,
+            ordered_data_qubits: Iterable[complex] | None = None,
+            extra_coords: Iterable[float] | None = None,
+            flags: Iterable[str] = None,
+    ) -> 'Tile':
+        if ordered_data_qubits is not None:
+            ordered_data_qubits = tuple(ordered_data_qubits)
+            if len(ordered_data_qubits) != len(self.ordered_data_qubits) and bases is None:
+                if self.basis is None:
+                    raise ValueError("Changed data qubit count of non-uniform basis tile.")
+                bases = self.basis
+
         return Tile(
-            bases=self.bases,
-            measurement_qubit=self.measurement_qubit,
-            ordered_data_qubits=[
-                None if d == q else d for d in self.ordered_data_qubits
-            ],
+            bases=self.bases if bases is None else bases,
+            measurement_qubit=self.measurement_qubit if measurement_qubit is None else measurement_qubit,
+            ordered_data_qubits=self.ordered_data_qubits if ordered_data_qubits is None else ordered_data_qubits,
+            flags=self.flags if flags is None else flags,
         )
+
+    def with_bases(self, bases: str) -> "Tile":
+        return self.with_edits(bases=bases)
+    with_basis = with_bases
 
     def with_xz_flipped(self) -> "Tile":
         f = {"X": "Z", "Y": "Y", "Z": "X"}
-        return Tile(
-            bases="".join(f[e] for e in self.bases),
-            measurement_qubit=self.measurement_qubit,
-            ordered_data_qubits=self.ordered_data_qubits,
-            extra_coords=self.extra_coords,
-        )
+        return self.with_bases("".join(f[e] for e in self.bases))
 
     def __eq__(self, other):
         if not isinstance(other, Tile):
@@ -95,7 +98,6 @@ class Tile:
             self.ordered_data_qubits == other.ordered_data_qubits
             and self.measurement_qubit == other.measurement_qubit
             and self.bases == other.bases
-            and self.extra_coords == other.extra_coords
         )
 
     def __ne__(self, other):
@@ -108,7 +110,7 @@ class Tile:
                 self.ordered_data_qubits,
                 self.measurement_qubit,
                 self.bases,
-                self.extra_coords,
+                self.flags,
             )
         )
 
@@ -116,8 +118,8 @@ class Tile:
         b = self.basis or self.bases
         extra = (
             ""
-            if not self.extra_coords
-            else f"\n    extra_coords={self.extra_coords!r}," ""
+            if not self.flags
+            else f"\n    flags={sorted(self.flags)!r},"
         )
         return f"""gen.Tile(
     ordered_data_qubits={self.ordered_data_qubits!r},
@@ -128,28 +130,21 @@ class Tile:
     def with_transformed_coords(
         self, coord_transform: Callable[[complex], complex]
     ) -> "Tile":
-        return Tile(
-            bases=self.bases,
+        return self.with_edits(
             ordered_data_qubits=[
                 None if d is None else coord_transform(d)
                 for d in self.ordered_data_qubits
             ],
             measurement_qubit=coord_transform(self.measurement_qubit),
-            extra_coords=self.extra_coords,
         )
 
     def after_basis_transform(
         self,
         basis_transform: Callable[[Literal["X", "Y", "Z"]], Literal["X", "Y", "Z"]],
     ) -> "Tile":
-        return Tile(
-            bases="".join(
-                basis_transform(cast(Literal["X", "Y", "Z"], e)) for e in self.bases
-            ),
-            ordered_data_qubits=self.ordered_data_qubits,
-            measurement_qubit=self.measurement_qubit,
-            extra_coords=self.extra_coords,
-        )
+        return self.with_bases("".join(
+            basis_transform(cast(Literal["X", "Y", "Z"], e)) for e in self.bases
+        ))
 
     @functools.cached_property
     def data_set(self) -> frozenset[complex]:
@@ -162,6 +157,9 @@ class Tile:
     @functools.cached_property
     def basis(self) -> Literal["X", "Y", "Z"] | None:
         bs = {b for q, b in zip(self.ordered_data_qubits, self.bases) if q is not None}
+        if len(bs) == 0:
+            # Fallback to including ejected qubits.
+            bs = set(self.bases)
         if len(bs) != 1:
             return None
         return next(iter(bs))

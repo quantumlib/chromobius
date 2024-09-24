@@ -16,41 +16,49 @@
 
 using namespace chromobius;
 
-static void extract_atomic_errors_from_dem_error_instruction_dets(
+AtomicErrorKey chromobius::extract_atomic_errors_from_dem_error_instruction_dets(
     std::span<const node_offset_int> dets,
     obsmask_int obs_flip,
     std::span<const ColorBasis> node_colors,
     std::map<AtomicErrorKey, obsmask_int> *out_atomic_errors) {
     switch (dets.size()) {
         case 1: {
-            (*out_atomic_errors)[AtomicErrorKey{dets[0], BOUNDARY_NODE, BOUNDARY_NODE}] = obs_flip;
-            return;
+            AtomicErrorKey key{dets[0], BOUNDARY_NODE, BOUNDARY_NODE};
+            (*out_atomic_errors)[key] = obs_flip;
+            return key;
         }
         case 2: {
+            AtomicErrorKey key{dets[0], dets[1], BOUNDARY_NODE};
             ColorBasis c0 = node_colors[dets[0]];
             ColorBasis c1 = node_colors[dets[1]];
             if (c0.basis == c1.basis) {
-                (*out_atomic_errors)[AtomicErrorKey{dets[0], dets[1], BOUNDARY_NODE}] = obs_flip;
+                (*out_atomic_errors)[key] = obs_flip;
+                return key;
             }
-            return;
+            return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
         }
         case 3: {
+            AtomicErrorKey key{dets[0], dets[1], dets[2]};
             ColorBasis c0 = node_colors[dets[0]];
             ColorBasis c1 = node_colors[dets[1]];
             ColorBasis c2 = node_colors[dets[2]];
             Charge net_charge = c0.color ^ c1.color ^ c2.color;
             if (net_charge == Charge::NEUTRAL && c0.basis == c1.basis && c1.basis == c2.basis) {
-                (*out_atomic_errors)[AtomicErrorKey{dets[0], dets[1], dets[2]}] = obs_flip;
+                (*out_atomic_errors)[key] = obs_flip;
+                return key;
             }
-            return;
+            return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
         }
+        default:
+            return AtomicErrorKey{BOUNDARY_NODE, BOUNDARY_NODE, BOUNDARY_NODE};
     }
 }
 
 void chromobius::extract_obs_and_dets_from_error_instruction(
     stim::DemInstruction instruction,
     stim::SparseXorVec<node_offset_int> *out_xor_detectors_buffer,
-    obsmask_int *out_obs_flip) {
+    obsmask_int *out_obs_flip,
+    std::span<const ColorBasis> node_colors) {
     out_xor_detectors_buffer->clear();
     *out_obs_flip = 0;
     for (const auto &t : instruction.target_data) {
@@ -65,7 +73,16 @@ void chromobius::extract_obs_and_dets_from_error_instruction(
                 ss << std::numeric_limits<node_offset_int>::max();
                 throw std::invalid_argument(ss.str());
             }
-            out_xor_detectors_buffer->xor_item((node_offset_int)u);
+            if (!node_colors[u].ignored) {
+                if (node_colors[u].color == NEUTRAL) {
+                    throw std::invalid_argument(
+                        "Expected all detectors to have at least 4 coordinates, with the 4th "
+                        "identifying the basis and color "
+                        "(RedX=0, GreenX=1, BlueX=2, RedZ=3, GreenZ=4, BlueZ=5), but got " +
+                        instruction.str());
+                }
+                out_xor_detectors_buffer->xor_item((node_offset_int)u);
+            }
         } else if (t.is_observable_id()) {
             if (t.raw_id() >= sizeof(obsmask_int) * 8) {
                 std::stringstream ss;
@@ -89,7 +106,7 @@ std::map<AtomicErrorKey, obsmask_int> chromobius::collect_atomic_errors(
     std::map<AtomicErrorKey, obsmask_int> result;
 
     dem.iter_flatten_error_instructions([&](stim::DemInstruction instruction) {
-        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip);
+        extract_obs_and_dets_from_error_instruction(instruction, &dets, &obs_flip, node_colors);
 
         extract_atomic_errors_from_dem_error_instruction_dets(dets.sorted_items, obs_flip, node_colors, &result);
     });

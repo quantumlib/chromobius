@@ -22,6 +22,25 @@ from clorco.pyramid_code._pyramid_code_layouts import make_planar_pyramid_code_l
 from clorco.pyramid_code._pyramid_code_layouts import make_toric_pyramid_code_layout
 
 
+def f2c(flow: gen.Flow) -> list[float]:
+    c = 0
+    if 'color=r' in flow.flags:
+        c += 0
+    elif 'color=g' in flow.flags:
+        c += 1
+    elif 'color=b' in flow.flags:
+        c += 2
+    else:
+        raise NotImplementedError(f'{flow=}')
+    if 'basis=X' in flow.flags:
+        c += 0
+    elif 'basis=Z' in flow.flags:
+        c += 3
+    else:
+        raise NotImplementedError(f'{flow=}')
+    return [c]
+
+
 def make_named_pyramid_code_constructions() -> (
     dict[str, Callable[[Params], stim.Circuit]]
 ):
@@ -47,14 +66,14 @@ def make_named_pyramid_code_constructions() -> (
             ])
         if phenom:
             return code.make_phenom_circuit(
-                noise=params.noise_model,
+                noise=params.noise_model.idle_depolarization,
                 rounds=params.rounds,
-                debug_out_dir=params.debug_out_dir,
+                extra_coords_func=f2c,
             )
         assert params.rounds == 1
         return code.make_code_capacity_circuit(
-            noise=params.noise_model.idle_noise,
-            debug_out_dir=params.debug_out_dir
+            noise=params.noise_model.idle_depolarization,
+            extra_coords_func=f2c,
         )
 
     constructions["transit_pyramid_code"] = lambda params: _make_simple_circuit(

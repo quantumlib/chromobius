@@ -17,12 +17,12 @@
 #ifndef _CHROMOBIUS_DEM_GRAPH_H
 #define _CHROMOBIUS_DEM_GRAPH_H
 
+#include <cassert>
 #include <ostream>
 #include <string>
 
 #include "chromobius/datatypes/atomic_error.h"
 #include "chromobius/datatypes/color_basis.h"
-#include "stim.h"
 
 namespace chromobius {
 
@@ -43,6 +43,7 @@ struct RgbEdge {
         return (&red_node)[c - 1];
     }
     inline node_offset_int &color_node(Charge c) {
+        assert(c != NEUTRAL);
         return (&red_node)[c - 1];
     }
 

@@ -6,6 +6,8 @@ src/chromobius/commands/main_predict.test.cc
 src/chromobius/datatypes/atomic_error.test.cc
 src/chromobius/datatypes/color_basis.test.cc
 src/chromobius/datatypes/rgb_edge.test.cc
+src/chromobius/datatypes/stim_integration.test.cc
+src/chromobius/datatypes/xor_vec.test.cc
 src/chromobius/decode/decoder.test.cc
 src/chromobius/decode/decoder_integration.test.cc
 src/chromobius/graph/charge_graph.test.cc

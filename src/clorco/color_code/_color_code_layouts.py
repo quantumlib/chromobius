@@ -84,7 +84,7 @@ def make_color_code_layout(
                     bases="XYZ"[int(q.imag % 3)],
                     measurement_qubit=m,
                     ordered_data_qubits=[q + d for d in order],
-                    extra_coords=[q.imag % 3],
+                    flags={'color=' + 'rgb'[int(q.imag % 3)]},
                 )
             )
         if x % 2 == 0:
@@ -94,7 +94,7 @@ def make_color_code_layout(
                     bases="Z",
                     measurement_qubit=q + 1,
                     ordered_data_qubits=[q + d for d in [1j, 0, 1, 1 + 1j]],
-                    extra_coords=[2],
+                    flags={'color=b'},
                 )
             )
             q = x + 1j * start_y
@@ -105,7 +105,7 @@ def make_color_code_layout(
                             bases="Y",
                             measurement_qubit=q + 1j - 1,
                             ordered_data_qubits=[q + d for d in [0, 1j - 1, 1j, -1]],
-                            extra_coords=[1],
+                            flags={'color=g'},
                         )
                     )
                     tiles.append(
@@ -113,7 +113,7 @@ def make_color_code_layout(
                             bases="X",
                             measurement_qubit=q - 1,
                             ordered_data_qubits=[q + d for d in [-1, 1j - 1]],
-                            extra_coords=[0],
+                            flags={'color=r'},
                         )
                     )
                 else:
@@ -123,7 +123,7 @@ def make_color_code_layout(
                                 bases="Z",
                                 measurement_qubit=q + 1j,
                                 ordered_data_qubits=[q + d for d in [1j, 0]],
-                                extra_coords=[2],
+                                flags={'color=b'},
                             )
                         )
             else:
@@ -134,7 +134,7 @@ def make_color_code_layout(
                             bases="X",
                             measurement_qubit=q + 1j,
                             ordered_data_qubits=[q + d for d in [0, 1j]],
-                            extra_coords=[0],
+                            flags={'color=r'},
                         )
                     )
         if x % 2 == 1 or spurs == "smooth":
@@ -145,7 +145,7 @@ def make_color_code_layout(
                         bases="X",
                         measurement_qubit=q + 2j,
                         ordered_data_qubits=[q + d for d in [2j, 1 + 2j, 1 + 1j, 1]],
-                        extra_coords=[0],
+                        flags={'color=r'},
                     )
                 )
             else:
@@ -154,22 +154,21 @@ def make_color_code_layout(
                         bases="Y",
                         measurement_qubit=q + 2j,
                         ordered_data_qubits=[q + d for d in [0, 1j, 2j, 1 + 2j]],
-                        extra_coords=[1],
+                        flags={'color=g'},
                     )
                 )
     patch = gen.Patch(tiles).with_transformed_coords(lambda e: h * 1j + w - e + 1 + 2j)
     if coord_style == "hex":
         patch = patch.with_transformed_coords(_rect_to_hex_transform)
     for tile in patch.tiles:
-        assert "XYZ".index(tile.basis) == tile.extra_coords[0]
+        assert "XYZ".index(tile.basis) == ["color=r", "color=g", "color=b"].index(next(iter(tile.flags)))
     if not single_rgb_layer_instead_of_actual_code:
         patch = gen.Patch(
             gen.Tile(
                 bases=basis,
-                measurement_qubit=tile.measurement_qubit
-                + (0.125 if basis == "Z" else 0),
+                measurement_qubit=tile.measurement_qubit + (0.125 if basis == "Z" else 0),
                 ordered_data_qubits=tile.ordered_data_qubits,
-                extra_coords=[tile.extra_coords[0] + (3 if basis == "Z" else 0)],
+                flags={*tile.flags, f'basis={basis}'},
             )
             for tile in patch.tiles
             for basis in "XZ"
@@ -209,7 +208,7 @@ def make_toric_color_code_layout(
                         bases="X",
                         measurement_qubit=wrap(q + 0),
                         ordered_data_qubits=[wrap(q + d) for d in order],
-                        extra_coords=[rgb],
+                        flags={'color=' + 'rgb'[int(rgb)], 'basis=X'},
                     )
                 )
             if rgb != 2 or not ablate_into_matchable_code:
@@ -218,7 +217,7 @@ def make_toric_color_code_layout(
                         bases="Z",
                         measurement_qubit=wrap(q + 1j),
                         ordered_data_qubits=[wrap(q + d) for d in order],
-                        extra_coords=[rgb + 3],
+                        flags={'color=' + 'rgb'[int(rgb)], 'basis=Z'},
                     )
                 )
 
@@ -326,7 +325,7 @@ def make_color_code_layout_488(
                 bases="Z",
                 measurement_qubit=q + 0.5,
                 ordered_data_qubits=[q + d for d in [1j, 0, 1, 1 + 1j]],
-                extra_coords=[2],
+                flags={'color=b'},
             )
         )
     for x in range(0, half, 2):
@@ -337,7 +336,7 @@ def make_color_code_layout_488(
                     bases="X",
                     measurement_qubit=q + 2j - 0.5,
                     ordered_data_qubits=[q + d for d in [1j, 2j, -1 + 2j, -1 + 1j]],
-                    extra_coords=[0],
+                    flags={'color=r'},
                 )
             )
             tiles.append(
@@ -345,7 +344,7 @@ def make_color_code_layout_488(
                     bases="Y",
                     measurement_qubit=q + 1j - 1.5,
                     ordered_data_qubits=[q + d for d in [-1 + 2j, -1 + 1j]],
-                    extra_coords=[1],
+                    flags={'color=g'},
                 )
             )
         else:
@@ -355,7 +354,7 @@ def make_color_code_layout_488(
                         bases="X",
                         measurement_qubit=q + 2j - 0.5,
                         ordered_data_qubits=[q + d for d in [1j, 2j]],
-                        extra_coords=[0],
+                        flags={'color=r'},
                     )
                 )
         tiles.append(
@@ -370,7 +369,7 @@ def make_color_code_layout_488(
                         else [2j, 1j, 0, 1j, 1 + 1j, 1, 1 + 1j, 1 + 2j]
                     )
                 ],
-                extra_coords=[1],
+                flags={'color=g'},
             )
         )
     for x in range(0, half - 1, 2):
@@ -381,7 +380,7 @@ def make_color_code_layout_488(
                     bases="X",
                     measurement_qubit=q + 0.5 + 1j,
                     ordered_data_qubits=[q + d for d in [2j, 1j, 1 + 1j, 1 + 2j]],
-                    extra_coords=[0],
+                    flags={'color=r'},
                 )
             )
             tiles.append(
@@ -389,7 +388,7 @@ def make_color_code_layout_488(
                     bases="Z",
                     measurement_qubit=q + 1.5 + 2j,
                     ordered_data_qubits=[q + d for d in [1 + 1j, 1 + 2j]],
-                    extra_coords=[2],
+                    flags={'color=b'},
                 )
             )
         elif spurs != "smooth":
@@ -398,7 +397,7 @@ def make_color_code_layout_488(
                     bases="X",
                     measurement_qubit=q + 1j + 0.5,
                     ordered_data_qubits=[q + d for d in [1j, 2j]],
-                    extra_coords=[0],
+                    flags={'color=r'},
                 )
             )
         q -= 1
@@ -414,7 +413,7 @@ def make_color_code_layout_488(
                         else [0, 1j, 2j, 1 + 2j, 1 + 1j, 1]
                     )
                 ],
-                extra_coords=[2],
+                flags={'color=b'},
             )
         )
 
@@ -431,7 +430,7 @@ def make_color_code_layout_488(
                             [0, 1j, 1 + 1j, 1] if x % 2 == 0 else [1j, 0, 1, 1 + 1j]
                         )
                     ],
-                    extra_coords=[0],
+                    flags={'color=r'},
                 )
             )
     for offset in range(0, w, 2):
@@ -445,7 +444,7 @@ def make_color_code_layout_488(
                         q + d
                         for d in [3j, 2j, 1j, 0, 1j, 1 + 1j, 1, 1 + 1j, 1 + 2j, 1 + 3j]
                     ],
-                    extra_coords=[1],
+                    flags={'color=g'},
                 )
             )
     for offset in range(0, w, 2):
@@ -472,7 +471,7 @@ def make_color_code_layout_488(
                             1 + 3j,
                         ]
                     ],
-                    extra_coords=[2],
+                    flags={'color=b'},
                 )
             )
 
@@ -489,7 +488,7 @@ def make_color_code_layout_488(
                     else -1
                 ),
                 ordered_data_qubits=tile.ordered_data_qubits,
-                extra_coords=tile.extra_coords,
+                flags=tile.flags,
             )
             for tile in tiles
         ]
@@ -497,7 +496,7 @@ def make_color_code_layout_488(
     if coord_style == "oct":
         patch = patch.with_transformed_coords(_rect_to_oct_transform)
     for tile in patch.tiles:
-        assert "XYZ".index(tile.basis) == tile.extra_coords[0]
+        assert "XYZ".index(tile.basis) == ["color=r", "color=g", "color=b"].index(next(iter(tile.flags)))
     if not single_rgb_layer_instead_of_actual_code:
         patch = gen.Patch(
             gen.Tile(
@@ -505,7 +504,7 @@ def make_color_code_layout_488(
                 measurement_qubit=tile.measurement_qubit
                 + (0.125 if basis == "Z" else 0),
                 ordered_data_qubits=tile.ordered_data_qubits,
-                extra_coords=[tile.extra_coords[0] + (3 if basis == "Z" else 0)],
+                flags={*tile.flags, f'basis={basis}'},
             )
             for tile in patch.tiles
             for basis in "XZ"

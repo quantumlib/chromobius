@@ -15,6 +15,8 @@
 #include "chromobius/graph/drag_graph.h"
 
 #include <optional>
+#include <set>
+#include <sstream>
 
 using namespace chromobius;
 

@@ -88,24 +88,24 @@ def code_capacity_mobius_graph_svg(patch: gen.Patch) -> str:
     rgb_patch_x = gen.Patch(
         [
             gen.Tile(
-                bases="XYZ"[int(tile.extra_coords[0]) % 3],
+                bases='X' if 'color=r' in tile.flags else 'Y' if 'color=g' in tile.flags else 'Z',
                 measurement_qubit=tile.measurement_qubit,
                 ordered_data_qubits=tile.ordered_data_qubits,
             )
             for tile in patch.tiles
-            if tile.extra_coords[0] // 3 == 0
+            if 'basis=X' in tile.flags
         ]
     )
 
     rgb_patch_z = gen.Patch(
         [
             gen.Tile(
-                bases="XYZ"[int(tile.extra_coords[0]) % 3],
+                bases='X' if 'color=r' in tile.flags else 'Y' if 'color=g' in tile.flags else 'Z',
                 measurement_qubit=tile.measurement_qubit,
                 ordered_data_qubits=tile.ordered_data_qubits,
             )
             for tile in patch.tiles
-            if tile.extra_coords[0] // 3 == 1
+            if 'basis=X' in tile.flags
         ]
     )
 
@@ -122,6 +122,12 @@ def code_capacity_mobius_graph_svg(patch: gen.Patch) -> str:
 
     lines.append("</svg>")
     return "\n".join(lines)
+
+
+def is_colinear(a: complex, b: complex, c: complex) -> bool:
+     d1 = b - a
+     d2 = c - a
+     return abs(d1.real * d2.imag - d2.real * d1.imag) < 1e-4
 
 
 def code_capacity_mobius_graph_helper_piece(
@@ -198,7 +204,7 @@ def code_capacity_mobius_graph_helper_piece(
                             center2 = sum(tile2.data_set) / len(tile2.data_set)
                             p2 = draw_coord(q)
                             p2 = p2 + ((a - p2) + (b - p2)) * -0.4
-                            if gen.is_colinear(q, center1, center2):
+                            if is_colinear(q, center1, center2):
                                 lines.append(
                                     f"""<path d="M {a.real},{a.imag} L {b.real},{b.imag}" stroke="{BASIS_COLORS_DARKER[rem]}" stroke-width="{stroke_width*3}" fill="none" />"""
                                 )

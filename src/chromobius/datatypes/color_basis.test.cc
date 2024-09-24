@@ -30,23 +30,6 @@ TEST(types, color_basis_basic) {
     ASSERT_EQ(e.str(), "ColorBasis{.color=R, .basis=X}");
 }
 
-TEST(atomic_error, detector_instruction_to_color_basis) {
-    std::vector<double> args{-1, -1, -1, 2};
-    std::vector<double> offsets{-3, -3, -3, 3, -2};
-    stim::DemInstruction instruction{
-        .arg_data = args,
-        .target_data = {},
-        .type = stim::DemInstructionType::DEM_ERROR,
-    };
-    ASSERT_EQ(detector_instruction_to_color_basis(instruction, offsets), (ColorBasis{Charge::B, Basis::Z}));
-    offsets[3] = 100;
-    ASSERT_THROW({ detector_instruction_to_color_basis(instruction, offsets); }, std::invalid_argument);
-    offsets[3] = 0.5;
-    ASSERT_THROW({ detector_instruction_to_color_basis(instruction, offsets); }, std::invalid_argument);
-    args[3] = 0.5;
-    ASSERT_EQ(detector_instruction_to_color_basis(instruction, offsets), (ColorBasis{Charge::G, Basis::X}));
-}
-
 TEST(atomic_error, mobius_node_to_detector_vs_detector_to_mobius_node) {
     std::vector<ColorBasis> colors;
     colors.resize(50);

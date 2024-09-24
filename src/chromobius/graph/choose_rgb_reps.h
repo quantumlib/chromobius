@@ -17,6 +17,8 @@
 #ifndef _CHROMOBIUS_CHOOSE_RGB_REPS_H
 #define _CHROMOBIUS_CHOOSE_RGB_REPS_H
 
+#include <map>
+
 #include "chromobius/datatypes/atomic_error.h"
 #include "chromobius/datatypes/rgb_edge.h"
 

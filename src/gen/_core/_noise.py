@@ -1,18 +1,4 @@
-# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from typing import Iterator, AbstractSet, Any
+from typing import Iterator, AbstractSet, DefaultDict, Any
 
 import collections
 
@@ -25,6 +11,7 @@ ANNOTATION_OPS = {
     "QUBIT_COORDS",
     "SHIFT_COORDS",
     "TICK",
+    "MPAD",
 }
 OP_TO_MEASURE_BASES = {
     "M": "Z",
@@ -44,7 +31,8 @@ class NoiseRule:
     def __init__(
         self,
         *,
-        after: dict[str, float],
+        before: dict[str, float | tuple[float, ...]] | None = None,
+        after: dict[str, float | tuple[float, ...]] | None = None,
         flip_result: float = 0,
     ):
         """
@@ -57,14 +45,25 @@ class NoiseRule:
             flip_result: The probability that a measurement result should be reported incorrectly.
                 Only valid when applied to operations that produce measurement results.
         """
+        if after is None:
+            after = {}
+        if before is None:
+            before = {}
         if not (0 <= flip_result <= 1):
             raise ValueError(f"not (0 <= {flip_result=} <= 1)")
-        for k, p in after.items():
+        for k, p in [*after.items(), *before.items()]:
             gate_data = stim.gate_data(k)
             if gate_data.produces_measurements or not gate_data.is_noisy_gate:
                 raise ValueError(f"not a pure noise channel: {k} from {after=}")
-            if not (0 <= p <= 1):
-                raise ValueError(f"not (0 <= {p} <= 1) from {after=}")
+            if gate_data.num_parens_arguments_range == range(1, 2):
+                if not isinstance(p, (int, float)) or not (0 <= p <= 1):
+                    raise ValueError(f"not a probability: {p!r}")
+            else:
+                if len(p) not in gate_data.num_parens_arguments_range:
+                    raise ValueError(f"Wrong number of arguments {p!r} for gate {k!r}")
+                if not isinstance(p, (list, tuple)) or not (0 <= sum(p) <= 1):
+                    raise ValueError(f"not a tuple of disjoint probabilities: {p!r}")
+        self.before = before
         self.after = after
         self.flip_result = flip_result
 
@@ -73,7 +72,8 @@ class NoiseRule:
         *,
         split_op: stim.CircuitInstruction,
         out_during_moment: stim.Circuit,
-        after_moments: collections.defaultdict[Any, stim.Circuit],
+        before_moments: DefaultDict[Any, stim.Circuit],
+        after_moments: DefaultDict[Any, stim.Circuit],
         immune_qubit_indices: AbstractSet[int],
     ) -> None:
         targets = split_op.targets_copy()
@@ -96,6 +96,8 @@ class NoiseRule:
 
         out_during_moment.append(split_op.name, targets, args)
         raw_targets = [t.value for t in targets if not t.is_combiner]
+        for op_name, arg in self.before.items():
+            before_moments[(op_name, arg)].append(op_name, raw_targets, arg)
         for op_name, arg in self.after.items():
             after_moments[(op_name, arg)].append(op_name, raw_targets, arg)
 
@@ -103,7 +105,7 @@ class NoiseRule:
 class NoiseModel:
     def __init__(
         self,
-        idle_noise: float | NoiseRule | None = None,
+        idle_depolarization: float = 0,
         tick_noise: NoiseRule | None = None,
         additional_depolarization_waiting_for_m_or_r: float = 0,
         gate_rules: dict[str, NoiseRule] | None = None,
@@ -113,12 +115,7 @@ class NoiseModel:
         any_clifford_2q_rule: NoiseRule | None = None,
         allow_multiple_uses_of_a_qubit_in_one_tick: bool = False,
     ):
-        if isinstance(idle_noise, float):
-            if idle_noise == 0:
-                idle_noise = None
-            else:
-                idle_noise = NoiseRule(after={'DEPOLARIZE1': idle_noise})
-        self.idle_noise: NoiseRule | None = idle_noise
+        self.idle_depolarization = idle_depolarization
         self.tick_noise = tick_noise
         self.additional_depolarization_waiting_for_m_or_r = (
             additional_depolarization_waiting_for_m_or_r
@@ -144,7 +141,7 @@ class NoiseModel:
         the measurement.
         """
         return NoiseModel(
-            idle_noise=p / 10,
+            idle_depolarization=p / 10,
             additional_depolarization_waiting_for_m_or_r=2 * p,
             any_clifford_1q_rule=NoiseRule(after={"DEPOLARIZE1": p / 10}),
             any_clifford_2q_rule=NoiseRule(after={"DEPOLARIZE2": p}),
@@ -170,7 +167,7 @@ class NoiseModel:
         the input qubit. The input qubit is depolarized.
         """
         return NoiseModel(
-            idle_noise=p,
+            idle_depolarization=p,
             any_clifford_1q_rule=NoiseRule(after={"DEPOLARIZE1": p}),
             any_clifford_2q_rule=NoiseRule(after={"DEPOLARIZE2": p}),
             measure_rules={
@@ -233,11 +230,12 @@ class NoiseModel:
                 split_op=stim.CircuitInstruction(m_name, split_op.targets_copy())
             )
             return NoiseRule(
+                before=r_noise.before if r_noise is not None else {},
                 after=r_noise.after if r_noise is not None else {},
                 flip_result=m_noise.flip_result if m_noise is not None else 0,
             )
 
-        raise ValueError(f"No noise (or lack of noise) specified for {split_op=}.")
+        raise ValueError(f"No noise (or lack of noise) specified for '{split_op}'.")
 
     def _append_idle_error(
         self,
@@ -286,9 +284,8 @@ class NoiseModel:
             - clifford_qubits_set
             - immune_qubit_indices
         )
-        if idle and self.idle_noise is not None:
-            for k, v in self.idle_noise.after.items():
-                out.append(k, idle, v)
+        if idle and self.idle_depolarization:
+            out.append("DEPOLARIZE1", idle, self.idle_depolarization)
 
         waiting_for_mr = sorted(
             system_qubit_indices - collapse_qubits_set - immune_qubit_indices
@@ -303,6 +300,8 @@ class NoiseModel:
             )
 
         if self.tick_noise is not None:
+            for k, p in self.tick_noise.before.items():
+                out.append(k, system_qubit_indices - immune_qubit_indices, p)
             for k, p in self.tick_noise.after.items():
                 out.append(k, system_qubit_indices - immune_qubit_indices, p)
 
@@ -314,18 +313,24 @@ class NoiseModel:
         system_qubits_indices: AbstractSet[int],
         immune_qubit_indices: AbstractSet[int],
     ) -> None:
+        before = collections.defaultdict(stim.Circuit)
         after = collections.defaultdict(stim.Circuit)
+        grow = stim.Circuit()
         for split_op in moment_split_ops:
             rule = self._noise_rule_for_split_operation(split_op=split_op)
             if rule is None:
-                out.append(split_op)
+                grow.append(split_op)
             else:
                 rule.append_noisy_version_of(
                     split_op=split_op,
-                    out_during_moment=out,
+                    out_during_moment=grow,
+                    before_moments=before,
                     after_moments=after,
                     immune_qubit_indices=immune_qubit_indices,
                 )
+        for k in sorted(before.keys()):
+            out += before[k]
+        out += grow
         for k in sorted(after.keys()):
             out += after[k]
 
@@ -335,6 +340,43 @@ class NoiseModel:
             system_qubit_indices=system_qubits_indices,
             immune_qubit_indices=immune_qubit_indices,
         )
+
+    def noisy_circuit_skipping_mpp_boundaries(
+            self,
+            circuit: stim.Circuit,
+            *,
+            immune_qubit_indices: AbstractSet[int] | None = None,
+    ) -> stim.Circuit:
+        """Adds noise to the circuit except for MPP operations at the start/end.
+
+        Divides the circuit into three parts: mpp_start, body, mpp_end. The mpp
+        sections grow from the ends of the circuit until they hit an instruction
+        that's not an annotation or an MPP. Then body is the remaining circuit
+        between the two ends. Noise is added to the body, and then the pieces
+        are reassembled.
+        """
+        allowed = {
+            'TICK',
+            'OBSERVABLE_INCLUDE',
+            'DETECTOR',
+            'MPP',
+            'QUBIT_COORDS',
+            'SHIFT_COORDS',
+        }
+        start = 0
+        end = len(circuit)
+        while start < len(circuit) and circuit[start].name in allowed:
+            start += 1
+        while end > 0 and circuit[end - 1].name in allowed:
+            end -= 1
+        while end < len(circuit) and circuit[end].name != 'MPP':
+            end += 1
+        while end > 0 and circuit[end - 1].name == 'TICK':
+            end -= 1
+        if end <= start:
+            raise ValueError("end <= start")
+        noisy = self.noisy_circuit(circuit[start:end], immune_qubit_indices=immune_qubit_indices)
+        return circuit[:start] + noisy + circuit[end:]
 
     def noisy_circuit(
         self,
@@ -430,18 +472,37 @@ def _split_targets_if_needed(
         yield from _split_out_immune_targets_assuming_single_qubit_gate(
             op, immune_qubit_indices
         )
+    elif gate_data.is_two_qubit_gate:
+        yield from _split_out_immune_targets_assuming_two_qubit_gate(
+            op, immune_qubit_indices
+        )
     else:
         raise NotImplementedError(f"{op=}")
 
 
 def _split_out_immune_targets_assuming_single_qubit_gate(
-    op: stim.CircuitInstruction,
-    immune_qubit_indices: AbstractSet[int],
+        op: stim.CircuitInstruction,
+        immune_qubit_indices: AbstractSet[int],
 ) -> list[stim.CircuitInstruction]:
     if immune_qubit_indices:
         args = op.gate_args_copy()
         for t in op.targets_copy():
             yield stim.CircuitInstruction(op.name, [t], args)
+    else:
+        yield op
+
+
+def _split_out_immune_targets_assuming_two_qubit_gate(
+        op: stim.CircuitInstruction,
+        immune_qubit_indices: AbstractSet[int],
+) -> list[stim.CircuitInstruction]:
+    if immune_qubit_indices:
+        args = op.gate_args_copy()
+        targets = op.targets_copy()
+        for k in range(len(targets)):
+            t1 = targets[k]
+            t2 = targets[k + 1]
+            yield stim.CircuitInstruction(op.name, [t1, t2], args)
     else:
         yield op
 

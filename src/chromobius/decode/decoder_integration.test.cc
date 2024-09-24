@@ -147,6 +147,7 @@ INSTANTIATE_TEST_SUITE_P(
                 std::tuple<const char *, int>{"midout_color_code_d9_r36_p1000.stim", 45},
                 std::tuple<const char *, int>{"superdense_color_code_d5_r20_p1000.stim", 329},  // Including remnant errors reduces to 273?
                 std::tuple<const char *, int>{"phenom_color_code_d5_r5_p1000.stim", 0},
+                std::tuple<const char *, int>{"phenom_color_code_d5_r5_p1000_with_ignored.stim", 0},
                 std::tuple<const char *, int>{"surface_code_d5_r5_p1000.stim", 3},
                 std::tuple<const char *, int>{"rep_code_d9_transit_p10.stim", 1},
                 std::tuple<const char *, int>{"rep_code_rg_d9_transit_p10.stim", 1},
@@ -172,4 +173,47 @@ TEST(FixCheck, euler_tour_ordering) {
 
 TEST(FixCheck, phenom_rgb_reps_for_last_layer) {
     decode_single("fix_check_1.stim", {8915, 8914, 8890});
+}
+
+TEST(ConfigureDecoder, unreordered_detectors) {
+    FILE *f = open_test_data_file("old_fail_to_configure_cases/detector_unreorder_superdense_round.stim");
+    stim::Circuit src_circuit = stim::Circuit::from_file(f);
+    fclose(f);
+
+    auto src_dem =
+        stim::ErrorAnalyzer::circuit_to_detector_error_model(src_circuit, false, true, false, 0, false, false);
+    Decoder decoder = Decoder::from_dem(src_dem, DecoderConfigOptions{});
+    decoder.check_invariants();
+}
+
+TEST(ConfigureDecoder, reordered_detectors) {
+    FILE *f = open_test_data_file("old_fail_to_configure_cases/detector_reorder_superdense_round.stim");
+    stim::Circuit src_circuit = stim::Circuit::from_file(f);
+    fclose(f);
+
+    auto src_dem =
+        stim::ErrorAnalyzer::circuit_to_detector_error_model(src_circuit, false, true, false, 0, false, false);
+    Decoder decoder = Decoder::from_dem(src_dem, DecoderConfigOptions{});
+    decoder.check_invariants();
+}
+
+TEST(ConfigureDecoder, hard_config) {
+    FILE *f = open_test_data_file("old_fail_to_configure_cases/hard_config.stim");
+    stim::Circuit src_circuit = stim::Circuit::from_file(f);
+    fclose(f);
+
+    auto src_dem =
+        stim::ErrorAnalyzer::circuit_to_detector_error_model(src_circuit, false, true, false, 0, false, false);
+    Decoder decoder = Decoder::from_dem(src_dem, DecoderConfigOptions{});
+    decoder.check_invariants();
+}
+
+TEST(ConfigureDecoder, fail_config) {
+    auto src_dem = stim::DetectorErrorModel(R"DEM(
+        error(0.1) D0
+        detector D0
+    )DEM");
+    EXPECT_THROW({
+        Decoder::from_dem(src_dem, DecoderConfigOptions{});
+    }, std::invalid_argument);
 }

@@ -56,13 +56,13 @@ def test_make_color_code_patch_3_6():
                 ordered_data_qubits=((1 + 3j), (1 + 2j), (1 + 1j), 1j),
                 measurement_qubit=(1 + 1j),
                 bases="Y",
-                extra_coords=(1,),
+                flags={'color=g', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=((2 + 1j), (2 + 2j), (1 + 2j), (1 + 1j)),
                 measurement_qubit=(1 + 2j),
                 bases="Z",
-                extra_coords=(2,),
+                flags={'color=b', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=(
@@ -75,13 +75,13 @@ def test_make_color_code_patch_3_6():
                 ),
                 measurement_qubit=(1 + 4j),
                 bases="X",
-                extra_coords=(0.0,),
+                flags={'color=r', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=((2 + 3j), (2 + 4j)),
                 measurement_qubit=(2 + 3j),
                 bases="Z",
-                extra_coords=(2,),
+                flags={'color=b', 'basis=Z'},
             ),
         ]
     )
@@ -138,19 +138,19 @@ def test_make_color_code_patch_4_8_8():
                 ),
                 measurement_qubit=1j,
                 bases="Y",
-                extra_coords=[1],
+                flags={'color=g', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=(1j, 2j),
                 measurement_qubit=2j,
                 bases="X",
-                extra_coords=[0],
+                flags={'color=r', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=((1 + 1j), 1, 2, (2 + 1j)),
                 measurement_qubit=2.0,
                 bases="Z",
-                extra_coords=[2],
+                flags={'color=b', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=(
@@ -167,37 +167,37 @@ def test_make_color_code_patch_4_8_8():
                 ),
                 measurement_qubit=(2 + 1j),
                 bases="Y",
-                extra_coords=[1],
+                flags={'color=g', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=((1 + 1j), (1 + 2j), (2 + 2j), (2 + 1j)),
                 measurement_qubit=(2 + 2j),
                 bases="X",
-                extra_coords=[0],
-            ),
+                flags={'color=r', 'basis=X'},
+           ),
             gen.Tile(
                 ordered_data_qubits=((2 + 4j), (2 + 3j), (3 + 3j), (3 + 4j)),
                 measurement_qubit=(2 + 3j),
                 bases="X",
-                extra_coords=[0],
+                flags={'color=r', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=((3 + 1j), 3, 4, (4 + 1j)),
                 measurement_qubit=4.0,
                 bases="Z",
-                extra_coords=[2],
+                flags={'color=b', 'basis=Z'},
             ),
             gen.Tile(
                 ordered_data_qubits=((3 + 1j), (3 + 2j), (4 + 2j), (4 + 1j)),
                 measurement_qubit=(4 + 2j),
                 bases="X",
-                extra_coords=[0],
+                flags={'color=r', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=((4 + 3j), (4 + 4j)),
                 measurement_qubit=(4 + 3j),
                 bases="X",
-                extra_coords=[0],
+                flags={'color=r', 'basis=X'},
             ),
             gen.Tile(
                 ordered_data_qubits=(
@@ -210,7 +210,7 @@ def test_make_color_code_patch_4_8_8():
                 ),
                 measurement_qubit=(4 + 4j),
                 bases="Z",
-                extra_coords=[2],
+                flags={'color=b', 'basis=Z'},
             ),
         ]
     )
@@ -233,7 +233,7 @@ def test_make_color_code_patch_4_8_8_stripped_measurements(
         single_rgb_layer_instead_of_actual_code=True,
         coord_style="rect",
     )
-    code.check_commutation_relationships()
+    code.verify()
 
     patch = code.patch
     all_columns = {c.real for c in patch.data_set}
@@ -263,7 +263,7 @@ def test_make_toric_color_code_layout(
         height=height,
         ablate_into_matchable_code=ablate_into_matchable_code,
     )
-    code.check_commutation_relationships()
+    code.verify()
     circuit = code.make_code_capacity_circuit(
         noise=gen.NoiseRule(after={"DEPOLARIZE1": 1e-3})
     )
@@ -302,7 +302,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=1j,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -315,7 +315,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=5j,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -328,7 +328,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(1 + 2j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -341,7 +341,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(1 + 3j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -354,7 +354,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(1 + 6j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -367,7 +367,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(1 + 7j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -380,7 +380,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(2 + 0j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -393,7 +393,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(2 + 4j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -406,7 +406,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(3 + 3j),
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -419,7 +419,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(3 + 7j),
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -432,7 +432,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(4 + 0j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -445,7 +445,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(4 + 1j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -458,7 +458,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(4 + 4j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -471,7 +471,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(4 + 5j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -484,7 +484,7 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(5 + 2j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -497,22 +497,22 @@ def test_make_toric_color_code_exact():
                     ),
                     measurement_qubit=(5 + 6j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
             ]
         ),
         observables_x=[
-            gen.PauliString(qubits={2j: "X", 3j: "X", 6j: "X", 7j: "X"}),
+            gen.PauliString({2j: "X", 3j: "X", 6j: "X", 7j: "X"}),
             gen.PauliString(
-                qubits={(1 + 4j): "X", (2 + 3j): "X", (4 + 3j): "X", (5 + 4j): "X"}
+                {(1 + 4j): "X", (2 + 3j): "X", (4 + 3j): "X", (5 + 4j): "X"}
             ),
         ],
         observables_z=[
             gen.PauliString(
-                qubits={2j: "Z", (1 + 1j): "Z", (3 + 1j): "Z", (4 + 2j): "Z"}
+                {2j: "Z", (1 + 1j): "Z", (3 + 1j): "Z", (4 + 2j): "Z"}
             ),
             gen.PauliString(
-                qubits={(2 + 2j): "Z", (2 + 3j): "Z", (2 + 6j): "Z", (2 + 7j): "Z"}
+                {(2 + 2j): "Z", (2 + 3j): "Z", (2 + 6j): "Z", (2 + 7j): "Z"}
             ),
         ],
     )
@@ -524,8 +524,7 @@ def test_make_toric_color_code_phenom_circuit_exact():
         height=8,
         ablate_into_matchable_code=True,
     )
-    assert code.make_code_capacity_circuit(noise=0.125) == stim.Circuit(
-        """
+    assert code.make_code_capacity_circuit(noise=0.125) == stim.Circuit("""
         QUBIT_COORDS(0, -1) 0
         QUBIT_COORDS(0, 2) 1
         QUBIT_COORDS(0, 3) 2
@@ -552,45 +551,37 @@ def test_make_toric_color_code_phenom_circuit_exact():
         QUBIT_COORDS(5, 1) 23
         QUBIT_COORDS(5, 4) 24
         QUBIT_COORDS(5, 5) 25
-        MPP X0*X1*X2*X3*X4
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        MPP X5*X8*X11*X19*X24
-        OBSERVABLE_INCLUDE(1) rec[-1]
-        MPP Z0*Z1*Z7*Z15*Z18
-        OBSERVABLE_INCLUDE(2) rec[-1]
-        MPP Z5*Z10*Z11*Z12*Z13
-        OBSERVABLE_INCLUDE(3) rec[-1]
-        MPP Z1*Z4*Z6*Z7*Z22*Z23 Z2*Z3*Z8*Z9*Z24*Z25 X1*X2*X7*X8*X10*X11 Z1*Z2*Z7*Z8*Z10*Z11 X3*X4*X6*X9*X12*X13 Z3*Z4*Z6*Z9*Z12*Z13 X6*X7*X10*X13*X14*X15 X8*X9*X11*X12*X16*X17 Z10*Z11*Z15*Z16*Z18*Z19 Z12*Z13*Z14*Z17*Z20*Z21 X14*X15*X18*X21*X22*X23 Z14*Z15*Z18*Z21*Z22*Z23 X16*X17*X19*X20*X24*X25 Z16*Z17*Z19*Z20*Z24*Z25 X1*X2*X18*X19*X23*X24 X3*X4*X20*X21*X22*X25
-        TICK
+        MPP X0*X1*X2*X3*X4 X5*X8*X11*X19*X24 Z0*Z1*Z7*Z15*Z18 Z5*Z10*Z11*Z12*Z13 Z1*Z4*Z6*Z7*Z22*Z23 Z2*Z3*Z8*Z9*Z24*Z25 X1*X2*X7*X8*X10*X11 Z1*Z2*Z7*Z8*Z10*Z11 X3*X4*X6*X9*X12*X13 Z3*Z4*Z6*Z9*Z12*Z13 X6*X7*X10*X13*X14*X15 X8*X9*X11*X12*X16*X17 Z10*Z11*Z15*Z16*Z18*Z19 Z12*Z13*Z14*Z17*Z20*Z21 X14*X15*X18*X21*X22*X23 Z14*Z15*Z18*Z21*Z22*Z23 X16*X17*X19*X20*X24*X25 Z16*Z17*Z19*Z20*Z24*Z25 X1*X2*X18*X19*X23*X24 X3*X4*X20*X21*X22*X25
         DEPOLARIZE1(0.125) 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+        OBSERVABLE_INCLUDE(0) rec[-20]
+        OBSERVABLE_INCLUDE(1) rec[-19]
+        OBSERVABLE_INCLUDE(2) rec[-18]
+        OBSERVABLE_INCLUDE(3) rec[-17]
         TICK
-        MPP Z1*Z4*Z6*Z7*Z22*Z23 Z2*Z3*Z8*Z9*Z24*Z25 X1*X2*X7*X8*X10*X11 Z1*Z2*Z7*Z8*Z10*Z11 X3*X4*X6*X9*X12*X13 Z3*Z4*Z6*Z9*Z12*Z13 X6*X7*X10*X13*X14*X15 X8*X9*X11*X12*X16*X17 Z10*Z11*Z15*Z16*Z18*Z19 Z12*Z13*Z14*Z17*Z20*Z21 X14*X15*X18*X21*X22*X23 Z14*Z15*Z18*Z21*Z22*Z23 X16*X17*X19*X20*X24*X25 Z16*Z17*Z19*Z20*Z24*Z25 X1*X2*X18*X19*X23*X24 X3*X4*X20*X21*X22*X25
-        DETECTOR(0, 1, 0, 3) rec[-32] rec[-16]
-        DETECTOR(0, 5, 0, 3) rec[-31] rec[-15]
-        DETECTOR(1, 2, 0, 1) rec[-30] rec[-14]
-        DETECTOR(1, 3, 0, 4) rec[-29] rec[-13]
-        DETECTOR(1, 6, 0, 1) rec[-28] rec[-12]
-        DETECTOR(1, 7, 0, 4) rec[-27] rec[-11]
-        DETECTOR(2, 0, 0, 2) rec[-26] rec[-10]
-        DETECTOR(2, 4, 0, 2) rec[-25] rec[-9]
-        DETECTOR(3, 3, 0, 3) rec[-24] rec[-8]
-        DETECTOR(3, 7, 0, 3) rec[-23] rec[-7]
-        DETECTOR(4, 0, 0, 1) rec[-22] rec[-6]
-        DETECTOR(4, 1, 0, 4) rec[-21] rec[-5]
-        DETECTOR(4, 4, 0, 1) rec[-20] rec[-4]
-        DETECTOR(4, 5, 0, 4) rec[-19] rec[-3]
-        DETECTOR(5, 2, 0, 2) rec[-18] rec[-2]
-        DETECTOR(5, 6, 0, 2) rec[-17] rec[-1]
-        MPP X0*X1*X2*X3*X4
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        MPP X5*X8*X11*X19*X24
-        OBSERVABLE_INCLUDE(1) rec[-1]
-        MPP Z0*Z1*Z7*Z15*Z18
-        OBSERVABLE_INCLUDE(2) rec[-1]
-        MPP Z5*Z10*Z11*Z12*Z13
-        OBSERVABLE_INCLUDE(3) rec[-1]
-    """
-    )
+        MPP X0*X1*X2*X3*X4 X5*X8*X11*X19*X24 Z0*Z1*Z7*Z15*Z18 Z5*Z10*Z11*Z12*Z13 Z1*Z4*Z6*Z7*Z22*Z23 Z2*Z3*Z8*Z9*Z24*Z25 X1*X2*X7*X8*X10*X11 Z1*Z2*Z7*Z8*Z10*Z11 X3*X4*X6*X9*X12*X13 Z3*Z4*Z6*Z9*Z12*Z13 X6*X7*X10*X13*X14*X15 X8*X9*X11*X12*X16*X17 Z10*Z11*Z15*Z16*Z18*Z19 Z12*Z13*Z14*Z17*Z20*Z21 X14*X15*X18*X21*X22*X23 Z14*Z15*Z18*Z21*Z22*Z23 X16*X17*X19*X20*X24*X25 Z16*Z17*Z19*Z20*Z24*Z25 X1*X2*X18*X19*X23*X24 X3*X4*X20*X21*X22*X25
+        OBSERVABLE_INCLUDE(0) rec[-20]
+        OBSERVABLE_INCLUDE(1) rec[-19]
+        OBSERVABLE_INCLUDE(2) rec[-18]
+        OBSERVABLE_INCLUDE(3) rec[-17]
+        DETECTOR(0, 1, 0) rec[-36] rec[-16]
+        DETECTOR(0, 5, 0) rec[-35] rec[-15]
+        DETECTOR(1, 2, 0) rec[-34] rec[-14]
+        DETECTOR(1, 3, 0) rec[-33] rec[-13]
+        DETECTOR(1, 6, 0) rec[-32] rec[-12]
+        DETECTOR(1, 7, 0) rec[-31] rec[-11]
+        DETECTOR(2, 0, 0) rec[-30] rec[-10]
+        DETECTOR(2, 4, 0) rec[-29] rec[-9]
+        DETECTOR(3, 3, 0) rec[-28] rec[-8]
+        DETECTOR(3, 7, 0) rec[-27] rec[-7]
+        DETECTOR(4, 0, 0) rec[-26] rec[-6]
+        DETECTOR(4, 1, 0) rec[-25] rec[-5]
+        DETECTOR(4, 4, 0) rec[-24] rec[-4]
+        DETECTOR(4, 5, 0) rec[-23] rec[-3]
+        DETECTOR(5, 2, 0) rec[-22] rec[-2]
+        DETECTOR(5, 6, 0) rec[-21] rec[-1]
+        SHIFT_COORDS(0, 0, 1)
+        TICK
+    """)
 
 
 def test_make_toric_color_code_exact_square_coords():
@@ -613,7 +604,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=1j,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -626,7 +617,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=3j,
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -639,7 +630,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(1 + 0j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -652,7 +643,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(1 + 1j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -665,7 +656,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(1 + 2j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -678,7 +669,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(1 + 3j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -691,7 +682,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(2 + 0j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -704,7 +695,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(2 + 2j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -717,7 +708,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(3 + 0j),
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -730,7 +721,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(3 + 2j),
                     bases="Z",
-                    extra_coords=(3,),
+                    flags={'color=r', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -743,7 +734,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(4 + 0j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -756,7 +747,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(4 + 1j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -769,7 +760,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(4 + 2j),
                     bases="X",
-                    extra_coords=(1,),
+                    flags={'color=g', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -782,7 +773,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(4 + 3j),
                     bases="Z",
-                    extra_coords=(4,),
+                    flags={'color=g', 'basis=Z'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -795,7 +786,7 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(5 + 1j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
                 gen.Tile(
                     ordered_data_qubits=(
@@ -808,22 +799,22 @@ def test_make_toric_color_code_exact_square_coords():
                     ),
                     measurement_qubit=(5 + 3j),
                     bases="X",
-                    extra_coords=(2,),
+                    flags={'color=b', 'basis=X'},
                 ),
             ]
         ),
         observables_x=[
-            gen.PauliString(qubits={0j: "X", 1j: "X", 2j: "X", 3j: "X"}),
+            gen.PauliString({0j: "X", 1j: "X", 2j: "X", 3j: "X"}),
             gen.PauliString(
-                qubits={(1 + 2j): "X", (2 + 2j): "X", (4 + 2j): "X", (5 + 2j): "X"}
+                {(1 + 2j): "X", (2 + 2j): "X", (4 + 2j): "X", (5 + 2j): "X"}
             ),
         ],
         observables_z=[
             gen.PauliString(
-                qubits={1j: "Z", (1 + 1j): "Z", (3 + 1j): "Z", (4 + 1j): "Z"}
+                {1j: "Z", (1 + 1j): "Z", (3 + 1j): "Z", (4 + 1j): "Z"}
             ),
             gen.PauliString(
-                qubits={(2 + 0j): "Z", (2 + 1j): "Z", (2 + 2j): "Z", (2 + 3j): "Z"}
+                {(2 + 0j): "Z", (2 + 1j): "Z", (2 + 2j): "Z", (2 + 3j): "Z"}
             ),
         ],
     )
