@@ -206,7 +206,7 @@ jobs:
           bazelisk-version: 1.x
       - run: bazel build :chromobius_dev_wheel
       - run: pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
-      - run: pip install pytest stim sinter pygltflib
+      - run: pip install pytest stim~=1.14.dev sinter pygltflib
       - run: pytest src
       - run: tools/doctest_proper.py --module chromobius
   upload_dev_release_to_pypi:
