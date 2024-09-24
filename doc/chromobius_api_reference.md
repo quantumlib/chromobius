@@ -351,6 +351,7 @@ def predict_weighted_obs_flips_from_dets_bit_packed(
         >>> # Decode with Chromobius.
         >>> dem = repetition_color_code.detector_error_model()
         >>> decoder = chromobius.compile_decoder_for_dem(dem)
-        >>> pred, weights = decoder.predict_obs_flips_from_dets_bit_packed(dets)
+        >>> result = decoder.predict_weighted_obs_flips_from_dets_bit_packed(dets)
+        >>> pred, weights = result
     """
 ```

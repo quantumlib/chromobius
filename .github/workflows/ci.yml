@@ -53,7 +53,7 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: "10.15"
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      CIBW_TEST_REQUIRES: pytest stim sinter pygltflib
+      CIBW_TEST_REQUIRES: pytest stim~=1.14.dev sinter pygltflib
       CIBW_TEST_COMMAND: pytest {project}/src
     steps:
       - uses: actions/checkout@v3
