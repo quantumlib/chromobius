@@ -53,7 +53,6 @@ class Chunk:
         self.discarded_outputs = tuple(discarded_outputs)
         assert all(isinstance(e, (PauliString, KeyedPauliString)) for e in self.discarded_inputs)
         assert all(isinstance(e, (PauliString, KeyedPauliString)) for e in self.discarded_outputs)
-        self.verify()
 
     def __add__(self, other: 'Chunk') -> 'Chunk':
         from gen._flows._flow_util import compile_chunks_into_circuit
