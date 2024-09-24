@@ -19,6 +19,7 @@
 
 #include <ostream>
 #include <span>
+#include <tuple>
 
 #include "chromobius/datatypes/conf.h"
 
