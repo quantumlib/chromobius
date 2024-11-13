@@ -329,14 +329,21 @@ def f2c(flow: gen.Flow) -> list[float]:
         c += 2
     else:
         raise NotImplementedError(f"{flow=}")
-    if "basis=X" in flow.flags:
-        c += 0
-    elif "basis=Z" in flow.flags:
-        c += 3
-    else:
-        raise NotImplementedError(f"{flow=}")
+
     if "is_flag=True" in flow.flags:
-        c += 6
+        if "basis=X" in flow.flags:
+            c += 9
+        elif "basis=Z" in flow.flags:
+            c += 6
+        else:
+            raise NotImplementedError(f"{flow=}")
+    else:
+        if "basis=X" in flow.flags:
+            c += 0
+        elif "basis=Z" in flow.flags:
+            c += 3
+        else:
+            raise NotImplementedError(f"{flow=}")
     return [c]
 
 
