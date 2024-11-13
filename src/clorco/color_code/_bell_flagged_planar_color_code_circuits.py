@@ -93,7 +93,7 @@ def make_bell_flagged_color_code_circuit_z_first_half_round_chunk(
                 gen.Flow(
                     measurement_indices=mf(m),
                     center=m,
-                    flags=tile.flags,
+                    flags=tile.flags | frozenset({"is_flag=True"}),
                 )
             )
             if not initialize:
@@ -254,7 +254,7 @@ def make_bell_flagged_color_code_circuit_x_second_half_round_chunk(
                 gen.Flow(
                     measurement_indices=mf(m),
                     center=m,
-                    flags=tile.flags,
+                    flags=tile.flags | frozenset({"is_flag=True"}),
                 )
             )
             flows.append(
@@ -335,6 +335,8 @@ def f2c(flow: gen.Flow) -> list[float]:
         c += 3
     else:
         raise NotImplementedError(f"{flow=}")
+    if "is_flag=True" in flow.flags:
+        c += 6
     return [c]
 
 
