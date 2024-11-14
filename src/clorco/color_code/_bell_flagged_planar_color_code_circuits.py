@@ -15,6 +15,7 @@
 from typing import Callable
 from typing import Iterable
 from typing import Literal, List
+from functools import partial
 
 import stim
 
@@ -22,6 +23,26 @@ import gen
 from clorco.color_code._superdense_planar_color_code_circuits import (
     make_color_code_layout_for_superdense,
 )
+from gen._core._stabilizer_code import StabilizerCode
+
+
+def builder_do_cxs(
+    builder: gen.Builder,
+    code: StabilizerCode,
+    centers: Iterable[complex],
+    d_control: complex,
+    d_target: complex,
+    inv: Callable[[complex], bool] = lambda _: False,
+) -> None:
+    builder.append(
+        "CX",
+        [
+            (c + d_control, c + d_target)[:: -1 if inv(c) else +1]
+            for c in centers
+            if c + d_control in code.patch.used_set
+            if c + d_target in code.patch.used_set
+        ],
+    )
 
 
 def make_bell_flagged_color_code_circuit_z_first_half_round_chunk(
@@ -39,27 +60,12 @@ def make_bell_flagged_color_code_circuit_z_first_half_round_chunk(
 
     builder = gen.Builder.for_qubits(code.patch.used_set)
 
-    def do_cxs(
-        centers: Iterable[complex],
-        d_control: complex,
-        d_target: complex,
-        inv: Callable[[complex], bool] = lambda _: False,
-    ) -> None:
-        builder.append(
-            "CX",
-            [
-                (c + d_control, c + d_target)[:: -1 if inv(c) else +1]
-                for c in centers
-                if c + d_control in code.patch.used_set
-                if c + d_target in code.patch.used_set
-            ],
-        )
+    do_cxs = partial(builder_do_cxs, builder, code)
 
     def mf(*qs):
         return builder.lookup_recs(q for q in qs if q in code.patch.measure_set)
 
     # Construct the first half of the cycle, responsible for the Z checks
-    builder = gen.Builder.for_qubits(code.patch.used_set)
     builder.append("RX", x_ms)
     if initialize:
         builder.append(f"R{basis}", code.patch.data_set)
@@ -187,27 +193,12 @@ def make_bell_flagged_color_code_circuit_x_second_half_round_chunk(
 
     builder = gen.Builder.for_qubits(code.patch.used_set)
 
-    def do_cxs(
-        centers: Iterable[complex],
-        d_control: complex,
-        d_target: complex,
-        inv: Callable[[complex], bool] = lambda _: False,
-    ) -> None:
-        builder.append(
-            "CX",
-            [
-                (c + d_control, c + d_target)[:: -1 if inv(c) else +1]
-                for c in centers
-                if c + d_control in code.patch.used_set
-                if c + d_target in code.patch.used_set
-            ],
-        )
+    do_cxs = partial(builder_do_cxs, builder, code)
 
     def mf(*qs):
         return builder.lookup_recs(q for q in qs if q in code.patch.measure_set)
 
     # Construct the second half of the cycle, responsible for the X checks
-    builder = gen.Builder.for_qubits(code.patch.used_set)
     builder.append("RX", x_ms)
     builder.append("RZ", z_ms)
     builder.tick()
