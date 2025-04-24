@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: ci
+name: Continuous integration
+
 on:
   push:
     branches:
@@ -25,6 +26,16 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      bazel_version:
+        description: Version of Bazel to use
+        type: string
+
+env:
+  # Default Bazel version to use.
+  bazel_version: '6.5.0'
+
 jobs:
   build_dist:
     runs-on: ${{ matrix.os_dist.os }}
@@ -109,7 +120,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: bazel-contrib/setup-bazel@0.12.1
       env:
-        USE_BAZEL_VERSION: 6.5.0
+        USE_BAZEL_VERSION: ${{inputs.bazel_version || env.bazel_version}}
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -177,7 +188,7 @@ jobs:
       - uses: actions/setup-python@v5
       - uses: bazel-contrib/setup-bazel@0.12.1
         env:
-          USE_BAZEL_VERSION: 6.5.0
+          USE_BAZEL_VERSION: ${{inputs.bazel_version || env.bazel_version}}
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -204,7 +215,7 @@ jobs:
       - uses: actions/setup-python@v5
       - uses: bazel-contrib/setup-bazel@0.12.1
         env:
-          USE_BAZEL_VERSION: 6.5.0
+          USE_BAZEL_VERSION: ${{inputs.bazel_version || env.bazel_version}}
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
