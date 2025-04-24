@@ -107,7 +107,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: bazel-contrib/setup-bazel@0.8.5
+    - uses: bazel-contrib/setup-bazel@0.12.1
+      env:
+        USE_BAZEL_VERSION: 6.5.0
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -116,7 +118,7 @@ jobs:
     - run: bazel build :all
     - run: bazel test :chromobius_test
   build_clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
     - run: |
@@ -174,6 +176,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
       - uses: bazel-contrib/setup-bazel@0.8.5
+        env:
+          USE_BAZEL_VERSION: 6.5.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -199,6 +203,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
       - uses: bazel-contrib/setup-bazel@0.8.5
+        env:
+          USE_BAZEL_VERSION: 6.5.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
