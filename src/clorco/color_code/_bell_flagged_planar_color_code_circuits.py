@@ -107,7 +107,6 @@ def make_bell_flagged_color_code_circuit_z_first_half_round_chunk(
                     gen.Flow(
                         start=tile.to_data_pauli_string(),
                         end=tile.to_data_pauli_string(),
-                        measurement_indices=mf(m),
                         center=m,
                         flags=tile.flags,
                     )
@@ -116,7 +115,6 @@ def make_bell_flagged_color_code_circuit_z_first_half_round_chunk(
                 flows.append(
                     gen.Flow(
                         end=tile.to_data_pauli_string(),
-                        measurement_indices=mf(m),
                         center=m,
                         flags=tile.flags,
                     )
@@ -252,7 +250,7 @@ def make_bell_flagged_color_code_circuit_x_second_half_round_chunk(
                 gen.Flow(
                     start=tile.to_data_pauli_string(),
                     end=tile.to_data_pauli_string(),
-                    measurement_indices=mf(m - 2j if m.imag > 0 else m, m + 2j),
+                    measurement_indices=[],
                     center=m,
                     flags=tile.flags,
                 )
@@ -275,13 +273,7 @@ def make_bell_flagged_color_code_circuit_x_second_half_round_chunk(
             gen.Flow(
                 start=obs_z,
                 end=obs_z,
-                measurement_indices=mf(
-                    *[
-                        tile.measurement_qubit
-                        for tile in code.patch.tiles
-                        if tile.basis == "Z" and tile.measurement_qubit.imag <= 1
-                    ]
-                ),
+                measurement_indices=[],
                 center=-1 - 1j,
                 obs_index=0,
             )

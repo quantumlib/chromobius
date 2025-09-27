@@ -94,8 +94,7 @@ def test_make_bell_flagged_color_code_circuit_exact():
         editable_extras={},
     )
     assert circuit == stim.Circuit(
-        """
-        QUBIT_COORDS(0, 0) 0
+        """QUBIT_COORDS(0, 0) 0
 QUBIT_COORDS(1, 0) 1
 QUBIT_COORDS(1, 1) 2
 QUBIT_COORDS(1, 2) 3
@@ -220,23 +219,23 @@ H 1 3 4 6 9 11 13 15 17 19 21 23 25 27 29 31 33 36
 DEPOLARIZE1(0.0001) 1 3 4 6 9 11 13 15 17 19 21 23 25 27 29 31 33 36 0 2 5 7 8 10 12 14 16 18 20 22 24 26 28 30 32 34 35
 TICK
 M(0.005) 1 3 9 11 13 21 23 25 33 4 6 15 17 19 27 29 31 36
-DETECTOR(1, 0, 0, 0) rec[-36] rec[-18]
-DETECTOR(1, 2, 0, 2) rec[-35] rec[-17]
+DETECTOR(1, 0, 0, 0) rec[-18]
+DETECTOR(1, 2, 0, 2) rec[-17]
 DETECTOR(2, 0, 0, 6) rec[-9]
 DETECTOR(2, 2, 0, 8) rec[-8]
-DETECTOR(3, 1, 0, 1) rec[-34] rec[-16]
-DETECTOR(3, 3, 0, 0) rec[-33] rec[-15]
-DETECTOR(3, 5, 0, 2) rec[-32] rec[-14]
+DETECTOR(3, 1, 0, 1) rec[-16]
+DETECTOR(3, 3, 0, 0) rec[-15]
+DETECTOR(3, 5, 0, 2) rec[-14]
 DETECTOR(4, 1, 0, 7) rec[-7]
 DETECTOR(4, 3, 0, 6) rec[-6]
 DETECTOR(4, 5, 0, 8) rec[-5]
-DETECTOR(5, 0, 0, 0) rec[-31] rec[-13]
-DETECTOR(5, 2, 0, 2) rec[-30] rec[-12]
-DETECTOR(5, 4, 0, 1) rec[-29] rec[-11]
+DETECTOR(5, 0, 0, 0) rec[-13]
+DETECTOR(5, 2, 0, 2) rec[-12]
+DETECTOR(5, 4, 0, 1) rec[-11]
 DETECTOR(6, 0, 0, 6) rec[-4]
 DETECTOR(6, 2, 0, 8) rec[-3]
 DETECTOR(6, 4, 0, 7) rec[-2]
-DETECTOR(7, 1, 0, 1) rec[-28] rec[-10]
+DETECTOR(7, 1, 0, 1) rec[-10]
 DETECTOR(8, 1, 0, 7) rec[-1]
 SHIFT_COORDS(0, 0, 1)
 DEPOLARIZE1(0.001) 1 3 9 11 13 21 23 25 33 4 6 15 17 19 27 29 31 36
@@ -284,20 +283,20 @@ REPEAT 98 {
     M(0.005) 1 3 9 11 13 21 23 25 33 4 6 15 17 19 27 29 31 36
     DETECTOR(1, 0, 0, 9) rec[-18]
     DETECTOR(1, 2, 0, 11) rec[-17]
-    DETECTOR(2, 0, 0, 3) rec[-45] rec[-27] rec[-26] rec[-9]
-    DETECTOR(2, 2, 0, 5) rec[-44] rec[-27] rec[-8]
+    DETECTOR(2, 0, 0, 3) rec[-45] rec[-9]
+    DETECTOR(2, 2, 0, 5) rec[-44] rec[-8]
     DETECTOR(3, 1, 0, 10) rec[-16]
     DETECTOR(3, 3, 0, 9) rec[-15]
     DETECTOR(3, 5, 0, 11) rec[-14]
-    DETECTOR(4, 1, 0, 4) rec[-43] rec[-24] rec[-7]
-    DETECTOR(4, 3, 0, 3) rec[-42] rec[-25] rec[-23] rec[-6]
-    DETECTOR(4, 5, 0, 5) rec[-41] rec[-24] rec[-5]
+    DETECTOR(4, 1, 0, 4) rec[-43] rec[-7]
+    DETECTOR(4, 3, 0, 3) rec[-42] rec[-6]
+    DETECTOR(4, 5, 0, 5) rec[-41] rec[-5]
     DETECTOR(5, 0, 0, 9) rec[-13]
     DETECTOR(5, 2, 0, 11) rec[-12]
     DETECTOR(5, 4, 0, 10) rec[-11]
-    DETECTOR(6, 0, 0, 3) rec[-40] rec[-22] rec[-21] rec[-4]
-    DETECTOR(6, 2, 0, 5) rec[-39] rec[-22] rec[-20] rec[-3]
-    DETECTOR(6, 4, 0, 4) rec[-38] rec[-21] rec[-2]
+    DETECTOR(6, 0, 0, 3) rec[-40] rec[-4]
+    DETECTOR(6, 2, 0, 5) rec[-39] rec[-3]
+    DETECTOR(6, 4, 0, 4) rec[-38] rec[-2]
     DETECTOR(7, 1, 0, 10) rec[-10]
     DETECTOR(8, 1, 0, 4) rec[-37] rec[-1]
     SHIFT_COORDS(0, 0, 1)
@@ -343,23 +342,23 @@ REPEAT 98 {
     DEPOLARIZE1(0.0001) 1 3 4 6 9 11 13 15 17 19 21 23 25 27 29 31 33 36 0 2 5 7 8 10 12 14 16 18 20 22 24 26 28 30 32 34 35
     TICK
     M(0.005) 1 3 9 11 13 21 23 25 33 4 6 15 17 19 27 29 31 36
-    DETECTOR(1, 0, 0, 0) rec[-54] rec[-36] rec[-18]
-    DETECTOR(1, 2, 0, 2) rec[-53] rec[-35] rec[-17]
+    DETECTOR(1, 0, 0, 0) rec[-54] rec[-18]
+    DETECTOR(1, 2, 0, 2) rec[-53] rec[-17]
     DETECTOR(2, 0, 0, 6) rec[-9]
     DETECTOR(2, 2, 0, 8) rec[-8]
-    DETECTOR(3, 1, 0, 1) rec[-52] rec[-34] rec[-16]
-    DETECTOR(3, 3, 0, 0) rec[-51] rec[-33] rec[-15]
-    DETECTOR(3, 5, 0, 2) rec[-50] rec[-32] rec[-14]
+    DETECTOR(3, 1, 0, 1) rec[-52] rec[-16]
+    DETECTOR(3, 3, 0, 0) rec[-51] rec[-15]
+    DETECTOR(3, 5, 0, 2) rec[-50] rec[-14]
     DETECTOR(4, 1, 0, 7) rec[-7]
     DETECTOR(4, 3, 0, 6) rec[-6]
     DETECTOR(4, 5, 0, 8) rec[-5]
-    DETECTOR(5, 0, 0, 0) rec[-49] rec[-31] rec[-13]
-    DETECTOR(5, 2, 0, 2) rec[-48] rec[-30] rec[-12]
-    DETECTOR(5, 4, 0, 1) rec[-47] rec[-29] rec[-11]
+    DETECTOR(5, 0, 0, 0) rec[-49] rec[-13]
+    DETECTOR(5, 2, 0, 2) rec[-48] rec[-12]
+    DETECTOR(5, 4, 0, 1) rec[-47] rec[-11]
     DETECTOR(6, 0, 0, 6) rec[-4]
     DETECTOR(6, 2, 0, 8) rec[-3]
     DETECTOR(6, 4, 0, 7) rec[-2]
-    DETECTOR(7, 1, 0, 1) rec[-46] rec[-28] rec[-10]
+    DETECTOR(7, 1, 0, 1) rec[-46] rec[-10]
     DETECTOR(8, 1, 0, 7) rec[-1]
     SHIFT_COORDS(0, 0, 1)
     DEPOLARIZE1(0.001) 1 3 9 11 13 21 23 25 33 4 6 15 17 19 27 29 31 36
@@ -467,35 +466,33 @@ DEPOLARIZE1(0.0001) 0 1 3 4 6 8 9 11 13 14 15 17 19 21 23 25 27 29 31 32 33 35 3
 TICK
 M(0.005) 36 31 29 27 19 17 15 6 4 35 34 32 30 28 26 24 22 20 18 16 14 12 10 8 7 5 2 0 33 25 23 21 13 11 9 3 1
 DETECTOR(1, 0, 0, 9) rec[-1]
-DETECTOR(1, 0, 1, 0) rec[-38] rec[-14] rec[-12] rec[-11] rec[-10] rec[-2] rec[-1]
+DETECTOR(1, 0, 1, 0) rec[-38] rec[-14] rec[-12] rec[-11] rec[-10] rec[-2]
 DETECTOR(1, 2, 0, 11) rec[-2]
-DETECTOR(1, 2, 1, 2) rec[-39] rec[-15] rec[-13] rec[-12] rec[-11] rec[-1]
-DETECTOR(2, 0, 0, 3) rec[-82] rec[-64] rec[-63] rec[-47] rec[-29]
-DETECTOR(2, 2, 0, 5) rec[-81] rec[-64] rec[-48] rec[-30]
+DETECTOR(1, 2, 1, 2) rec[-39] rec[-15] rec[-13] rec[-12] rec[-11] rec[-2] rec[-1]
+DETECTOR(2, 0, 0, 3) rec[-82] rec[-48] rec[-29]
+DETECTOR(2, 2, 0, 5) rec[-81] rec[-48] rec[-47] rec[-30]
 DETECTOR(3, 1, 0, 10) rec[-3]
-DETECTOR(3, 1, 1, 1) rec[-40] rec[-21] rec[-18] rec[-17] rec[-15] rec[-14] rec[-12] rec[-4]
+DETECTOR(3, 1, 1, 1) rec[-40] rec[-21] rec[-18] rec[-17] rec[-15] rec[-14] rec[-12] rec[-4] rec[-3]
 DETECTOR(3, 3, 0, 9) rec[-4]
-DETECTOR(3, 3, 1, 0) rec[-41] rec[-22] rec[-19] rec[-18] rec[-16] rec[-15] rec[-13] rec[-5] rec[-3]
+DETECTOR(3, 3, 1, 0) rec[-41] rec[-22] rec[-19] rec[-18] rec[-16] rec[-15] rec[-13] rec[-5] rec[-4] rec[-3]
 DETECTOR(3, 5, 0, 11) rec[-5]
-DETECTOR(3, 5, 1, 2) rec[-42] rec[-23] rec[-20] rec[-19] rec[-16] rec[-4]
-DETECTOR(4, 1, 0, 4) rec[-80] rec[-61] rec[-49] rec[-31]
-DETECTOR(4, 3, 0, 3) rec[-79] rec[-62] rec[-60] rec[-50] rec[-32]
-DETECTOR(4, 5, 0, 5) rec[-78] rec[-61] rec[-51] rec[-33]
+DETECTOR(3, 5, 1, 2) rec[-42] rec[-23] rec[-20] rec[-19] rec[-16] rec[-5] rec[-4]
+DETECTOR(4, 1, 0, 4) rec[-80] rec[-50] rec[-49] rec[-31]
+DETECTOR(4, 3, 0, 3) rec[-79] rec[-51] rec[-50] rec[-49] rec[-32]
+DETECTOR(4, 5, 0, 5) rec[-78] rec[-51] rec[-50] rec[-33]
 DETECTOR(5, 0, 0, 9) rec[-6]
-DETECTOR(5, 0, 1, 0) rec[-43] rec[-26] rec[-24] rec[-21] rec[-17] rec[-7] rec[-6]
+DETECTOR(5, 0, 1, 0) rec[-43] rec[-26] rec[-24] rec[-21] rec[-17] rec[-7]
 DETECTOR(5, 2, 0, 11) rec[-7]
-DETECTOR(5, 2, 1, 2) rec[-44] rec[-27] rec[-25] rec[-24] rec[-22] rec[-21] rec[-18] rec[-8] rec[-6]
+DETECTOR(5, 2, 1, 2) rec[-44] rec[-27] rec[-25] rec[-24] rec[-22] rec[-21] rec[-18] rec[-8] rec[-7] rec[-6]
 DETECTOR(5, 4, 0, 10) rec[-8]
-DETECTOR(5, 4, 1, 1) rec[-45] rec[-25] rec[-23] rec[-22] rec[-19] rec[-7]
-DETECTOR(6, 0, 0, 3) rec[-77] rec[-59] rec[-58] rec[-52] rec[-34]
-DETECTOR(6, 2, 0, 5) rec[-76] rec[-59] rec[-57] rec[-53] rec[-35]
-DETECTOR(6, 4, 0, 4) rec[-75] rec[-58] rec[-54] rec[-36]
+DETECTOR(5, 4, 1, 1) rec[-45] rec[-25] rec[-23] rec[-22] rec[-19] rec[-8] rec[-7]
+DETECTOR(6, 0, 0, 3) rec[-77] rec[-53] rec[-34]
+DETECTOR(6, 2, 0, 5) rec[-76] rec[-54] rec[-53] rec[-52] rec[-35]
+DETECTOR(6, 4, 0, 4) rec[-75] rec[-54] rec[-53] rec[-36]
 DETECTOR(7, 1, 0, 10) rec[-9]
-DETECTOR(7, 1, 1, 1) rec[-46] rec[-28] rec[-27] rec[-26] rec[-24]
+DETECTOR(7, 1, 1, 1) rec[-46] rec[-28] rec[-27] rec[-26] rec[-24] rec[-9]
 DETECTOR(8, 1, 0, 4) rec[-74] rec[-55] rec[-37]
 OBSERVABLE_INCLUDE(0) rec[-28] rec[-27] rec[-26] rec[-25] rec[-24] rec[-23] rec[-22] rec[-21] rec[-20] rec[-19] rec[-18] rec[-17] rec[-16] rec[-15] rec[-14] rec[-13] rec[-12] rec[-11] rec[-10] rec[-9] rec[-8] rec[-7] rec[-5] rec[-4] rec[-3] rec[-2]
 SHIFT_COORDS(0, 0, 2)
-DEPOLARIZE1(0.001) 36 31 29 27 19 17 15 6 4 35 34 32 30 28 26 24 22 20 18 16 14 12 10 8 7 5 2 0 33 25 23 21 13 11 9 3 1
-
-    """
+DEPOLARIZE1(0.001) 36 31 29 27 19 17 15 6 4 35 34 32 30 28 26 24 22 20 18 16 14 12 10 8 7 5 2 0 33 25 23 21 13 11 9 3 1"""
     )
