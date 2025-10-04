@@ -50,7 +50,7 @@ bazel run :chromobius
 
 ```bash
 cmake .
-make chromobius_pybind
+make chromobius
 ```
 
 Then, to run the built tool:
