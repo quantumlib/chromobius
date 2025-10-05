@@ -56,26 +56,26 @@ jobs:
       CIBW_TEST_REQUIRES: pytest stim~=1.14 sinter pygltflib
       CIBW_TEST_COMMAND: pytest {project}/src
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
       - run: python tools/overwrite_dev_versions_with_date.py
       - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir dist
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: "dist-chromobius-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
           path: dist/*
   build_sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
       - run: python -m pip install setuptools pybind11~=2.11.1
       - run: python tools/overwrite_dev_versions_with_date.py
       - run: mkdir output
       - run: python setup.py sdist
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: "dist-chromobius-sdist"
           path: dist/*.tar.gz
@@ -84,30 +84,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist-chromobius
           pattern: dist-chromobius-*
   check_sdist_installs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
       - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools
       - run: python setup.py sdist
       - run: pip install dist/*.tar.gz
   run_main:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: cmake .
     - run: make chromobius -j 2
     - run: out/chromobius --help
   build_bazel:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: bazel-contrib/setup-bazel@0.8.5
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+    - uses: bazel-contrib/setup-bazel@v1
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -118,7 +118,7 @@ jobs:
   build_clang:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.12.1
@@ -126,7 +126,7 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
-    - uses: egor-tensin/setup-clang@v1
+    - uses: egor-tensin/setup-clang@ef434b41eb33a70396fb336b1bae39c76d740c3d # v1
       with:
         version: latest
         platform: x64
@@ -136,14 +136,14 @@ jobs:
   perf:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: cmake .
     - run: make chromobius_perf -j 2
     - run: out/chromobius_perf
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.12.1
@@ -157,7 +157,7 @@ jobs:
   test_o3:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.12.1
@@ -171,9 +171,9 @@ jobs:
   test_generated_docs_are_fresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: bazel-contrib/setup-bazel@v1
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -187,7 +187,7 @@ jobs:
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - run: tools/regen_file_lists.sh /tmp
       - run: diff /tmp/perf_files file_lists/perf_files
       - run: diff /tmp/pybind_files file_lists/pybind_files
@@ -196,9 +196,9 @@ jobs:
   test_pybind:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: bazel-contrib/setup-bazel@v1
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -214,11 +214,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4.1.7
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: dist-chromobius
           path: dist-chromobius
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
           packages_dir: dist-chromobius/
