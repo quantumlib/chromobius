@@ -20,6 +20,5 @@ common:verbose --auto_output_filter=none
 common:verbose --show_timestamps
 common:verbose --subcommands
 common:verbose --verbose_failures
-
 test:verbose --test_summary=detailed
 test:verbose --test_verbose_timeout_warnings
