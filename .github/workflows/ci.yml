@@ -104,7 +104,7 @@ jobs:
     steps:
     - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: cmake .
-    - run: make chromobius -j 2
+    - run: make chromobius -j $(( $(nproc) - 1 ))
     - run: out/chromobius --help
   build_bazel:
     runs-on: ubuntu-latest
@@ -127,7 +127,7 @@ jobs:
         git clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
-        make
+        make -j $(( $(nproc) - 1 ))
         sudo make install
     - uses: egor-tensin/setup-clang@ef434b41eb33a70396fb336b1bae39c76d740c3d # v1
       with:
@@ -141,7 +141,7 @@ jobs:
     steps:
     - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: cmake .
-    - run: make chromobius_perf -j 2
+    - run: make chromobius_perf -j $(( $(nproc) - 1 ))
     - run: out/chromobius_perf
   test:
     runs-on: ubuntu-latest
@@ -152,10 +152,10 @@ jobs:
         git clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
-        make
+        make -j $(( $(nproc) - 1 ))
         sudo make install
     - run: cmake .
-    - run: make chromobius_test -j 2
+    - run: make chromobius_test -j $(( $(nproc) - 1 ))
     - run: out/chromobius_test
   test_o3:
     runs-on: ubuntu-latest
@@ -166,10 +166,10 @@ jobs:
         git clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
-        make
+        make -j $(( $(nproc) - 1 ))
         sudo make install
     - run: cmake . -DSIMD_WIDTH=256
-    - run: make chromobius_test_o3 -j 2
+    - run: make chromobius_test_o3 -j $(( $(nproc) - 1 ))
     - run: out/chromobius_test_o3
   test_generated_docs_are_fresh:
     runs-on: ubuntu-latest
