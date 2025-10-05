@@ -1,9 +1,9 @@
 # These are development requirements, not install requirements.
 matplotlib ~= 3.5
 numpy
-pymatching ~= 2.0
+pymatching ~= 2.2.2
 pytest
 scipy
 sinter ~= 1.14
-stim ~= 1.14
+stim ~= 1.15.0
 pygltflib
