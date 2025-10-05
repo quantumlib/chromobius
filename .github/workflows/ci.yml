@@ -131,7 +131,7 @@ jobs:
         version: latest
         platform: x64
     - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-    - run: cmake --build . --target chromobius chromobius_test chromobius_perf
+    - run: cmake --build . -j --target chromobius chromobius_test chromobius_perf
     - run: out/chromobius --help
   perf:
     runs-on: ubuntu-latest
