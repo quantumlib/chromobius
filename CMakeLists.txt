@@ -39,15 +39,35 @@ file(STRINGS file_lists/test_files TEST_FILES)
 file(STRINGS file_lists/perf_files PERF_FILES)
 file(STRINGS file_lists/pybind_files PYBIND_FILES)
 
-set(SIMD_WIDTH 128)
 include(FetchContent)
+
+find_package(GTest QUIET)
+if(NOT GTest_FOUND)
+    message(STATUS "GTest not found. Will try fetching and building from source.")
+    FetchContent_Declare(googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        # Note: keep the version of GTest here and in .github/workflows/ci.yml the same.
+        GIT_TAG        release-1.12.1
+    )
+    # For Windows: prevent overriding parent project's compiler/linker settings.
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+    if(TARGET GTest::gtest)
+        message(STATUS "GTest fetch successful.")
+        set(GTest_FOUND TRUE)
+    else()
+        message("WARNING: Failed to get GTest. Some tests will not be built. To fix, follow the Standalone CMake Project install instructions at https://github.com/google/googletest/blob/master/googletest/README.md")
+    endif()
+endif()
+
+set(SIMD_WIDTH 128)
 FetchContent_Declare(stim
         GIT_REPOSITORY https://github.com/quantumlib/stim.git
         GIT_TAG da4594c5ede00a063ec2b84bd830f846b5d097dd)
 FetchContent_GetProperties(stim)
 if(NOT stim_POPULATED)
-  FetchContent_Populate(stim)
-  add_subdirectory(${stim_SOURCE_DIR})
+    FetchContent_Populate(stim)
+    add_subdirectory(${stim_SOURCE_DIR})
 endif()
 
 FetchContent_Declare(pymatching
@@ -83,8 +103,7 @@ target_compile_options(chromobius_perf PRIVATE -Wall -Wpedantic -O3 -g -fno-omit
 target_link_options(chromobius_perf PRIVATE -pthread)
 target_link_libraries(chromobius_perf PRIVATE libstim libpymatching)
 
-find_package(GTest QUIET)
-if(${GTest_FOUND})
+if(GTest_FOUND)
     add_executable(chromobius_test ${SOURCE_FILES_NO_MAIN} ${PYMATCHING_SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(chromobius_test GTest::gtest GTest::gtest_main libstim libpymatching)
     target_compile_options(chromobius_test PRIVATE -Wall -Wpedantic -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=undefined -fsanitize=address)
