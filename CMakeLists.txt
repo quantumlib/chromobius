@@ -66,8 +66,8 @@ FetchContent_Declare(stim
         GIT_TAG da4594c5ede00a063ec2b84bd830f846b5d097dd)
 FetchContent_GetProperties(stim)
 if(NOT stim_POPULATED)
-    FetchContent_Populate(stim)
-    add_subdirectory(${stim_SOURCE_DIR})
+  FetchContent_MakeAvailable(stim)
+  add_subdirectory(${stim_SOURCE_DIR})
 endif()
 
 FetchContent_Declare(pymatching
@@ -75,7 +75,7 @@ FetchContent_Declare(pymatching
         GIT_TAG 40dcf8c01273ff7e23a7105d5cdc410ada067001)
 FetchContent_GetProperties(pymatching)
 if(NOT pymatching_POPULATED)
-  FetchContent_Populate(pymatching)
+  FetchContent_MakeAvailable(pymatching)
   add_subdirectory(${pymatching_SOURCE_DIR})
 endif()
 
