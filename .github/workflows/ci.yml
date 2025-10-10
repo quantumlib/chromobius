@@ -155,7 +155,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
-    - run: apt-get update && apt-get install --no-install-recommends -y clang
+    - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang
     - run: |
         cd ..
         git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
