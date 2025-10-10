@@ -158,7 +158,7 @@ jobs:
     - run: apt-get update && apt-get install --no-install-recommends -y clang
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.12.1
+        git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
         make -j $(( $(nproc) - 1 ))
@@ -179,7 +179,7 @@ jobs:
     - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.12.1
+        git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
         make -j $(( $(nproc) - 1 ))
@@ -193,7 +193,7 @@ jobs:
     - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.12.1
+        git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
         make -j $(( $(nproc) - 1 ))
