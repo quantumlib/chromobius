@@ -45,15 +45,25 @@ jobs:
           {os: ubuntu-latest, dist: cp312-manylinux_x86_64},
           {os: ubuntu-latest, dist: cp313-manylinux_x86_64},
 
-          {os: macos-latest, dist: cp310-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp311-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp312-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp313-macosx_x86_64, macosarch: x86_64},
+          {os: macos-13, dist: cp310-macosx_x86_64, macosarch: x86_64},
+          {os: macos-13, dist: cp311-macosx_x86_64, macosarch: x86_64},
+          {os: macos-13, dist: cp312-macosx_x86_64, macosarch: x86_64},
+          {os: macos-13, dist: cp313-macosx_x86_64, macosarch: x86_64},
 
-          {os: macos-latest, dist: cp310-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp311-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp312-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp313-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp313-macosx_arm64, macosarch: arm64},
+
+          {os: macos-15, dist: cp310-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp311-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp313-macosx_arm64, macosarch: arm64},
+
+          {os: macos-26, dist: cp310-macosx_arm64, macosarch: arm64},
+          {os: macos-26, dist: cp311-macosx_arm64, macosarch: arm64},
+          {os: macos-26, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-26, dist: cp313-macosx_arm64, macosarch: arm64},
 
           # Currently disabled because in CI it gives "DLL load failed" errors I don't understand when testing the wheel.
           # {os: windows-latest, dist: cp310-win_amd64},
