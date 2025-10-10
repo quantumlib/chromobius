@@ -79,8 +79,8 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: "10.15"
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      CIBW_TEST_REQUIRES: pytest stim~=1.14 sinter pygltflib
-      CIBW_TEST_COMMAND: pytest {project}/src
+      CIBW_TEST_REQUIRES: pytest pytest-xdist stim~=1.14 sinter pygltflib
+      CIBW_TEST_COMMAND: pytest -n auto {project}/src
       CIBW_BUILD_VERBOSITY: ${{inputs.debug && 1 || ''}}
       # Color codes make the logs hard to read. (CMake uses CLICOLOR, cibuildwheel uses NO_COLOR.)
       CLICOLOR: ${{inputs.debug && 0 || ''}}
@@ -246,8 +246,8 @@ jobs:
           bazelisk-version: 1.x
       - run: bazel build :chromobius_dev_wheel
       - run: pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
-      - run: pip install pytest stim~=1.14 sinter pygltflib
-      - run: pytest src
+      - run: pip install pytest pytest-xdist stim~=1.14 sinter pygltflib
+      - run: pytest -n auto src
       - run: tools/doctest_proper.py --module chromobius
   upload_dev_release_to_pypi:
     needs: ["build_dist"]
