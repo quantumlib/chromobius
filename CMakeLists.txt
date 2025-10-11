@@ -63,20 +63,18 @@ endif()
 set(SIMD_WIDTH 128)
 FetchContent_Declare(stim
         GIT_REPOSITORY https://github.com/quantumlib/stim.git
-        GIT_TAG da4594c5ede00a063ec2b84bd830f846b5d097dd)
+        GIT_TAG 1320ad7eac7de34d2e9c70daa44fbc6d84174450) # v1.15.dev0 (what PyMatching 2.2.2 uses)
 FetchContent_GetProperties(stim)
 if(NOT stim_POPULATED)
   FetchContent_MakeAvailable(stim)
-  add_subdirectory(${stim_SOURCE_DIR})
 endif()
 
 FetchContent_Declare(pymatching
         GIT_REPOSITORY https://github.com/oscarhiggott/pymatching.git
-        GIT_TAG 40dcf8c01273ff7e23a7105d5cdc410ada067001)
+        GIT_TAG 08f4f03fc876bd3e13351b677241fc2e160b8b38) # v2.2.2
 FetchContent_GetProperties(pymatching)
 if(NOT pymatching_POPULATED)
   FetchContent_MakeAvailable(pymatching)
-  add_subdirectory(${pymatching_SOURCE_DIR})
 endif()
 
 add_executable(chromobius src/main.cc ${SOURCE_FILES_NO_MAIN} ${PYMATCHING_SOURCE_FILES_NO_MAIN})
@@ -118,14 +116,29 @@ else()
 endif()
 
 find_package(Python COMPONENTS Interpreter Development)
-find_package(pybind11 CONFIG)
-if ((${pybind11_FOUND} AND ${Python_FOUND}) OR "$ENV{CMAKE_FORCE_PYBIND_CHROMOBIUS}")
+
+# Look for the same Pybind version range as ci.yml uses.
+find_package(pybind11 2.11.1...<2.12.0 QUIET CONFIG)
+if(NOT pybind11_FOUND)
+    message(STATUS "Pybind11 not found or the version found is not the needed one. Will try fetching and building the desired version from source.")
+    FetchContent_Declare(pybind11
+        GIT_REPOSITORY https://github.com/pybind/pybind11.git
+        GIT_TAG        v2.11.2
+    )
+    FetchContent_MakeAvailable(pybind11)
+    if(TARGET pybind11::pybind11)
+        message(STATUS "Pybind11 fetch successful.")
+        set(pybind11_FOUND TRUE)
+    endif()
+endif()
+if ((pybind11_FOUND AND Python_FOUND) OR "$ENV{CMAKE_FORCE_PYBIND_CHROMOBIUS}")
     pybind11_add_module(chromobius_pybind ${PYBIND_FILES} ${SOURCE_FILES_NO_MAIN})
     set_target_properties(chromobius_pybind PROPERTIES OUTPUT_NAME chromobius)
     target_compile_options(chromobius_pybind PRIVATE -O3 -DNDEBUG)
     target_link_libraries(chromobius_pybind PRIVATE libstim libpymatching)
     target_link_options(chromobius_pybind PRIVATE -O3)
     add_compile_definitions(CHROMOBIUS_VERSION_INFO=${CHROMOBIUS_VERSION_INFO})
+    message(STATUS "Added chromobius_pybind target.")
 else()
     message("WARNING: Skipped chromobius_pybind target. `pybind11` not found. To fix, install pybind11. On debian based distributions, the package name is `pybind11-dev`")
 endif()
