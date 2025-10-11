@@ -172,7 +172,7 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make -j $(( $(nproc) - 1 ))
         sudo make install
-    - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
+    - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     - run: cmake --build . -j --target chromobius chromobius_test chromobius_perf
     - run: out/chromobius --help
   perf:
