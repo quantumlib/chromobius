@@ -52,11 +52,11 @@ jobs:
           {os: ubuntu-latest, dist: cp313-manylinux_x86_64, arch: x86_64},
           {os: ubuntu-latest, dist: cp314-manylinux_x86_64, arch: x86_64},
 
-          {os: ubuntu-latest, dist: cp310-manylinux_aarch64, arch: aarch64},
-          {os: ubuntu-latest, dist: cp311-manylinux_aarch64, arch: aarch64},
-          {os: ubuntu-latest, dist: cp312-manylinux_aarch64, arch: aarch64},
-          {os: ubuntu-latest, dist: cp313-manylinux_aarch64, arch: aarch64},
-          {os: ubuntu-latest, dist: cp314-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp310-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp311-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp312-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp313-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp314-manylinux_aarch64, arch: aarch64},
 
           {os: macos-13, dist: cp310-macosx_x86_64, arch: x86_64, target: '10.15'},
           {os: macos-13, dist: cp311-macosx_x86_64, arch: x86_64, target: '10.15'},
