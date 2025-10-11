@@ -41,49 +41,69 @@ concurrency:
 
 jobs:
   build_dist:
-    runs-on: ${{ matrix.os_dist.os }}
+    runs-on: ${{matrix.build.os}}
     strategy:
       fail-fast: false
       matrix:
-        os_dist: [
-          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp311-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp312-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp313-manylinux_x86_64},
+        build: [
+          {os: ubuntu-latest, dist: cp310-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp311-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp312-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp313-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp314-manylinux_x86_64, arch: x86_64},
 
-          {os: macos-13, dist: cp310-macosx_x86_64, macosarch: x86_64},
-          {os: macos-13, dist: cp311-macosx_x86_64, macosarch: x86_64},
-          {os: macos-13, dist: cp312-macosx_x86_64, macosarch: x86_64},
-          {os: macos-13, dist: cp313-macosx_x86_64, macosarch: x86_64},
+          {os: ubuntu-latest, dist: cp310-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-latest, dist: cp311-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-latest, dist: cp312-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-latest, dist: cp313-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-latest, dist: cp314-manylinux_aarch64, arch: aarch64},
 
-          {os: macos-14, dist: cp310-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp311-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp312-macosx_arm64, macosarch: arm64},
-          {os: macos-14, dist: cp313-macosx_arm64, macosarch: arm64},
+          {os: macos-13, dist: cp310-macosx_x86_64, arch: x86_64, target: '10.5'},
+          {os: macos-13, dist: cp311-macosx_x86_64, arch: x86_64, target: '10.5'},
+          {os: macos-13, dist: cp312-macosx_x86_64, arch: x86_64, target: '10.5'},
+          {os: macos-13, dist: cp313-macosx_x86_64, arch: x86_64, target: '10.5'},
+          {os: macos-13, dist: cp314-macosx_x86_64, arch: x86_64, target: '10.5'},
 
-          {os: macos-15, dist: cp310-macosx_arm64, macosarch: arm64},
-          {os: macos-15, dist: cp311-macosx_arm64, macosarch: arm64},
-          {os: macos-15, dist: cp312-macosx_arm64, macosarch: arm64},
-          {os: macos-15, dist: cp313-macosx_arm64, macosarch: arm64},
+          {os: macos-14, dist: cp310-macosx_arm64, arch: arm64, target: '10.5'},
+          {os: macos-14, dist: cp311-macosx_arm64, arch: arm64, target: '10.5'},
+          {os: macos-14, dist: cp312-macosx_arm64, arch: arm64, target: '10.5'},
+          {os: macos-14, dist: cp313-macosx_arm64, arch: arm64, target: '10.5'},
+          {os: macos-14, dist: cp314-macosx_arm64, arch: arm64, target: '10.5'},
 
-          {os: macos-26, dist: cp310-macosx_arm64, macosarch: arm64},
-          {os: macos-26, dist: cp311-macosx_arm64, macosarch: arm64},
-          {os: macos-26, dist: cp312-macosx_arm64, macosarch: arm64},
-          {os: macos-26, dist: cp313-macosx_arm64, macosarch: arm64},
+          {os: macos-15, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
 
-          # Currently disabled because in CI it gives "DLL load failed" errors I don't understand when testing the wheel.
-          # {os: windows-latest, dist: cp310-win_amd64},
-          # {os: windows-latest, dist: cp311-win_amd64},
-          # {os: windows-latest, dist: cp312-win_amd64},
+          {os: macos-26, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
+
+          {os: windows-latest, dist: cp310-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp311-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp312-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp313-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp314-win_amd64, arch: AMD64},
+
+          {os: windows-latest, dist: cp310-win_arm64, arch: ARM64},
+          {os: windows-latest, dist: cp311-win_arm64, arch: ARM64},
+          {os: windows-latest, dist: cp312-win_arm64, arch: ARM64},
+          {os: windows-latest, dist: cp313-win_arm64, arch: ARM64},
+          {os: windows-latest, dist: cp314-win_arm64, arch: ARM64},
         ]
     env:
-      MACOSX_DEPLOYMENT_TARGET: "10.15"
-      CIBW_BUILD: "${{ matrix.os_dist.dist }}"
-      CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
+      MACOSX_DEPLOYMENT_TARGET: ${{matrix.build.target}}
+      CIBW_BUILD: ${{matrix.build.dist}}
+      CIBW_ARCHS: ${{matrix.build.arch}}
       CIBW_TEST_REQUIRES: pytest pytest-xdist stim~=1.14 sinter pygltflib
       CIBW_TEST_COMMAND: pytest -n auto {project}/src
+      CIBW_PRERELEASE_PYTHONS: 1
       CIBW_BUILD_VERBOSITY: ${{inputs.debug && 1 || ''}}
-      # Color codes make the logs hard to read. (CMake uses CLICOLOR, cibuildwheel uses NO_COLOR.)
+      CIBW_ENVIRONMENT: ${{inputs.debug && 'PIP_VERBOSE=1' || ''}}
+      # Color escape codes make the logs hard to read. (CMake uses CLICOLOR, cibuildwheel uses NO_COLOR.)
       CLICOLOR: ${{inputs.debug && 0 || ''}}
       NO_COLOR: ${{inputs.debug && 1 || ''}}
     steps:
@@ -91,13 +111,14 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           cache: pip
+          python-version: '3.11'
       - run: python tools/overwrite_dev_versions_with_date.py
-      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.23.3 setuptools
+      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=3.2.0 setuptools
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir dist
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: "dist-chromobius-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
+          name: "dist-chromobius-${{matrix.build.os}}-${{matrix.build.dist}}-${{matrix.build.arch}}"
           path: dist/*
   build_sdist:
     runs-on: ubuntu-latest
@@ -226,7 +247,7 @@ jobs:
           bazelisk-version: 1.x
       - run: bazel build :chromobius_dev_wheel
       - run: pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
-      - run: pip install pytest pytest-xdist stim~=1.14 sinter pygltflib
+      - run: pip install pytest pytest-xdist stim~=1.15 sinter pygltflib
       - run: pytest -n auto src
       - run: tools/doctest_proper.py --module chromobius
   upload_dev_release_to_pypi:
