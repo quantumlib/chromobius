@@ -121,6 +121,8 @@ jobs:
         env:
           # These paths are on GitHub runners.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: 'delvewheel repair -v --add-path "D:\\a\\chromobius\\chromobius\\dist;D:\\a\\chromobius\\chromobius" -w {dest_dir} {wheel}'
+          CARGO_BUILD_TARGET: 'aarch64-pc-windows-msvc'
+          SETUPTOOLS_USE_DISTUTILS: 'local'
         run: |
           python -m pip install delvewheel
           python -m cibuildwheel --output-dir dist
