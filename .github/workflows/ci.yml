@@ -230,7 +230,7 @@ jobs:
       - run: pytest -n auto src
       - run: tools/doctest_proper.py --module chromobius
   upload_dev_release_to_pypi:
-    needs: ["build_dist", "build_sdist"]
+    needs: ["build_dist", "build_sdist", "run_main", "test", "test_o3", "test_pybind"]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
