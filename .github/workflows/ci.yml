@@ -64,11 +64,11 @@ jobs:
           {os: macos-13, dist: cp313-macosx_x86_64, arch: x86_64, target: '10.15'},
           {os: macos-13, dist: cp314-macosx_x86_64, arch: x86_64, target: '10.15'},
 
-          {os: macos-14, dist: cp310-macosx_arm64, arch: arm64, target: '10.15'},
-          {os: macos-14, dist: cp311-macosx_arm64, arch: arm64, target: '10.15'},
-          {os: macos-14, dist: cp312-macosx_arm64, arch: arm64, target: '10.15'},
-          {os: macos-14, dist: cp313-macosx_arm64, arch: arm64, target: '10.15'},
-          {os: macos-14, dist: cp314-macosx_arm64, arch: arm64, target: '10.15'},
+          {os: macos-14, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
 
           {os: macos-15, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
           {os: macos-15, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
