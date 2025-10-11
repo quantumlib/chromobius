@@ -88,11 +88,11 @@ jobs:
           {os: windows-latest, dist: cp313-win_amd64, arch: AMD64},
           {os: windows-latest, dist: cp314-win_amd64, arch: AMD64},
 
-          {os: windows-latest, dist: cp310-win_arm64, arch: ARM64},
-          {os: windows-latest, dist: cp311-win_arm64, arch: ARM64},
-          {os: windows-latest, dist: cp312-win_arm64, arch: ARM64},
-          {os: windows-latest, dist: cp313-win_arm64, arch: ARM64},
-          {os: windows-latest, dist: cp314-win_arm64, arch: ARM64},
+          {os: windows-11-arm, dist: cp310-win_arm64, arch: ARM64},
+          {os: windows-11-arm, dist: cp311-win_arm64, arch: ARM64},
+          {os: windows-11-arm, dist: cp312-win_arm64, arch: ARM64},
+          {os: windows-11-arm, dist: cp313-win_arm64, arch: ARM64},
+          {os: windows-11-arm, dist: cp314-win_arm64, arch: ARM64},
         ]
     env:
       MACOSX_DEPLOYMENT_TARGET: ${{matrix.build.target}}
