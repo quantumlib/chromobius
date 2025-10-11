@@ -98,7 +98,7 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: ${{matrix.build.target}}
       CIBW_BUILD: ${{matrix.build.dist}}
       CIBW_ARCHS: ${{matrix.build.arch}}
-      CIBW_TEST_REQUIRES: pytest pytest-xdist stim~=1.14 sinter pygltflib
+      CIBW_TEST_REQUIRES: pytest pytest-xdist stim~=1.15 sinter pygltflib
       CIBW_TEST_COMMAND: pytest -n auto {project}/src
       CIBW_PRERELEASE_PYTHONS: 1
       CIBW_BUILD_VERBOSITY: ${{inputs.debug && 1 || ''}}
