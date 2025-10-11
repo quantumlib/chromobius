@@ -110,7 +110,7 @@ jobs:
       - run: python tools/overwrite_dev_versions_with_date.py
       - run: python setup.py sdist
         # Before going further, test that the result is installable.
-      - run: pip install dist/*.tar.gz || exit 1
+      - run: pip install ${{inputs.debug && '-v' || ''}} dist/*.tar.gz || exit 1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist-chromobius-sdist
