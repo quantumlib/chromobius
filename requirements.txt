@@ -5,5 +5,5 @@ pymatching ~= 2.2.2
 pytest
 scipy
 sinter ~= 1.14
-stim ~= 1.15.0
+stim ~= 1.14
 pygltflib
