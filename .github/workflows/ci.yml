@@ -97,9 +97,6 @@ jobs:
       CIBW_PRERELEASE_PYTHONS: 1
       CIBW_BUILD_VERBOSITY: ${{inputs.debug && 1 || ''}}
       CIBW_ENVIRONMENT: ${{inputs.debug && 'PIP_VERBOSE=1' || ''}}
-      # Color escape codes make the logs hard to read. (CMake uses CLICOLOR, cibuildwheel uses NO_COLOR.)
-      CLICOLOR: ${{inputs.debug && 0 || ''}}
-      NO_COLOR: ${{inputs.debug && 1 || ''}}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
