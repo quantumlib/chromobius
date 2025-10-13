@@ -13,6 +13,7 @@
 # limitations under the License.
 
 name: ci
+
 on:
   push:
     branches:
@@ -25,89 +26,130 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Run with debugging options'
+        type: boolean
+        default: false
+
+permissions: read-all
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{github.workflow}}-${{github.event.pull_request.number||github.ref}}
+
 jobs:
   build_dist:
-    runs-on: ${{ matrix.os_dist.os }}
+    runs-on: ${{matrix.build.os}}
     strategy:
       fail-fast: false
       matrix:
-        os_dist: [
-          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp311-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp312-manylinux_x86_64},
+        build: [
+          {os: ubuntu-latest, dist: cp310-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp311-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp312-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp313-manylinux_x86_64, arch: x86_64},
+          {os: ubuntu-latest, dist: cp314-manylinux_x86_64, arch: x86_64},
 
-          {os: macos-latest, dist: cp310-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp311-macosx_x86_64, macosarch: x86_64},
-          {os: macos-latest, dist: cp312-macosx_x86_64, macosarch: x86_64},
+          {os: ubuntu-24.04-arm, dist: cp310-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp311-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp312-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp313-manylinux_aarch64, arch: aarch64},
+          {os: ubuntu-24.04-arm, dist: cp314-manylinux_aarch64, arch: aarch64},
 
-          {os: macos-latest, dist: cp310-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp311-macosx_arm64, macosarch: arm64},
-          {os: macos-latest, dist: cp312-macosx_arm64, macosarch: arm64},
+          {os: macos-13, dist: cp310-macosx_x86_64, arch: x86_64, target: '10.15'},
+          {os: macos-13, dist: cp311-macosx_x86_64, arch: x86_64, target: '10.15'},
+          {os: macos-13, dist: cp312-macosx_x86_64, arch: x86_64, target: '10.15'},
+          {os: macos-13, dist: cp313-macosx_x86_64, arch: x86_64, target: '10.15'},
+          {os: macos-13, dist: cp314-macosx_x86_64, arch: x86_64, target: '10.15'},
 
-          # Currently disabled because in CI it gives "DLL load failed" errors I don't understand when testing the wheel.
-          # {os: windows-latest, dist: cp310-win_amd64},
-          # {os: windows-latest, dist: cp311-win_amd64},
-          # {os: windows-latest, dist: cp312-win_amd64},
+          {os: macos-14, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-14, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
+
+          {os: macos-15, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-15, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
+
+          {os: macos-26, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
+          {os: macos-26, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
+
+          {os: windows-latest, dist: cp310-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp311-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp312-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp313-win_amd64, arch: AMD64},
+          {os: windows-latest, dist: cp314-win_amd64, arch: AMD64},
         ]
     env:
-      MACOSX_DEPLOYMENT_TARGET: "10.15"
-      CIBW_BUILD: "${{ matrix.os_dist.dist }}"
-      CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macosarch }}"
-      CIBW_TEST_REQUIRES: pytest stim~=1.14 sinter pygltflib
-      CIBW_TEST_COMMAND: pytest {project}/src
+      MACOSX_DEPLOYMENT_TARGET: ${{matrix.build.target}}
+      CIBW_BUILD: ${{matrix.build.dist}}
+      CIBW_ARCHS: ${{matrix.build.arch}}
+      CIBW_TEST_REQUIRES: pytest pytest-xdist stim~=1.15 sinter pygltflib
+      CIBW_TEST_COMMAND: pytest -n auto {project}/src
+      CIBW_PRERELEASE_PYTHONS: 1
+      CIBW_BUILD_VERBOSITY: ${{inputs.debug && 1 || ''}}
+      CIBW_ENVIRONMENT: ${{inputs.debug && 'PIP_VERBOSE=1' || ''}}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - run: python tools/overwrite_dev_versions_with_date.py
-      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools
-      - run: python -m cibuildwheel --print-build-identifiers
-      - run: python -m cibuildwheel --output-dir dist
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          name: "dist-chromobius-${{ matrix.os_dist.os }}-${{ matrix.os_dist.dist }}-${{ matrix.os_dist.macosarch }}"
+          cache: pip
+          python-version: '3.11'
+      - run: python tools/overwrite_dev_versions_with_date.py
+      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=3.2.0 setuptools
+      - run: python -m cibuildwheel --print-build-identifiers
+      - if: matrix.build.arch != 'AMD64'
+        run: python -m cibuildwheel --output-dir dist
+      - if: matrix.build.arch == 'AMD64'
+        env:
+          # These paths are on GitHub runners.
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: 'delvewheel repair -v --add-path "D:\\a\\chromobius\\chromobius\\dist;D:\\a\\chromobius\\chromobius" -w {dest_dir} {wheel}'
+          CARGO_BUILD_TARGET: 'aarch64-pc-windows-msvc'
+          SETUPTOOLS_USE_DISTUTILS: 'local'
+        run: |
+          python -m pip install delvewheel
+          python -m cibuildwheel --output-dir dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: "dist-chromobius-${{matrix.build.os}}-${{matrix.build.dist}}-${{matrix.build.arch}}"
           path: dist/*
   build_sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - run: python -m pip install setuptools pybind11~=2.11.1
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          cache: pip
+          python-version: '3.11'
+      - run: python -m pip install setuptools pybind11~=2.11.1 ninja
       - run: python tools/overwrite_dev_versions_with_date.py
-      - run: mkdir output
       - run: python setup.py sdist
-      - uses: actions/upload-artifact@v4.4.0
+        # Before going further, test that the result is installable.
+      - run: pip install ${{inputs.debug && '-v' || ''}} dist/*.tar.gz || exit 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: "dist-chromobius-sdist"
+          name: dist-chromobius-sdist
           path: dist/*.tar.gz
-  merge_upload_artifacts:
-    needs: ["build_dist", "build_sdist"]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
-        with:
-          name: dist-chromobius
-          pattern: dist-chromobius-*
-  check_sdist_installs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - run: python -m pip install pybind11~=2.11.1 cibuildwheel~=2.16.2 setuptools
-      - run: python setup.py sdist
-      - run: pip install dist/*.tar.gz
   run_main:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: cmake .
-    - run: make chromobius -j 2
+    - run: make chromobius -j
     - run: out/chromobius --help
   build_bazel:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: bazel-contrib/setup-bazel@0.8.5
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+    - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # v1
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -116,64 +158,64 @@ jobs:
     - run: bazel build :all
     - run: bazel test :chromobius_test
   build_clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+    - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.12.1
+        git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
-        make
+        make -j
         sudo make install
-    - uses: egor-tensin/setup-clang@v1
-      with:
-        version: latest
-        platform: x64
-    - run: cmake . -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-    - run: cmake --build . --target chromobius chromobius_test chromobius_perf
+    - run: cmake . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+    - run: cmake --build . -j --target chromobius chromobius_test chromobius_perf
     - run: out/chromobius --help
   perf:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: cmake .
-    - run: make chromobius_perf -j 2
+    - run: make chromobius_perf -j
     - run: out/chromobius_perf
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.12.1
+        git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
-        make
+        make -j
         sudo make install
     - run: cmake .
-    - run: make chromobius_test -j 2
+    - run: make chromobius_test -j
     - run: out/chromobius_test
   test_o3:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.12.1
+        git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
-        make
+        make -j
         sudo make install
     - run: cmake . -DSIMD_WIDTH=256
-    - run: make chromobius_test_o3 -j 2
+    - run: make chromobius_test_o3 -j
     - run: out/chromobius_test_o3
   test_generated_docs_are_fresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          cache: pip
+          python-version: '3.11'
+      - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # v1
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -187,7 +229,7 @@ jobs:
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - run: tools/regen_file_lists.sh /tmp
       - run: diff /tmp/perf_files file_lists/perf_files
       - run: diff /tmp/pybind_files file_lists/pybind_files
@@ -196,9 +238,12 @@ jobs:
   test_pybind:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: bazel-contrib/setup-bazel@0.8.5
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          cache: pip
+          python-version: '3.11'
+      - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # v1
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -206,19 +251,21 @@ jobs:
           bazelisk-version: 1.x
       - run: bazel build :chromobius_dev_wheel
       - run: pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
-      - run: pip install pytest stim~=1.14 sinter pygltflib
-      - run: pytest src
+      - run: pip install pytest pytest-xdist stim~=1.15 sinter pygltflib
+      - run: pytest -n auto src
       - run: tools/doctest_proper.py --module chromobius
   upload_dev_release_to_pypi:
-    needs: ["build_dist"]
-    if: github.ref == 'refs/heads/main'
+    needs: ["build_dist", "build_sdist", "run_main", "test", "test_o3", "test_pybind"]
+    if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4.1.7
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: dist-chromobius
           path: dist-chromobius
-      - uses: pypa/gh-action-pypi-publish@release/v1
+          pattern: dist-chromobius-*
+          merge-multiple: true
+      - run: ls -lR dist-chromobius
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1
         with:
           user: __token__
           packages_dir: dist-chromobius/
