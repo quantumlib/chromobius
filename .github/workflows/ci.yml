@@ -254,9 +254,8 @@ jobs:
       - run: pip install pytest pytest-xdist stim~=1.15 sinter pygltflib
       - run: pytest -n auto src
       - run: tools/doctest_proper.py --module chromobius
-  upload_dev_release_to_pypi:
+  preflight_check_dists:
     needs: ["build_dist", "build_sdist", "run_main", "test", "test_o3", "test_pybind"]
-    if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -265,8 +264,34 @@ jobs:
           pattern: dist-chromobius-*
           merge-multiple: true
       - run: ls -lR dist-chromobius
+      - run: python -m pip install --ignore-installed twine
+      - run: python -m twine check ./dist-chromobius/*
+  upload_dev_release_to_pypi:
+    if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
+    needs: ["preflight_check_dists"]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    environment:
+      name: Chromobius
+      url: https://pypi.org/p/chromobius
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist-chromobius
+          pattern: dist-chromobius-*
+          merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1
         with:
-          user: __token__
-          packages_dir: dist-chromobius/
-          password: ${{ secrets.pypi_token_chromobius }}
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist-chromobius/
+          verify-metadata: true
+          print-hash: true
+          verbose: true
+      # Only upload to PyPI if the previous step (uploading to PyPI) succeeds.
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1
+        with:
+          packages-dir: dist-chromobius/
+          verify-metadata: ${{inputs.debug == true}}
+          print-hash: ${{inputs.debug == true}}
+          verbose: ${{inputs.debug == true}}
