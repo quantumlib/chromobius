@@ -393,7 +393,7 @@ void chromobius::collect_composite_errors_and_remnants_into_mobius_dem(
                 // weight of the edge, which corresponds to squaring the probability.
                 p *= p;
             }
-            out_mobius_dem->append_error_instruction(p, composite_error_buffer);
+            out_mobius_dem->append_error_instruction(p, composite_error_buffer, "");
         }
     });
 }

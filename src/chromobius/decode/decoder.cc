@@ -48,7 +48,7 @@ Decoder Decoder::from_dem(const stim::DetectorErrorModel &dem, DecoderConfigOpti
     if (result.mobius_dem.count_detectors() < result.node_colors.size() * 2) {
         // Ensure the number of detectors in the mobius dem is exactly correct.
         result.mobius_dem.append_detector_instruction(
-            {}, stim::DemTarget::relative_detector_id(result.node_colors.size() * 2 - 1));
+            {}, stim::DemTarget::relative_detector_id(result.node_colors.size() * 2 - 1), "");
     }
 
     // For each node, pick nearby RGB representatives for holding charge near that node.
