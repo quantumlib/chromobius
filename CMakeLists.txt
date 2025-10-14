@@ -43,7 +43,7 @@ set(SIMD_WIDTH 128)
 include(FetchContent)
 FetchContent_Declare(stim
         GIT_REPOSITORY https://github.com/quantumlib/stim.git
-        GIT_TAG da4594c5ede00a063ec2b84bd830f846b5d097dd)
+        GIT_TAG 1320ad7eac7de34d2e9c70daa44fbc6d84174450) # v1.15.dev0 (what PyMatching 2.2.2 uses)
 FetchContent_GetProperties(stim)
 if(NOT stim_POPULATED)
   FetchContent_Populate(stim)
@@ -52,7 +52,7 @@ endif()
 
 FetchContent_Declare(pymatching
         GIT_REPOSITORY https://github.com/oscarhiggott/pymatching.git
-        GIT_TAG 40dcf8c01273ff7e23a7105d5cdc410ada067001)
+        GIT_TAG 08f4f03fc876bd3e13351b677241fc2e160b8b38) # v2.2.2
 FetchContent_GetProperties(pymatching)
 if(NOT pymatching_POPULATED)
   FetchContent_Populate(pymatching)

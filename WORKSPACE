@@ -3,13 +3,13 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
     name = "stim",
-    commit = "da4594c5ede00a063ec2b84bd830f846b5d097dd",
+    commit = "1320ad7eac7de34d2e9c70daa44fbc6d84174450",
     remote = "https://github.com/quantumlib/stim.git",
 )
 
 git_repository(
     name = "pymatching",
-    commit = "40dcf8c01273ff7e23a7105d5cdc410ada067001",
+    commit = "08f4f03fc876bd3e13351b677241fc2e160b8b38",
     remote = "https://github.com/oscarhiggott/pymatching.git",
 )
 
