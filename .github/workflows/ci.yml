@@ -288,10 +288,19 @@ jobs:
           verify-metadata: true
           print-hash: true
           verbose: true
-  # Separate jobs are needed for testpypi and pypi because the use of trusted
-  # publishers with the action pypa/gh-action-pypi-publish needs different
-  # values for the `environment` fields. Unfortunately, in GHA workflow syntax,
-  # `environment` is a job-level field only, not available for individual steps.
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          cache: pip
+          python-version: '3.12'
+      # Test that we can install what we released to test.pypi.org. The version
+      # construction code below emulates tools/overwrite_dev_versions_with_date.py
+      - run: |
+          set -x
+          base_version=$(sed -E -n "s/^__version__ = '([0-9]+\.[0-9]+).*'/\1/p" setup.py)
+          timestamp=$(git show -s --format=%ct HEAD)
+          version=${base_version}.dev${timestamp}
+          pip install -i https://test.pypi.org/simple/ chromobius=="${version}"
   upload_to_pypi:
     if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
     needs: ["upload_to_testpypi"]
