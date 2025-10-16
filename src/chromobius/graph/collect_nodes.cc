@@ -63,9 +63,9 @@ static void collect_nodes_from_dem_helper_process_detector_instruction(
             stim::DemTarget d1 = stim::DemTarget::relative_detector_id(n * 2 + 1);
 
             coord_buffer->back() = (double)g0;
-            out_mobius_dem->append_detector_instruction(*coord_buffer, d0);
+            out_mobius_dem->append_detector_instruction(*coord_buffer, d0, "");
             coord_buffer->back() = (double)g1;
-            out_mobius_dem->append_detector_instruction(*coord_buffer, d1);
+            out_mobius_dem->append_detector_instruction(*coord_buffer, d1, "");
         }
     }
 }
