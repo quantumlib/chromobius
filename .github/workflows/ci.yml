@@ -58,15 +58,6 @@ jobs:
           {os: ubuntu-24.04-arm, dist: cp313-manylinux_aarch64, arch: aarch64},
           {os: ubuntu-24.04-arm, dist: cp314-manylinux_aarch64, arch: aarch64},
 
-          {os: macos-13, dist: cp310-macosx_x86_64, arch: x86_64, target: '10.15'},
-          {os: macos-13, dist: cp311-macosx_x86_64, arch: x86_64, target: '10.15'},
-          {os: macos-13, dist: cp312-macosx_x86_64, arch: x86_64, target: '10.15'},
-          {os: macos-13, dist: cp313-macosx_x86_64, arch: x86_64, target: '10.15'},
-          # This next one takes an extremely long time on GitHub because it builds
-          # a wheel for Stim every time. It's not worth it. If Stim ends up
-          # shipping a wheel for this combo in the future, we can reenable this.
-          # {os: macos-13, dist: cp314-macosx_x86_64, arch: x86_64, target: '10.15'},
-
           {os: macos-14, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
           {os: macos-14, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
           {os: macos-14, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
