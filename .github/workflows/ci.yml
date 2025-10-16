@@ -266,15 +266,15 @@ jobs:
       - run: ls -lR dist-chromobius
       - run: python -m pip install --ignore-installed twine
       - run: python -m twine check ./dist-chromobius/*
-  upload_dev_release_to_pypi:
+  upload_to_testpypi:
     if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
     needs: ["preflight_check_dists"]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
     environment:
-      name: Chromobius
-      url: https://pypi.org/p/chromobius
+      name: PyPI
+      url: https://test.pypi.org/project/chromobius
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -288,7 +288,25 @@ jobs:
           verify-metadata: true
           print-hash: true
           verbose: true
-      # Only upload to PyPI if the previous step (uploading to PyPI) succeeds.
+  # Separate jobs are needed for testpypi and pypi because the use of trusted
+  # publishers with the action pypa/gh-action-pypi-publish needs different
+  # values for the `environment` fields. Unfortunately, in GHA workflow syntax,
+  # `environment` is a job-level field only, not available for individual steps.
+  upload_to_pypi:
+    if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
+    needs: ["upload_to_testpypi"]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    environment:
+      name: PyPI
+      url: https://pypi.org/project/chromobius
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist-chromobius
+          pattern: dist-chromobius-*
+          merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1
         with:
           packages-dir: dist-chromobius/
