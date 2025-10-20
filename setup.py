@@ -114,7 +114,7 @@ setuptools.setup(
     ext_modules=[CMakeExtension("chromobius", sourcedir=".", sources=RELEVANT_SOURCE_FILES)],
     cmdclass={"build_ext": CMakeBuild},
     python_requires=">=3.10",
-    setup_requires=['ninja', 'pybind11~=2.11.1'],
+    setup_requires=['ninja', 'pybind11~=2.11.1', 'cmake>=3.13'],
     install_requires=['numpy', 'stim'],
 
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
