@@ -56,25 +56,27 @@ if(NOT GTest_FOUND)
         message(STATUS "GTest fetch successful.")
         set(GTest_FOUND TRUE)
     else()
-        message("WARNING: Failed to get GTest. Some tests will not be built. To fix, follow the Standalone CMake Project install instructions at https://github.com/google/googletest/blob/master/googletest/README.md")
+        message(WARNING "Failed to find GoogleTest. Some tests will not be built. To fix "
+            "this, follow the Standalone CMake Project install instructions for GTest "
+            "at https://github.com/google/googletest/blob/master/googletest/README.md")
     endif()
 endif()
 
 set(SIMD_WIDTH 128)
 FetchContent_Declare(stim
-        GIT_REPOSITORY https://github.com/quantumlib/stim.git
-        GIT_TAG 1320ad7eac7de34d2e9c70daa44fbc6d84174450) # v1.15.dev0 (what PyMatching 2.2.2 uses)
+    GIT_REPOSITORY https://github.com/quantumlib/stim.git
+    GIT_TAG 1320ad7eac7de34d2e9c70daa44fbc6d84174450) # v1.15.dev0 (what PyMatching 2.2.2 uses)
 FetchContent_GetProperties(stim)
 if(NOT stim_POPULATED)
-  FetchContent_MakeAvailable(stim)
+    FetchContent_MakeAvailable(stim)
 endif()
 
 FetchContent_Declare(pymatching
-        GIT_REPOSITORY https://github.com/oscarhiggott/pymatching.git
-        GIT_TAG 08f4f03fc876bd3e13351b677241fc2e160b8b38) # v2.2.2
+    GIT_REPOSITORY https://github.com/oscarhiggott/pymatching.git
+    GIT_TAG 08f4f03fc876bd3e13351b677241fc2e160b8b38) # v2.2.2
 FetchContent_GetProperties(pymatching)
 if(NOT pymatching_POPULATED)
-  FetchContent_MakeAvailable(pymatching)
+    FetchContent_MakeAvailable(pymatching)
 endif()
 
 add_executable(chromobius src/main.cc ${SOURCE_FILES_NO_MAIN})
@@ -104,7 +106,8 @@ target_link_libraries(chromobius_perf PRIVATE libstim libpymatching)
 if(GTest_FOUND)
     add_executable(chromobius_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(chromobius_test GTest::gtest GTest::gtest_main libstim libpymatching)
-    target_compile_options(chromobius_test PRIVATE -Wall -Wpedantic -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=undefined -fsanitize=address)
+    target_compile_options(chromobius_test PRIVATE -Wall -Wpedantic -g -fno-omit-frame-pointer -fno-strict-aliasing
+        -fsanitize=undefined -fsanitize=address)
     target_link_options(chromobius_test PRIVATE -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address)
 
     add_executable(chromobius_test_o3 ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
@@ -112,7 +115,9 @@ if(GTest_FOUND)
     target_compile_options(chromobius_test_o3 PRIVATE -O3 -Wall -Wpedantic -fno-strict-aliasing)
     target_link_options(chromobius_test_o3 PRIVATE)
 else()
-    message("WARNING: Skipped chromobius_test target. `GTest` not found. To fix, follow Standalone CMake Project install instructions at https://github.com/google/googletest/blob/master/googletest/README.md")
+    message(WARNING "Skipped target 'chromobius_test' because GoogleTest could not be found. "
+        "To fix this, follow the Standalone CMake Project install instructions for GTest "
+        "at https://github.com/google/googletest/blob/master/googletest/README.md")
 endif()
 
 find_package(Python COMPONENTS Interpreter Development)
@@ -120,7 +125,8 @@ find_package(Python COMPONENTS Interpreter Development)
 # Look for the same Pybind version range as ci.yml uses.
 find_package(pybind11 2.11.1...<2.12.0 QUIET CONFIG)
 if(NOT pybind11_FOUND)
-    message(STATUS "Pybind11 not found or the version found is not the needed one. Will try fetching and building the desired version from source.")
+    message(STATUS "Pybind11 not found or the version found is not the version needed. "
+        "Will try fetching and building the desired version from source.")
     FetchContent_Declare(pybind11
         GIT_REPOSITORY https://github.com/pybind/pybind11.git
         GIT_TAG        v2.11.2
@@ -151,5 +157,8 @@ if ((pybind11_FOUND AND Python_FOUND) OR "$ENV{CMAKE_FORCE_PYBIND_CHROMOBIUS}")
 
     message(STATUS "Added chromobius_pybind target.")
 else()
-    message("WARNING: Skipped chromobius_pybind target. `pybind11` not found. To fix, install pybind11. On debian based distributions, the package name is `pybind11-dev`")
+    message(WARNING "Skipped target 'chromobius_pybind' because `pybind11` could not be found. "
+        "To fix this, install pybind11. On Debian and Ubuntu Linux distributions, the "
+        "package name is 'pybind11-dev'. For other systems, please see the pybind11 "
+        "instructions at https://pybind11.readthedocs.io/.")
 endif()
