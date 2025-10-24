@@ -70,6 +70,12 @@ jobs:
           {os: macos-15, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
           {os: macos-15, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
 
+          {os: macos-15-intel, dist: cp310-macosx_x86_64, arch: x86_64, target: '11.0'},
+          {os: macos-15-intel, dist: cp311-macosx_x86_64, arch: x86_64, target: '11.0'},
+          {os: macos-15-intel, dist: cp312-macosx_x86_64, arch: x86_64, target: '11.0'},
+          {os: macos-15-intel, dist: cp313-macosx_x86_64, arch: x86_64, target: '11.0'},
+          {os: macos-15-intel, dist: cp314-macosx_x86_64, arch: x86_64, target: '11.0'},
+
           {os: macos-26, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
           {os: macos-26, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
           {os: macos-26, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
