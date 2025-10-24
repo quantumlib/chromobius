@@ -105,7 +105,7 @@ setuptools.setup(
     version=__version__,
     author="Craig Gidney",
     url="https://github.com/quantumlib/chromobius",
-    description="A fast implementation of the Möbius color-code decoder.",
+    description="A fast implementation of the Möbius color code decoder.",
     long_description=long_description,
     long_description_content_type='text/markdown',
     maintainer="Google Quantum AI open-source maintainers",
