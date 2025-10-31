@@ -1,3 +1,7 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.check-wheel-contents]
+# Our binary wheels have 2 toplevel directories.
+ignore = ["W009", "W010"]
