@@ -141,8 +141,9 @@ token to be used with test.pypi.org. You can copy-paste a token at the prompt,
 or use other methods (described in the [`act`](https://github.com/nektos/act)
 documentation) to provide the token.
 
-The `--var` and `input` options in the command line above set variables that are
-used in the workflow to change some behaviors for local testing and debugging.
+The `--var` and `--input` options in the command line above set variables that
+are used in the workflow to change some behaviors for local testing and
+debugging.
 
 The `--no-recurse` option prevents `act` from triggering other workflows it may
 find in the workflows directory, and the flag `-W` test `act` which specific
