@@ -3,7 +3,6 @@ requires = [
   "setuptools",
   "pybind11~=2.11.1",
   "cmake>=3.13",
-  "delvewheel; sys_platform == 'win32'",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -18,6 +17,7 @@ test-requires = [
 test-command = "pytest -n auto {project}/src"
 
 [tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
 repair-wheel-command = 'delvewheel repair -v --add-path "dist;." -w {dest_dir} {wheel}'
 
 [tool.cibuildwheel.windows.environment]
