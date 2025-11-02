@@ -13,9 +13,10 @@ For the benefit of future Chromobius maintainers, this document summarizes how
 to set up an environment for working with [`act`](https://github.com/nektos/act)
 to run and test the CI workflow.
 
-## Notes about running the CI workflow with `act`
+## Local testing of the CI workflow with `act`
 
-The steps in the process are basically this:
+The overall process consists of these steps, which are described in more detail
+in the subsections below:
 
 1.  Clone the Chromobius repository to a local Linux computer.
 
@@ -83,8 +84,8 @@ docker build -t ubuntu-act:latest .
 docker image prune
 ```
 
-The runner image will be named `ubuntu-act`. This name is mapped to the names of
-GitHub runners used in `ci.yml` in a way explained below.
+The Docker image will be named `ubuntu-act`. This name is mapped to the names of
+GitHub runners used in `ci.yml` in a way explained in the next subsection.
 
 ### Configuration of `act`
 
@@ -131,16 +132,16 @@ mkdir /tmp/act-artifacts
 
 ### Start a local test PyPI server
 
-The `ci.yml` workflow includes steps to upload the latest developer release
-to [test.pypi.org](https://test.pypi.org). A limitation with using test.pypi.org
+The `ci.yml` workflow includes steps to upload the latest developer release to
+[test.pypi.org](https://test.pypi.org). A limitation with using test.pypi.org
 (and pypi.org, for that matter) is that a given file can only be uploaded once.
-This is inconvenient when developing and testing workflows, but luckily, it is
-possible to run a basic PyPI server locally and avoid this limitation.
+This is inconvenient when developing and testing workflows, but thankfully, it
+is possible to run a basic PyPI server locally and avoid this limitation.
 
 The [`pypiserver`](https://github.com/pypiserver/pypiserver) package is great
 for this use-case scenario. The server can be run with or without user
 authentication; for simplicity, we use it without authentication. Starting
-`pypiserver` is as simple as this one-line command:
+`pypiserver` is as simple as running this one-line command:
 
 ```shell
 pypi-server run -v -P . -a . /tmp/pypiserver-packages
