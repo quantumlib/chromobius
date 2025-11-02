@@ -252,8 +252,7 @@ jobs:
       - run: pytest -n auto src
       - run: tools/doctest_proper.py --module chromobius
   upload_to_testpypi:
-    if: ${{vars.local_testing == 'true' ||
-          (github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib')}}
+    if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
     needs:
       - build_bazel
       - build_clang
@@ -295,8 +294,7 @@ jobs:
           password: ${{env.testpypi_password}}
           verify-metadata: true
           verbose: true
-          skip-existing: ${{vars.local_testing == 'true' || inputs.debug}}
-          attestations: ${{vars.local_testing != 'true'}}
+          skip-existing: ${{inputs.debug}}
       # Test that we can install what we released to test.pypi.org. The version
       # number code below emulates tools/overwrite_dev_versions_with_date.py
       - run: |
@@ -307,11 +305,11 @@ jobs:
           pip install chromobius=="${version}" --index-url ${{env.testpypi_index_url}} \
             --extra-index-url https://pypi.org/simple
       - run: pip list
-        if: ${{vars.local_testing == 'true' || inputs.debug}}
+        if: ${{inputs.debug}}
       - run: python -c 'import chromobius; print(chromobius.__version__)'
   upload_to_pypi:
     if: >-
-      ${{vars.local_testing != 'true' && inputs.upload_to_pypi != 'false'
+      ${{inputs.upload_to_pypi != 'false'
         && github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
     needs: upload_to_testpypi
     runs-on: ubuntu-24.04
