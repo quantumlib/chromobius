@@ -174,8 +174,8 @@ test_server="http://${ip_address}:8080"
 gh act workflow_dispatch \
     --matrix os:ubuntu-24.04 \
     --container-options '--network host' \
-    --var local_testing=true \
     --input debug=true \
+    --input upload_to_pypi=false \
     --env testpypi_endpoint_url=${test_server} \
     --env testpypi_index_url=${test_server}/simple \
     --env testpypi_user=test \
@@ -185,21 +185,22 @@ gh act workflow_dispatch \
     -W .github/workflows/ci.yml
 ```
 
-The `--var` and `--input` options in the command line above set variables that
-are used in the workflow to change some behaviors for local testing and
-debugging. The `--env` options set various environment variable values: the
-`testpypi_*` variables override values inside the workflow, the
-`PIP_TRUSTED_HOST` environment variable tells the `pip install` commands that
-the local `pypiserver` can be trusted even though it uses HTTP and not HTTPS,
-and the `GITHUB_WORKFLOW_REF` setting sets a variablue that is normally set by
-GitHub when a workflow is running in their environment.
+The `--input` options in the command line above are used to variables that are
+used in the workflow to change some behaviors when debugging. The `--env`
+options set certain environment variables: the `testpypi_*` variables override
+values inside the workflow, the `PIP_TRUSTED_HOST` environment variable tells
+the `pip install` commands that the local `pypiserver` can be trusted even
+though it uses HTTP, and the `GITHUB_WORKFLOW_REF` setting sets a variablue that
+is normally set by GitHub when a workflow is running in that environment.
 
 Experienced developers may wonder why the command above needs to find the IP
 address instead of using the common host name `localhost` or the address
 `127.0.0.1`. The layers of software and containers involved can result in the
 environment inside the workflow to fail to resolve `localhost` properly. In our
 experience, the combination of telling Docker to use "--network host" mode and
-using explicit IP addresses has been more consistently successful.
+using explicit IP addresses has been more consistently successful in allowing
+the `pip` commands in the `upload_to_testpypi` workflow job to reach the
+test PyPI server running on the local computer.
 
 ### Miscellaneous tips
 
