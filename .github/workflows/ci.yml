@@ -292,7 +292,7 @@ jobs:
           password: ${{env.testpypi_password}}
           verify-metadata: true
           verbose: true
-          skip-existing: ${{inputs.debug}}
+          skip-existing: true
       # Test that we can install what we released to test.pypi.org. The version
       # number code below emulates tools/overwrite_dev_versions_with_date.py
       - run: |
@@ -328,4 +328,4 @@ jobs:
           packages-dir: dist-chromobius/
           verify-metadata: ${{inputs.debug}}
           verbose: ${{inputs.debug}}
-          skip-existing: ${{inputs.debug}}
+          skip-existing: true
