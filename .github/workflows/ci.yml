@@ -269,8 +269,6 @@ jobs:
       # Setting these as env. variables lets us override the values when testing locally.
       testpypi_endpoint_url: https://test.pypi.org/legacy
       testpypi_index_url: https://test.pypi.org/simple
-      testpypi_user: __token__
-      testpypi_password: ${{secrets.TEST_PYPI_API_TOKEN}}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
         with:
@@ -288,6 +286,7 @@ jobs:
         with:
           repository-url: ${{env.testpypi_endpoint_url}}
           packages-dir: dist-chromobius/
+          # Next 2 only need values when doing local testing with a local server.
           user: ${{env.testpypi_user}}
           password: ${{env.testpypi_password}}
           verify-metadata: true
