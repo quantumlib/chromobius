@@ -21,5 +21,4 @@ before-build = "pip install delvewheel"
 repair-wheel-command = 'delvewheel repair -v --add-path "dist;." -w {dest_dir} {wheel}'
 
 [tool.cibuildwheel.windows.environment]
-CARGO_BUILD_TARGET = "aarch64-pc-windows-msvc"
 SETUPTOOLS_USE_DISTUTILS = "local"
