@@ -24,16 +24,12 @@ in the subsections below:
 
     * The GitHub CLI program [`gh`](https://cli.github.com/)
     * The [`act` extension](https://nektosact.com/installation/gh.html) for `gh`
-    * The [`pypiserver`](https://github.com/pypiserver/pypiserver) Python program
     * The free and open-source Docker Community Edition (CE) version of
       [Docker Engine](https://docs.docker.com/engine/#licensing) (note: this is not
       the same as Docker Desktop, which is _not_ needed)
 
 3.  Create a Docker image that will be used by `gh act` to run the GitHub
     Actions workflow in `ci.yml`.
-
-4.  Start [`pypiserver`](https://github.com/pypiserver/pypiserver) on your
-    computer.
 
 5.  Run `gh act` with specific arguments, observe the results of the run, edit
     the workflow file (if necessary), and repeat until satisfied.
@@ -129,78 +125,28 @@ configuration used here, the artifact directory is `/tmp/act-artifacts/`:
 mkdir /tmp/act-artifacts
 ```
 
-### Start a local test PyPI server
-
-The `ci.yml` workflow includes steps to upload the latest developer release to
-[test.pypi.org](https://test.pypi.org). A limitation with using test.pypi.org
-(and pypi.org, for that matter) is that a given file can only be uploaded once.
-This is inconvenient when developing and testing workflows, but thankfully, it
-is possible to run a basic PyPI server locally and avoid this limitation.
-
-The [`pypiserver`](https://github.com/pypiserver/pypiserver) package is great
-for this use-case scenario. The server can be run with or without user
-authentication; for simplicity, we use it without authentication. Starting
-`pypiserver` is as simple as running this one-line command:
-
-```shell
-pypi-server run -v -P . -a . /tmp/pypiserver-packages
-```
-
-In the command line above, we used `/tmp/pypiserver-packages` as the location
-where `pypiserver` will store uploaded packages; a different location could be
-chosen if you prefer.
-
-`pypiserver` will by default start listening on port 8080 for connections from
-any host using the HTTP protocol (not HTTPS). In combination with turning off
-user authentication, the use of HTTP simplifies using the server for testing on
-a personal computer, but this insecure configuration would be unsuitable for
-other situations. Make sure to configure it appropriately for your environment.
-
 ### Running `gh act`
 
-Once `pypiserver` is running, in order for the containerized process in `gh act`
-to be able to contact it, we need to set certain variables to redirect the
-accesses to `test.pypi.org` to go to the local server instead. The following is
-an example of a command we use to run the workflow in debug mode. The command is
-meant to be executed from the top level of the Chromobius source directory. Note
-that this selects a specific OS from the matrix in `build_dist` (namely the
-entries using `ubuntu-24.04` as the operating system); the matrix selection
-value would need to be changed when running this command on a different
-operating system and hardware architecture.
+The following is an example of a command we use to run the workflow in debug
+mode. The command is meant to be executed from the top level of the Chromobius
+source directory. Note that this example shows how to select a specific OS from
+the matrix in `build_dist` (namely the entries using `ubuntu-24.04` as the
+operating system); this matrix selection value would need to be changed when
+running this command on a different operating system and hardware architecture.
 
 ```shell
-ip_address="$(hostname -I | xargs)"
-test_server="http://${ip_address}:8080"
 gh act workflow_dispatch \
     --matrix os:ubuntu-24.04 \
-    --container-options '--network host' \
     --input debug=true \
     --input upload_to_pypi=false \
-    --env testpypi_endpoint_url=${test_server} \
-    --env testpypi_index_url=${test_server}/simple \
-    --env testpypi_user=test \
-    --env testpypi_password=test \
-    --env PIP_TRUSTED_HOST=${ip_address} \
     --env GITHUB_WORKFLOW_REF=refs/heads/main \
     -W .github/workflows/ci.yml
 ```
 
 The `--input` options in the command line above are used to variables that are
-used in the workflow to change some behaviors when debugging. The `--env`
-options set certain environment variables: the `testpypi_*` variables override
-values inside the workflow, the `PIP_TRUSTED_HOST` environment variable tells
-the `pip install` commands that the local `pypiserver` can be trusted even
-though it uses HTTP, and the `GITHUB_WORKFLOW_REF` setting sets a variablue that
-is normally set by GitHub when a workflow is running in that environment.
-
-Experienced developers may wonder why the command above needs to find the IP
-address instead of using the common host name `localhost` or the address
-`127.0.0.1`. The layers of software and containers involved can result in the
-environment inside the workflow to fail to resolve `localhost` properly. In our
-experience, the combination of telling Docker to use "--network host" mode and
-using explicit IP addresses has been more consistently successful in allowing
-the `pip` commands in the `upload_to_testpypi` workflow job to reach the
-test PyPI server running on the local computer.
+used in the workflow to change some behaviors when debugging. The `--env` option
+sets the `GITHUB_WORKFLOW_REF` environment variablue that is normally set by
+GitHub when a workflow is running in that environment.
 
 ### Miscellaneous tips
 
