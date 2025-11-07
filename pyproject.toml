@@ -1,3 +1,24 @@
 [build-system]
-requires = ["setuptools"]
+requires = [
+  "setuptools",
+  "pybind11~=2.11.1",
+  "cmake>=3.13",
+]
 build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+test-requires = [
+    "pytest",
+    "pytest-xdist",
+    "stim~=1.15",
+    "sinter",
+    "pygltflib",
+]
+test-command = "pytest -n auto {project}/src"
+
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = 'delvewheel repair -v --add-path "dist;." -w {dest_dir} {wheel}'
+
+[tool.cibuildwheel.windows.environment]
+SETUPTOOLS_USE_DISTUTILS = "local"
