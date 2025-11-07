@@ -53,11 +53,13 @@ For this project, here is the `Dockerfile` we use for the Linux runner:
 
 ```dockerfile
 # Start from a base image that is already configured for act.
-FROM catthehacker/ubuntu:act-latest
+# The hash below is for version gh-22.04-20251102.
+FROM ghcr.io/catthehacker/ubuntu@sha256:3e4886e537c7c74d44c1ce0d1bc7c3142674e16ba1ca3c63c5ebbf8e1bbc10fd
 
+# Switch to the root user to have permission to install packages.
 USER root
 
-# Add software that is pre-installed on GitHub Linux runners.
+# Add some software that is pre-installed on GitHub Linux runners.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
