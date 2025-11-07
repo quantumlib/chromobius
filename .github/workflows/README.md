@@ -107,9 +107,7 @@ parameters are also essential to provide, notably `--pull=false` and the
 # This tells act where to put artifacts saved using `actions/upload-artifact`.
 --artifact-server-path /tmp/act-artifacts
 
-# These are some miscellaneous performance improvements. For the number of
-# CPUs, change the number from 4 to something suitable for your computer.
---container-options "--cpus=4"
+# These are some miscellaneous performance improvements.
 --use-new-action-cache
 --action-offline-mode
 
