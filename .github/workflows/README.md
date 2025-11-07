@@ -95,8 +95,8 @@ parameters are also essential to provide, notably `--pull=false` and the
 
 ```shell
 # The -P flag maps a GitHub runner name (inside the workflow file) to the name
-# of a Docker image on the local computer. For example, the following maps the
-# GitHub runner named "ubuntu-24.04" to the local docker image "ubuntu-act".
+# of a Docker image on the local computer. The following maps the runner named
+# "ubuntu-24.04" (used in ci.yml) to the local docker image "ubuntu-act".
 -P ubuntu-24.04=ubuntu-act:latest
 
 # If using a local docker image for the job runners, need to use --pull=false
