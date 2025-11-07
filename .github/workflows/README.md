@@ -1,6 +1,6 @@
 # Notes about the continuous integration workflow
 
-The continous integration workflow in [`ci.yml`](ci.yml) triggers automatically
+The continuous integration workflow in [`ci.yml`](ci.yml) triggers automatically
 on pushes, pull requests, and merge queue events. It can also be [triggered
 manually](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
 from either the Actions tab on GitHub or via the GitHub APIs. Manual invocations
@@ -9,6 +9,7 @@ problem only seems to show up on GitHub itself), but for more significant
 development and testing of the workflow itself, we use the
 [`act`](https://github.com/nektos/act) extension for GitHub's CLI program
 [`gh`](https://cli.github.com/) to run the workflow on a local computer.
+
 For the benefit of future Chromobius maintainers, this document summarizes how
 to set up an environment for working with [`act`](https://github.com/nektos/act)
 to run and test the CI workflow.
@@ -31,7 +32,7 @@ in the subsections below:
 3.  Create a Docker image that will be used by `gh act` to run the GitHub
     Actions workflow in `ci.yml`.
 
-5.  Run `gh act` with specific arguments, observe the results of the run, edit
+4.  Run `gh act` with specific arguments, observe the results of the run, edit
     the workflow file (if necessary), and repeat until satisfied.
 
 Note that the CI workflow in `ci.yml` contains a build step with a matrix of
@@ -40,12 +41,13 @@ them on the same machine because of architectural differences, so when we test
 the workflow locally, we tell `gh act` to select a subset of the matrix. This is
 explained below.
 
+<a class="anchor" id="creating-runner-images"></a>
 ### Creation of Docker images to use as workflow job runners
 
 For `gh act` to run a workflow, it needs to be told what Docker images to use
 for job runners. It is usually not possible to use GitHub's actual runner images
 (even though they are made freely available by GitHub) due to differences in
-hardware assumptions. Thankfully, some approximations to the GitHub images is
+hardware assumptions. Thankfully, some approximations to the GitHub images are
 available from other sources. For our testing, we create customized versions of
 runners that pre-install some software known to be provided on GitHub.
 
@@ -76,7 +78,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 ```
 
-Here is the shell command used to build the image:
+Here are the shell commands used to build the image:
 
 ```shell
 docker build -t ubuntu-act:latest .
@@ -91,8 +93,8 @@ GitHub runners used in `ci.yml` in a way explained in the next subsection.
 `gh act` reads a configuration file that can be used to set some run-time
 parameters. This can be used to map the name of the Docker image built in the
 step above to the name of the runners used in the workflow. Certain other
-parameters are also essential to provide, notably `--pull=false` and the
-`--artifact-server-path` option. Here is an example of a `~/.actrc` file:
+parameters are also essential to provide, notably `--pull=false`. Here is an
+example of a `~/.actrc` file:
 
 ```shell
 # The -P flag maps a GitHub runner name (inside the workflow file) to the name
@@ -130,47 +132,63 @@ gh act workflow_dispatch \
     --input debug=true \
     --input upload_to_pypi=false \
     --env GITHUB_WORKFLOW_REF=refs/heads/main \
-    --norecurse -W .github/workflows/ci.yml
+    --no-recurse -W .github/workflows/ci.yml
 ```
 
-The `--input` options in the command line above are used to variables that are
-used in the workflow to change some behaviors when debugging. The `--env` option
-sets the `GITHUB_WORKFLOW_REF` environment variablue that is normally set by
-GitHub when a workflow is running in that environment.
+The `--input` options in the command line above are used to set variables that
+are used in the workflow to change some behaviors when debugging. The `--env`
+option sets the `GITHUB_WORKFLOW_REF` environment variable that is normally set
+by GitHub when a workflow is running in that environment.
 
 ### Miscellaneous tips
 
 Sometimes it's useful to add the `--verbose` option to the `gh act` command
 above to get more information about what is happening.
 
-If the workflow running inside `act` inexplicably starts producing weird errors
-such as files suddently not found when they were found before, it may be due to
-corruption in the `act` cache. (One way that can happen is when runs are
-terminated using, e.g., <kbd>control</kbd><kbd>c</kbd>.) To resolve this, try to
-clean up everything, which is to say:
+If the workflow running inside `act` inexplicably starts producing inconsistent
+errors, such as a program like `bazel` not being found on one run when it was
+found on the previous run, or well-known actions (e.g., `actions/setup-python`)
+generating internal errors, the first thing to suspect is problems with caching.
+Here are some things to try:
 
-1.  Delete all artifacts in the `act` artifact directory. If you are using
-    `/tmp/act-artifacts` for the artifact directory, then you can do that
-    with a command such as this:
+1.  A possible cause of random workflow errors is corruption in the `act` cache.
+    (This can happen when runs are terminated using, e.g.,
+    <kbd>control</kbd><kbd>c</kbd>.) To resolve this, delete the cache contents:
 
-    ```shell
-    rm -rf /tmp/act-artifacts/*
-    ```
+    1.  Delete all artifacts in the `act` artifact directory. Assuming you are
+        using `/tmp/act-artifacts` for the artifact directory, do this:
 
-2.  Delete everything in the `act` cache (which is located in
-    `$HOME/.cache/act/` by default):
+        ```shell
+        rm -rf /tmp/act-artifacts/*
+        ```
 
-    ```shell
-    rm -rf ~/.cache/act/*
-    rm -rf ~/.cache/actcache/*
-    ```
+    2.  Delete everything in the `act` cache (which is located in
+        `$HOME/.cache/act/` by default):
 
-3.  Delete all docker containers and volumes:
+        ```shell
+        rm -rf ~/.cache/act/*
+        rm -rf ~/.cache/actcache/*
+        ```
+
+2.  If clearing the caches and containers as described above does not stop
+    random flaky behavior, the next thing to try is to add the option
+    `--no-cache-server` to the `gh act` command. If the random errors stop, then
+    the cause has been narrowed down. You can then experiment with trying to get
+    some parallelism back by replacing `--no-cache-server` with the
+    `--concurrent-jobs` option and a low number like 4 or 2. Reducing the
+    maximum concurrent jobs will reduce performance, but that may be the price
+    for avoiding random errors. If random errors resurface, then it may be
+    necessary to use `--no-cache-server` all the time on your system.
+
+3.  If the steps above did not stop random errors, the last thing to try is to
+    delete the Docker containers and volumes:
 
     ```shell
     docker system prune --all
     docker volume prune --all
     ```
 
-The above is something of a sledgehammer to apply to this problem, but sometimes
-a sledgehammer is what it takes.
+    This is a bit of a sledgehammer, unfortunately, and if you created a Docker
+    image as described in the [section above](#creating-runner-images), then
+    doing the pruning commands will remove it and you will need to recreate the
+    image.
