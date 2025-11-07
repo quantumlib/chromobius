@@ -116,17 +116,6 @@ parameters are also essential to provide, notably `--pull=false` and the
 --rm
 ```
 
-The `ci.yml` workflow has steps where it uploads and download build artifacts.
-When running on GitHub, the artifact storage is on GitHub itself; when running
-locally, `gh act` needs to be told to run its own artifact server. The
-configuration above tells `gh act` to store the artfacts in a local directory,
-but this directory has to be created before running `gh act`. In the example
-configuration used here, the artifact directory is `/tmp/act-artifacts/`:
-
-```shell
-mkdir /tmp/act-artifacts
-```
-
 ### Running `gh act`
 
 The following is an example of a command we use to run the workflow in debug
