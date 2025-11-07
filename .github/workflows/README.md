@@ -53,8 +53,8 @@ For this project, here is the `Dockerfile` we use for the Linux runner:
 
 ```dockerfile
 # Start from a base image that is already configured for act.
-# The hash below is for version gh-22.04-20251102.
-FROM ghcr.io/catthehacker/ubuntu@sha256:3e4886e537c7c74d44c1ce0d1bc7c3142674e16ba1ca3c63c5ebbf8e1bbc10fd
+# The hash below is for the image tagged act-24.04-20251102.
+FROM ghcr.io/catthehacker/ubuntu@sha256:8943e69edcada5141b8c1fcc1a84bab15568a49f438387bd858cb3e4df5a436d
 
 # Switch to the root user to have permission to install packages.
 USER root
@@ -62,11 +62,12 @@ USER root
 # Add some software that is pre-installed on GitHub Linux runners.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential \
+        clang \
         cmake \
-        curl \
         golang-go \
-        jq \
+        libclang-dev \
+        libclang-rt-dev \
+        ninja-build \
         python3 python3-dev cython3 \
         shellcheck \
         yamllint \
@@ -131,7 +132,7 @@ gh act workflow_dispatch \
     --input debug=true \
     --input upload_to_pypi=false \
     --env GITHUB_WORKFLOW_REF=refs/heads/main \
-    -W .github/workflows/ci.yml
+    --norecurse -W .github/workflows/ci.yml
 ```
 
 The `--input` options in the command line above are used to variables that are
