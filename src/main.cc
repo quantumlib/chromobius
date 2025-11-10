@@ -12,8 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+#include <stdexcept>
+
 #include "chromobius/commands/main_all.h"
 
-int main(int argc, const char **argv) {
-    return chromobius::main(argc, argv);
+int main(int argc, const char** argv) {
+    try {
+        return chromobius::main(argc, argv);
+    } catch (const std::invalid_argument& ex) {
+        std::cerr << ex.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
