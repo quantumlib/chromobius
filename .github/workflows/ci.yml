@@ -286,9 +286,8 @@ jobs:
         with:
           repository-url: ${{env.testpypi_endpoint_url}}
           packages-dir: dist-chromobius/
-          # Next 2 only need values when doing local testing with a local server.
-          user: ${{env.testpypi_user}}
-          password: ${{env.testpypi_password}}
+          user: ${{secrets.testpypi_user || '__token__'}}
+          password: ${{secrets.testpypi_password}}
           verify-metadata: true
           verbose: true
           skip-existing: true
