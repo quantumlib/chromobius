@@ -40,6 +40,10 @@ file(STRINGS file_lists/perf_files PERF_FILES)
 file(STRINGS file_lists/pybind_files PYBIND_FILES)
 
 include(FetchContent)
+if(WIN32)
+    # Use a shorter path for dependencies to avoid MAX_PATH issues on Windows.
+    set(FETCHCONTENT_BASE_DIR "C:/tmp/deps" CACHE PATH "Override fetchcontent dir" FORCE)
+endif()
 
 find_package(GTest QUIET)
 if(NOT GTest_FOUND)
