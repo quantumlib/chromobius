@@ -173,7 +173,8 @@ Here are some things to try:
 2.  If clearing the caches and containers as described above does not stop
     random flaky behavior, the next thing to try is to add the option
     `--no-cache-server` to the `gh act` command. If the random errors stop, then
-    the cause has been narrowed down. You can then experiment with trying to get
+    the cause may be resource contention from too many parallel jobs accessing
+    the `act` cache simultaneously. You can then experiment with trying to get
     some parallelism back by replacing `--no-cache-server` with the
     `--concurrent-jobs` option and a low number like 4 or 2. Reducing the
     maximum concurrent jobs will reduce performance, but that may be the price
