@@ -291,6 +291,7 @@ jobs:
           verify-metadata: true
           verbose: true
           skip-existing: true
+          attestations: false
       # Test that we can install what we released to test.pypi.org. The version
       # number code below emulates tools/overwrite_dev_versions_with_date.py
       - run: |
