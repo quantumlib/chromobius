@@ -267,7 +267,7 @@ jobs:
       id-token: write
     env:
       # Setting these as env. variables lets us override the values when testing locally.
-      testpypi_endpoint_url: https://test.pypi.org/legacy
+      testpypi_endpoint_url: https://test.pypi.org/legacy/
       testpypi_index_url: https://test.pypi.org/simple
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
