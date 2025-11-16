@@ -71,23 +71,11 @@ jobs:
           {os: macos-14, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
           {os: macos-14, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
 
-          {os: macos-15, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-15, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-15, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-15, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-15, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
-
           {os: macos-15-intel, dist: cp310-macosx_x86_64, arch: x86_64, target: '11.0'},
           {os: macos-15-intel, dist: cp311-macosx_x86_64, arch: x86_64, target: '11.0'},
           {os: macos-15-intel, dist: cp312-macosx_x86_64, arch: x86_64, target: '11.0'},
           {os: macos-15-intel, dist: cp313-macosx_x86_64, arch: x86_64, target: '11.0'},
           {os: macos-15-intel, dist: cp314-macosx_x86_64, arch: x86_64, target: '11.0'},
-
-          {os: macos-26, dist: cp310-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-26, dist: cp311-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-26, dist: cp312-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-26, dist: cp313-macosx_arm64, arch: arm64, target: '11.0'},
-          {os: macos-26, dist: cp314-macosx_arm64, arch: arm64, target: '11.0'},
 
           {os: windows-2025, dist: cp310-win_amd64, arch: AMD64},
           {os: windows-2025, dist: cp311-win_amd64, arch: AMD64},
@@ -249,6 +237,8 @@ jobs:
       - run: pip install pytest pytest-xdist stim~=1.15 sinter pygltflib
       - run: pytest -n auto src
       - run: tools/doctest_proper.py --module chromobius
+  # The next job verifies that uploading wheels and pip-installing them from
+  # PyPI servers succeeds. For efficiency, it only tests a subset of wheels.
   upload_to_testpypi:
     if: ${{github.ref == 'refs/heads/main' && github.repository_owner == 'quantumlib'}}
     needs:
@@ -280,8 +270,10 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: dist-chromobius
-          pattern: dist-chromobius-*
+          # For efficiency, test just one wheel for each platform.
+          pattern: '*cp311*'
           merge-multiple: true
+      - run: pwd && ls -lR dist-chromobius
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1
         with:
           repository-url: ${{env.testpypi_endpoint_url}}
