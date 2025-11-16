@@ -114,6 +114,6 @@ Copyright 2025 Google LLC.
 <div align="center">
   <a href="https://quantumai.google">
     <img width="15%" alt="Google Quantum AI"
-         src="./docs/images/quantum-ai-vertical.svg">
+         src="./assets/quantum-ai-vertical.svg">
   </a>
 </div>
