@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:packaging.bzl", "py_wheel")
-
 package(default_visibility = ["//visibility:public"])
+
+load("@rules_python//python:packaging.bzl", "py_wheel")
 
 SOURCE_FILES_NO_MAIN = glob(
     [
