@@ -273,7 +273,6 @@ jobs:
           # For efficiency, test just one wheel for each platform.
           pattern: '*cp311*'
           merge-multiple: true
-      - run: pwd && ls -lR dist-chromobius
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1
         with:
           repository-url: ${{env.testpypi_endpoint_url}}
@@ -314,6 +313,7 @@ jobs:
           path: dist-chromobius
           pattern: dist-chromobius-*
           merge-multiple: true
+      - run: pwd && ls -lR dist-chromobius
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1
         with:
           packages-dir: dist-chromobius/
