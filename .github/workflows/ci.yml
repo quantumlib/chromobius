@@ -267,7 +267,7 @@ jobs:
       id-token: write
     env:
       # Setting these as env. variables lets us override the values when testing locally.
-      testpypi_endpoint_url: https://test.pypi.org/legacy
+      testpypi_endpoint_url: https://test.pypi.org/legacy/
       testpypi_index_url: https://test.pypi.org/simple
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
@@ -286,12 +286,12 @@ jobs:
         with:
           repository-url: ${{env.testpypi_endpoint_url}}
           packages-dir: dist-chromobius/
-          # Next 2 only need values when doing local testing with a local server.
-          user: ${{env.testpypi_user}}
-          password: ${{env.testpypi_password}}
+          user: ${{secrets.testpypi_user || '__token__'}}
+          password: ${{secrets.testpypi_password}}
           verify-metadata: true
           verbose: true
           skip-existing: true
+          attestations: false
       # Test that we can install what we released to test.pypi.org. The version
       # number code below emulates tools/overwrite_dev_versions_with_date.py
       - run: |
