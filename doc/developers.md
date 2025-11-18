@@ -193,3 +193,36 @@ cmake .
 make chromobius_perf
 out/chromobius_perf
 ```
+
+##  <a class="anchor" id="release-checklist"></a>Releasing a new version
+
+New development releases are uploaded to the [Chromobius project on PyPI](https://pypi.org/project/chromobius/)
+automatically by a continuous integration workflow on GitHub. The updates are triggered when pull requests are merged
+into the main branch of the repository.
+
+Stable releases are performed manually by following these steps:
+
+*   Create an off-main-branch release commit
+    - [ ] `git checkout main -b SOMEBRANCHNAME`
+    - [ ] Search `.py` files and replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.Y.0'`
+    - [ ] `git commit -a -m "Bump to vX.Y.0"`
+    - [ ] `git tag vX.Y.0`
+    - [ ] Push the tag to GitHub
+    - [ ] Check the GitHub `Actions` tab and confirm CI is running on the tag
+*   Collect Python wheels from GitHub
+    - [ ] Wait for CI to finish validating and producing artifacts for the tag
+    - [ ] Download all the wheels created as artifacts by the CI workflow
+    - [ ] Do manual sanity checks, e.g., by installing one of the wheels and running tests
+*   Bump to next dev version on main branch
+    - [ ] `git checkout main -b SOMEBRANCHNAME`
+    - [ ] Search `.py` files and replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.(Y+1).dev0'`
+    - [ ] `git commit -a -m "Start vX.(Y+1).dev"`
+    - [ ] Push to GitHub as a branch and merge into main using a pull request
+*   Start a draft release on GitHub
+    - [ ] For the title, use two-word theming of most important changes
+    - [ ] In the body, list the user-visible fixes, additions, and other changes
+    - [ ] Attach the wheels to the release
+*   Do these irreversible and public viewable steps last!
+    - [ ] Upload wheels/sdists to PyPI
+    - [ ] Publish the GitHub release notes
+    - [ ] Announce the release
