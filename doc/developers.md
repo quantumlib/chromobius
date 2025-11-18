@@ -3,37 +3,34 @@
 ## Index
 
 - [Repository Layout](#Repository_Layout)
-- [Building chromobius as a standalone command line tool](#build-cli)
-    - [with bazel](#build-cli-bazel)
-    - [with cmake](#build-cli-cmake)
-    - [with gcc](#build-cli-gcc)
-    - [with clang](#build-cli-clang)
-- [Building chromobius as a python package](#build-python)
-    - [with bazel](#build-python-bazel)
-    - [with cmake](#build-python-cmake)
-    - [with cibuildwheels](#build-python-cibuildwheels)
+- [Building Chromobius as a standalone command line tool](#build-cli)
+    - [with Bazel](#build-cli-bazel)
+    - [with CMake](#build-cli-cmake)
+    - [with GCC](#build-cli-gcc)
+    - [with Clang](#build-cli-clang)
+- [Building Chromobius as a python package](#build-python)
+    - [with Bazel](#build-python-bazel)
+    - [with CMake](#build-python-cmake)
+    - [with cibuildwheel](#build-python-cibuildwheel)
     - [with pip](#build-python-pip)
 - [Running tests](#test)
-    - [python unit tests](#test-python)
+    - [Python unit tests](#test-python)
     - [C++ unit tests with Bazel](#test-bazel)
-    - [C++ unit tests with cmake](#test-cmake)
+    - [C++ unit tests with CMake](#test-cmake)
 - [Running performance benchmarks](#perf)
-    - [with bazel](#perf-bazel)
-    - [with cmake](#perf-cmake)
+    - [with Bazel](#perf-bazel)
+    - [with CMake](#perf-cmake)
 
-<a class="anchor" id="Repository_Layout"></a>
-## Repository Layout
+## <a class="anchor" id="Repository_Layout"></a>Repository Layout
 
-- `src/chromobius/`: C++ code implementing Chromobius and its python package.
+- `src/chromobius/`: C++ code implementing Chromobius and its Python package.
 - `src/clorco/`: Python code for generating color code and surface code circuits used to test Chromobius.
 - `src/gen/`: Generic utilities for making circuits; used by `src/clorco/`.
 - `tools/`: Bash scripts for generating circuits and statistics and plots presented in the paper.
 
-<a class="anchor" id="build-cli"></a>
-## Building chromobius as a standalone command line tool
+## <a class="anchor" id="build-cli"></a>Building Chromobius as a standalone command line tool
 
-<a class="anchor" id="build-cli-bazel"></a>
-### with bazel:
+### <a class="anchor" id="build-cli-bazel"></a>with Bazel:
 
 ```bash
 bazel build :chromobius
@@ -45,8 +42,7 @@ Or, to run the tool:
 bazel run :chromobius
 ```
 
-<a class="anchor" id="build-cli-cmake"></a>
-### with cmake:
+### <a class="anchor" id="build-cli-cmake"></a>with CMake:
 
 ```bash
 cmake .
@@ -59,8 +55,7 @@ Then, to run the built tool:
 out/chromobius
 ```
 
-<a class="anchor" id="build-cli-gcc"></a>
-### with gcc:
+### <a class="anchor" id="build-cli-gcc"></a>with GCC:
 
 ```bash
 # This must be run from the repository root.
@@ -83,8 +78,7 @@ g++ \
     -l pymatching
 ```
 
-<a class="anchor" id="build-cli-clang"></a>
-### with clang:
+### <a class="anchor" id="build-cli-clang"></a>with Clang:
 
 ```bash
 # This must be run from the repository root.
@@ -115,30 +109,26 @@ Then, to run the built tool:
 ./a.out
 ```
 
-<a class="anchor" id="build-python"></a>
-## Building chromobius as a python package
+## <a class="anchor" id="build-python"></a>Building Chromobius as a Python package
 
-<a class="anchor" id="build-python-bazel"></a>
-### with bazel:
+### <a class="anchor" id="build-python-bazel"></a>with Bazel:
 
 ```bash
 bazel build :chromobius_dev_wheel
 pip install bazel-bin/chromobius-0.0.dev0-py3-none-any.whl
 ```
 
-<a class="anchor" id="build-python-cmake"></a>
-### with cmake:
+### <a class="anchor" id="build-python-cmake"></a>with CMake:
 
 ```bash
-# Requires pybind11 and python to be installed on your system.
+# Requires pybind11 and Python to be installed on your system.
 cmake .
 make chromobius_pybind
 # output is in `out/` with a path that depends on your machine
 # e.g. it might be `out/chromobius.cpython-311-x86_64-linux-gnu.so`
 ```
 
-<a class="anchor" id="build-python-cibuildwheel"></a>
-### with cibuildwheel:
+### <a class="anchor" id="build-python-cibuildwheel"></a>with cibuildwheel:
 
 ```bash
 pip install cibuildwheel
@@ -148,44 +138,38 @@ CIBW_BUILD=cp311-manylinux_x86_64 cibuildwheel --platform linux
 # e.g. it might be `out/chromobius-0.0.dev0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl`
 ```
 
-<a class="anchor" id="build-python-pip"></a>
-### with pip:
+### <a class="anchor" id="build-python-pip"></a>with pip:
 
 ```bash
 # Must be run from the chromobius git repository root.
-# Note this will build the package AND install it into your python environment.
+# Note this will build the package AND install it into your Python environment.
 pip install .
 # output is in `python_build_chromobius/` under a platform dependent directory and filename
 # e.g. it might be `python_build_chromobius/lib.linux-x86_64-cpython-311/chromobius.cpython-311-x86_64-linux-gnu.so`
 ```
 
+## <a class="anchor" id="test"></a>Running unit tests
 
-<a class="anchor" id="test"></a>
-## Running unit tests
+### <a class="anchor" id="test-python"></a>Python unit tests
 
-<a class="anchor" id="test-python"></a>
-### python unit tests
-
-The python unit tests check that the circuit generation utilities
+The Python unit tests check that the circuit generation utilities
 are working correctly, and that Chromobius can decode the generated
 circuits.
 
-Note that these tests require the chromobius python package to be installed.
+Note that these tests require the Chromobius Python package to be installed.
 
 ```bash
 pip install -r requirements.txt
 pytest src
 ```
 
-<a class="anchor" id="test-bazel"></a>
-### C++ unit tests with bazel
+### <a class="anchor" id="test-bazel"></a>C++ unit tests with Bazel
 
 ```bash
 bazel test :all
 ```
 
-<a class="anchor" id="test-cmake"></a>
-### C++ unit tests with cmake
+### <a class="anchor" id="test-cmake"></a>C++ unit tests with CMake
 
 ```bash
 # Requires googletest to be installed on your system.
@@ -194,18 +178,15 @@ make chromobius_test
 out/chromobius_test
 ```
 
-<a class="anchor" id="perf"></a>
-## Running performance benchmarks
+## <a class="anchor" id="perf"></a>Running performance benchmarks
 
-<a class="anchor" id="perf-bazel"></a>
-### with bazel
+### <a class="anchor" id="perf-bazel"></a>with Bazel
 
 ```bash
 bazel run :chromobius_perf
 ```
 
-<a class="anchor" id="perf-cmake"></a>
-### with cmake
+### <a class="anchor" id="perf-cmake"></a>with CMake
 
 ```bash
 cmake .
