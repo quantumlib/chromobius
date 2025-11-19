@@ -108,7 +108,7 @@ setuptools.setup(
     description="A fast implementation of the Möbius color code decoder.",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    maintainer="Google Quantum AI open-source maintainers",
+    maintainer="Google Quantum AI",
     maintainer_email="quantum-oss-maintainers@google.com",
     license="Apache-2.0",
     ext_modules=[CMakeExtension("chromobius", sourcedir=".", sources=RELEVANT_SOURCE_FILES)],
