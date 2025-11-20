@@ -40,6 +40,9 @@ from clorco.color_code._superdense_planar_color_code_circuits import (
 from clorco.color_code._toric_color_code_circuits import (
     make_toric_color_code_circuit_with_magic_time_boundaries,
 )
+from clorco.color_code._bell_flagged_planar_color_code_circuits import (
+    make_bell_flagged_color_code_circuit,
+)
 
 
 def make_named_color_code_constructions() -> (
@@ -50,25 +53,26 @@ def make_named_color_code_constructions() -> (
         **_simplified_noise_color_code_constructions(),
         **_toric_color_code_constructions(),
         **_superdense_color_code_circuit_constructions(),
+        **_bell_flagged_color_code_circuit_constructions(),
     }
 
 
 def f2c(flow: gen.Flow) -> list[float]:
     c = 0
-    if 'color=r' in flow.flags:
+    if "color=r" in flow.flags:
         c += 0
-    elif 'color=g' in flow.flags:
+    elif "color=g" in flow.flags:
         c += 1
-    elif 'color=b' in flow.flags:
+    elif "color=b" in flow.flags:
         c += 2
     else:
-        raise NotImplementedError(f'{flow=}')
-    if 'basis=X' in flow.flags:
+        raise NotImplementedError(f"{flow=}")
+    if "basis=X" in flow.flags:
         c += 0
-    elif 'basis=Z' in flow.flags:
+    elif "basis=Z" in flow.flags:
         c += 3
     else:
-        raise NotImplementedError(f'{flow=}')
+        raise NotImplementedError(f"{flow=}")
     return [c]
 
 
@@ -81,7 +85,11 @@ def _midout_color_code_circuit_constructions() -> (
         circuit = gen.compile_chunks_into_circuit(chunks, flow_to_extra_coords_func=f2c)
 
         if params.debug_out_dir is not None:
-            make_layout = make_color_code_layout_488 if '488' in params.style else make_color_code_layout
+            make_layout = (
+                make_color_code_layout_488
+                if "488" in params.style
+                else make_color_code_layout
+            )
             rgb_patch = make_layout(
                 base_width=params.diameter,
                 spurs="midout",
@@ -89,7 +97,7 @@ def _midout_color_code_circuit_constructions() -> (
                 single_rgb_layer_instead_of_actual_code=True,
             ).patch
             gen.write_file(
-                params.debug_out_dir / 'ideal_circuit.html',
+                params.debug_out_dir / "ideal_circuit.html",
                 gen.stim_circuit_html_viewer(circuit, patch=rgb_patch),
             )
 
@@ -100,7 +108,11 @@ def _midout_color_code_circuit_constructions() -> (
             circuit = params.noise_model.noisy_circuit(circuit)
 
         if params.debug_out_dir is not None:
-            make_layout = make_color_code_layout_488 if '488' in params.style else make_color_code_layout
+            make_layout = (
+                make_color_code_layout_488
+                if "488" in params.style
+                else make_color_code_layout
+            )
             make_layout(
                 base_width=params.diameter,
                 spurs="smooth",
@@ -115,7 +127,7 @@ def _midout_color_code_circuit_constructions() -> (
             make_layout(
                 base_width=params.diameter,
                 spurs="smooth",
-                coord_style=cast(Any, "oct" if '488' in params.style else "hex"),
+                coord_style=cast(Any, "oct" if "488" in params.style else "hex"),
                 single_rgb_layer_instead_of_actual_code=True,
             ).patch.write_svg(
                 params.debug_out_dir / "rgb_patch_hex_smooth.svg",
@@ -126,7 +138,7 @@ def _midout_color_code_circuit_constructions() -> (
             make_layout(
                 base_width=params.diameter,
                 spurs="midout",
-                coord_style=cast(Any, "oct" if '488' in params.style else "hex"),
+                coord_style=cast(Any, "oct" if "488" in params.style else "hex"),
                 single_rgb_layer_instead_of_actual_code=True,
             ).patch.write_svg(
                 params.debug_out_dir / "rgb_patch_hex.svg",
@@ -158,26 +170,26 @@ def _midout_color_code_circuit_constructions() -> (
                 show_measure_qubits=False,
             )
             gen.write_file(
-                params.debug_out_dir / 'circuit.html',
+                params.debug_out_dir / "circuit.html",
                 gen.stim_circuit_html_viewer(circuit, patch=rgb_patch),
             )
 
         return circuit
 
-    constructions[
-        "mxyz_color_code"
-    ] = lambda params: make_mxyz_color_code_from_stim_gen(
-        distance=params.diameter,
-        rounds=params.rounds,
-        noise=params.noise_model,
-        convert_to_cz=params.convert_to_cz,
+    constructions["mxyz_color_code"] = (
+        lambda params: make_mxyz_color_code_from_stim_gen(
+            distance=params.diameter,
+            rounds=params.rounds,
+            noise=params.noise_model,
+            convert_to_cz=params.convert_to_cz,
+        )
     )
-    constructions[
-        "phenom_mxyz_color_code"
-    ] = lambda params: make_mxyz_phenom_color_code(
-        base_width=params.diameter,
-        rounds=params.rounds,
-        noise=params.noise_strength,
+    constructions["phenom_mxyz_color_code"] = (
+        lambda params: make_mxyz_phenom_color_code(
+            base_width=params.diameter,
+            rounds=params.rounds,
+            noise=params.noise_strength,
+        )
     )
 
     constructions["midout_color_code_Z"] = lambda params: _chunks_to_circuit(
@@ -253,7 +265,7 @@ def _superdense_color_code_circuit_constructions() -> (
             )
             rgb_patch = make_color_code_layout_for_superdense(
                 base_data_width=params.diameter,
-                single_rgb_layer_instead_of_actual_code='double_measure_qubit',
+                single_rgb_layer_instead_of_actual_code="double_measure_qubit",
             ).patch
             rgb_patch.write_svg(
                 params.debug_out_dir / "rgb_patch.svg",
@@ -279,6 +291,60 @@ def _superdense_color_code_circuit_constructions() -> (
 
     constructions["superdense_color_code_X"] = _chunks_to_circuit
     constructions["superdense_color_code_Z"] = _chunks_to_circuit
+    return constructions
+
+
+def _bell_flagged_color_code_circuit_constructions() -> (
+    dict[str, Callable[[Params], stim.Circuit]]
+):
+    constructions: dict[str, Callable[[Params], stim.Circuit]] = {}
+
+    def _chunks_to_circuit(params: Params) -> stim.Circuit:
+        basis = params.style[-1]
+        assert basis == "X" or basis == "Z"
+        circuit = make_bell_flagged_color_code_circuit(
+            base_data_width=params.diameter,
+            basis=cast(Literal["X", "Z"], basis),
+            rounds=params.rounds,
+        )
+
+        if params.debug_out_dir is not None:
+            rgb_patch = make_color_code_layout_for_superdense(
+                base_data_width=params.diameter,
+                single_rgb_layer_instead_of_actual_code=True,
+            ).patch
+            gen.write_file(
+                params.debug_out_dir / "ideal_circuit.html",
+                gen.stim_circuit_html_viewer(circuit, patch=rgb_patch),
+            )
+            rgb_patch = make_color_code_layout_for_superdense(
+                base_data_width=params.diameter,
+                single_rgb_layer_instead_of_actual_code="double_measure_qubit",
+            ).patch
+            rgb_patch.write_svg(
+                params.debug_out_dir / "rgb_patch.svg",
+                show_order=False,
+                show_measure_qubits=False,
+            )
+            rgb_patch.write_svg(
+                params.debug_out_dir / "rgb_patch_qubits.svg",
+                show_order=False,
+                show_measure_qubits=True,
+                show_data_qubits=True,
+            )
+            make_color_code_layout_for_superdense(
+                base_data_width=params.diameter,
+                single_rgb_layer_instead_of_actual_code=False,
+            ).write_svg(params.debug_out_dir / "code.svg", show_measure_qubits=True)
+
+        if params.convert_to_cz:
+            circuit = gen.transpile_to_z_basis_interaction_circuit(circuit)
+        if params.noise_model is not None:
+            circuit = params.noise_model.noisy_circuit(circuit)
+        return circuit
+
+    constructions["bell_flagged_color_code_X"] = _chunks_to_circuit
+    constructions["bell_flagged_color_code_Z"] = _chunks_to_circuit
     return constructions
 
 
@@ -417,11 +483,15 @@ def _toric_color_code_constructions() -> dict[str, Callable[[Params], stim.Circu
             )
         if phenom:
             circuit = code.make_phenom_circuit(
-                noise=params.noise_strength, rounds=params.rounds, extra_coords_func=f2c,
+                noise=params.noise_strength,
+                rounds=params.rounds,
+                extra_coords_func=f2c,
             )
         else:
             assert params.rounds == 1
-            circuit = code.make_code_capacity_circuit(noise=params.noise_strength, extra_coords_func=f2c)
+            circuit = code.make_code_capacity_circuit(
+                noise=params.noise_strength, extra_coords_func=f2c
+            )
         if params.debug_out_dir is not None:
             gen.write_file(
                 params.debug_out_dir / "detslice.svg", circuit.diagram("detslice-svg")
