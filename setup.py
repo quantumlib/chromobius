@@ -1,3 +1,17 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import glob
 import os
 import pathlib
@@ -73,7 +87,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
 
 __version__ = '1.2.dev0'
 
-with open("README.md", "r", encoding="utf-8") as f:
+with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
 # HACK: Workaround difficulties collecting data files for the package by just making a directory.
@@ -91,13 +105,16 @@ setuptools.setup(
     version=__version__,
     author="Craig Gidney",
     url="https://github.com/quantumlib/chromobius",
-    description="A fast implementation of the mobius color code decoder.",
+    description="A fast implementation of the Möbius color code decoder.",
     long_description=long_description,
     long_description_content_type='text/markdown',
+    maintainer="Google Quantum AI",
+    maintainer_email="quantum-oss-maintainers@google.com",
+    license="Apache-2.0",
     ext_modules=[CMakeExtension("chromobius", sourcedir=".", sources=RELEVANT_SOURCE_FILES)],
     cmdclass={"build_ext": CMakeBuild},
     python_requires=">=3.10",
-    setup_requires=['ninja', 'pybind11~=2.11.1'],
+    setup_requires=['ninja', 'pybind11~=2.11.1', 'cmake>=3.13'],
     install_requires=['numpy', 'stim'],
 
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
@@ -111,4 +128,25 @@ setuptools.setup(
     package_dir={'chromobius': package_data_dir.name},
     package_data={'chromobius': [str(e) for e in package_data_dir.iterdir()]},
     include_package_data=True,
+    classifiers=[
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
+        "Topic :: Scientific/Engineering :: Quantum Computing",
+    ],
+    keywords=[
+        "algorithms",
+        "color code",
+        "fault-tolerant quantum computing",
+        "möbius decoder",
+        "quantum computing",
+        "quantum error correction",
+        "quantum",
+    ],
 )
