@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-    - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # v1
+    - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -199,7 +199,7 @@ jobs:
         with:
           cache: pip
           python-version: '3.11'
-      - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # v1
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
         with:
           disk-cache: ${{ github.workflow }}
           repository-cache: true
@@ -226,7 +226,7 @@ jobs:
         with:
           cache: pip
           python-version: '3.11'
-      - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # v1
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
