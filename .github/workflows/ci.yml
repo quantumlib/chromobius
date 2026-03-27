@@ -90,7 +90,7 @@ jobs:
       CIBW_PRERELEASE_PYTHONS: 1
       CIBW_BUILD_VERBOSITY: ${{inputs.debug && 1 || ''}}
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           cache: pip
@@ -108,7 +108,7 @@ jobs:
   build_sdist:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           cache: pip
@@ -125,14 +125,14 @@ jobs:
   run_main:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - run: cmake .
     - run: make chromobius -j
     - run: out/chromobius --help
   build_bazel:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
       with:
         bazelisk-cache: true
@@ -144,7 +144,7 @@ jobs:
   build_clang:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang
     - run: |
         cd ..
@@ -159,14 +159,14 @@ jobs:
   perf:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - run: cmake .
     - run: make chromobius_perf -j
     - run: out/chromobius_perf
   test:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - run: |
         cd ..
         git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
@@ -180,7 +180,7 @@ jobs:
   test_o3:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - run: |
         cd ..
         git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
@@ -194,7 +194,7 @@ jobs:
   test_generated_docs_are_fresh:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           cache: pip
@@ -212,7 +212,7 @@ jobs:
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - run: tools/regen_file_lists.sh /tmp
       - run: diff /tmp/perf_files file_lists/perf_files
       - run: diff /tmp/pybind_files file_lists/pybind_files
@@ -221,7 +221,7 @@ jobs:
   test_pybind:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           cache: pip
@@ -260,7 +260,7 @@ jobs:
       testpypi_endpoint_url: https://test.pypi.org/legacy/
       testpypi_index_url: https://test.pypi.org/simple
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: setup.py
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
