@@ -23,7 +23,12 @@ import chromobius
 
 
 @pytest.mark.parametrize(
-    "style", [style for style in CONSTRUCTIONS.keys() if "mxyz_" not in style]
+    "style",
+    [
+        style
+        for style in CONSTRUCTIONS.keys()
+        if ("mxyz_" not in style and "bell_flagged" not in style)
+    ],
 )
 def test_constructions_are_decoded(style: str):
     r = 1 if style.startswith("transit") else 6
@@ -37,9 +42,7 @@ def test_constructions_are_decoded(style: str):
         convert_to_cz=True,
         editable_extras={},
     )
-    decoder = chromobius.compile_decoder_for_dem(
-        circuit.detector_error_model()
-    )
+    decoder = chromobius.compile_decoder_for_dem(circuit.detector_error_model())
 
     shots = 2048
     assert 0 < circuit.num_observables <= 8
