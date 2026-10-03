@@ -125,14 +125,14 @@ jobs:
   run_main:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - run: cmake .
     - run: make chromobius -j
     - run: out/chromobius --help
   build_bazel:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
       with:
         bazelisk-cache: true
@@ -144,7 +144,7 @@ jobs:
   build_clang:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang
     - run: |
         cd ..
@@ -159,14 +159,14 @@ jobs:
   perf:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - run: cmake .
     - run: make chromobius_perf -j
     - run: out/chromobius_perf
   test:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - run: |
         cd ..
         git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
@@ -180,7 +180,7 @@ jobs:
   test_o3:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - run: |
         cd ..
         git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
@@ -212,7 +212,7 @@ jobs:
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: tools/regen_file_lists.sh /tmp
       - run: diff /tmp/perf_files file_lists/perf_files
       - run: diff /tmp/pybind_files file_lists/pybind_files
@@ -260,7 +260,7 @@ jobs:
       testpypi_endpoint_url: https://test.pypi.org/legacy/
       testpypi_index_url: https://test.pypi.org/simple
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: setup.py
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -273,7 +273,7 @@ jobs:
           # For efficiency, test just one wheel for each platform.
           pattern: '*cp311*'
           merge-multiple: true
-      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1
         with:
           repository-url: ${{env.testpypi_endpoint_url}}
           packages-dir: dist-chromobius/
@@ -314,7 +314,7 @@ jobs:
           pattern: dist-chromobius-*
           merge-multiple: true
       - run: pwd && ls -lR dist-chromobius
-      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1
         with:
           packages-dir: dist-chromobius/
           verify-metadata: ${{inputs.debug}}
