@@ -65,11 +65,11 @@ jobs:
           {os: ubuntu-24.04-arm, dist: cp313-manylinux_aarch64, arch: aarch64},
           {os: ubuntu-24.04-arm, dist: cp314-manylinux_aarch64, arch: aarch64},
 
-          {os: macos-14, dist: cp310-macosx_arm64, arch: arm64},
-          {os: macos-14, dist: cp311-macosx_arm64, arch: arm64},
-          {os: macos-14, dist: cp312-macosx_arm64, arch: arm64},
-          {os: macos-14, dist: cp313-macosx_arm64, arch: arm64},
-          {os: macos-14, dist: cp314-macosx_arm64, arch: arm64},
+          {os: macos-15, dist: cp310-macosx_arm64, arch: arm64},
+          {os: macos-15, dist: cp311-macosx_arm64, arch: arm64},
+          {os: macos-15, dist: cp312-macosx_arm64, arch: arm64},
+          {os: macos-15, dist: cp313-macosx_arm64, arch: arm64},
+          {os: macos-15, dist: cp314-macosx_arm64, arch: arm64},
 
           {os: macos-15-intel, dist: cp310-macosx_x86_64, arch: x86_64},
           {os: macos-15-intel, dist: cp311-macosx_x86_64, arch: x86_64},
