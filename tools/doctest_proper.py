@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """Runs doctests on a module, including any objects imported into the module."""
 import argparse
 import doctest

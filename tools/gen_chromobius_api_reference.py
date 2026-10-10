@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """
 Iterates over modules and classes, listing their attributes and methods in markdown.
 """
