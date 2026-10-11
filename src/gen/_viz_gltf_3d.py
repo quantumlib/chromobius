@@ -272,7 +272,7 @@ def viz_3d_gltf_model_html(model: pygltflib.GLTF2) -> str:
     container.textContent = "Loading viewer...";
 
     /// BEGIN TERRIBLE HACK.
-    /// This a workaround for https://github.com/jupyter/notebook/issues/6597
+    /// This is a workaround for https://github.com/jupyter/notebook/issues/6597
     ///
     /// What this SHOULD be is:
     ///

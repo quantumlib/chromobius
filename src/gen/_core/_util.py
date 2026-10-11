@@ -26,9 +26,9 @@ def min_max_complex(
             raised instead when given an empty collection.
 
     Returns:
-        A pair of complex values (c_min, c_max) where c_min's real component
-        where c_min is the minimum corner of the bounding box and c_max is the
-        maximum corner of the bounding box.
+        A pair of complex values (c_min, c_max) where c_min is the minimum
+        corner of the bounding box and c_max is the maximum corner of the
+        bounding box.
     """
     coords = list(coords)
     if not coords and default is not None:

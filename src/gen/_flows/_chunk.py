@@ -340,7 +340,7 @@ class Chunk:
             self.flows, key=lambda flow: (flow.start, flow.obs_index)
         ).items():
             if key[0] and len(group) > 1:
-                raise ValueError(f"Multiple flows with same non-empty end: {group}")
+                raise ValueError(f"Multiple flows with same non-empty start: {group}")
         for key, group in sinter.group_by(
             self.flows, key=lambda flow: (flow.end, flow.obs_index)
         ).items():

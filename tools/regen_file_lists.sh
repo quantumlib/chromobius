@@ -39,9 +39,9 @@ find src | grep "\\.pybind\\.\\(cc\\|h\\)$" | LC_ALL=C sort > "${FOLDER}/pybind_
 {
     echo "#ifndef _CHROMOBIUS_H";
     echo "#define _CHROMOBIUS_H";
-    echo "/// WARNING: THE chromobius C++ API MAKES NO COMPATIBILITY GUARANTEES.";
+    echo "/// WARNING: THE Chromobius C++ API MAKES NO COMPATIBILITY GUARANTEES.";
     echo "/// It may change arbitrarily and catastrophically from minor version to minor version.";
-    echo "/// If you need a stable API, use chromobius's Python API.";
+    echo "/// If you need a stable API, use Chromobius's Python API.";
     find src | grep "\\.h$" | grep -v "\\.\(test\|perf\|pybind\)\\.h$" | grep -v "src/chromobius\\.h" | LC_ALL=C sort | sed 's/src\/\(.*\)/#include "\1"/g';
     echo "#endif";
 } > src/chromobius.h

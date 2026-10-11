@@ -22,7 +22,7 @@ def make_rep_code_layout(
     toric: bool = False,
     replace_basis_with_coloring=False,
 ) -> gen.StabilizerCode:
-    """Creates a rotated surface code.
+    """Creates a repetition code.
 
     Data qubits are at integer coordinates. Measure qubits are at half integer coordinates.
 

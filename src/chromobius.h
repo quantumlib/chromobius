@@ -1,8 +1,8 @@
 #ifndef _CHROMOBIUS_H
 #define _CHROMOBIUS_H
-/// WARNING: THE chromobius C++ API MAKES NO COMPATIBILITY GUARANTEES.
+/// WARNING: THE Chromobius C++ API MAKES NO COMPATIBILITY GUARANTEES.
 /// It may change arbitrarily and catastrophically from minor version to minor version.
-/// If you need a stable API, use chromobius's Python API.
+/// If you need a stable API, use Chromobius's Python API.
 #include "chromobius/commands/main_all.h"
 #include "chromobius/commands/main_benchmark.h"
 #include "chromobius/commands/main_describe_decoder.h"

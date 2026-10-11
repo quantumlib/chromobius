@@ -160,7 +160,7 @@ class NoiseModel:
 
         Everything has the same parameter p.
         Single qubit clifford gates get single qubit depolarization.
-        Two qubit clifford gates get single qubit depolarization.
+        Two qubit clifford gates get two qubit depolarization.
         Dissipative gates have their result probabilistically bit flipped (or phase flipped if appropriate).
 
         Non-demolition measurement is treated a bit unusually in that it is the result that is flipped instead of

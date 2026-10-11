@@ -135,13 +135,13 @@ pip install cibuildwheel
 # See https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip for CIBW_BUILD values
 CIBW_BUILD=cp311-manylinux_x86_64 cibuildwheel --platform linux
 # output is in `wheelhouse/` with a path that depends on platform/target
-# e.g. it might be `out/chromobius-0.0.dev0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl`
+# e.g. it might be `wheelhouse/chromobius-0.0.dev0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl`
 ```
 
 ### <a class="anchor" id="build-python-pip"></a>with pip:
 
 ```bash
-# Must be run from the chromobius git repository root.
+# Must be run from the Chromobius git repository root.
 # Note this will build the package AND install it into your Python environment.
 pip install .
 # output is in `python_build_chromobius/` under a platform dependent directory and filename
@@ -222,7 +222,7 @@ Stable releases are performed manually by following these steps:
     - [ ] For the title, use two-word theming of most important changes
     - [ ] In the body, list the user-visible fixes, additions, and other changes
     - [ ] Attach the wheels to the release
-*   Do these irreversible and public viewable steps last!
+*   Do these irreversible and publicly viewable steps last!
     - [ ] Upload wheels/sdists to PyPI
     - [ ] Publish the GitHub release notes
     - [ ] Announce the release

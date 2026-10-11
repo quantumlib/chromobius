@@ -98,9 +98,9 @@ sinter collect \
     --decoders chromobius \
     --custom_decoders_module_function "chromobius:sinter_decoders" \
     --max_shots 100_000 \
-    --max_errors 100
+    --max_errors 100 \
     --processes auto \
-    --save_resume_filepath "stats.csv" \
+    --save_resume_filepath "stats.csv"
 ```
 
 ## Disclaimer

@@ -2,7 +2,7 @@
 set -e
 
 #########################################################################
-# Regenerates doc files using the installed version of stim.
+# Regenerates doc files using the installed version of Chromobius.
 #########################################################################
 
 # Get to this script's git repo root.

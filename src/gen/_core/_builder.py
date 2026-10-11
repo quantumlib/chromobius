@@ -27,7 +27,7 @@ SYMMETRIC_GATES = {
 
 
 class Builder:
-    """Helper class for building stim circuits.
+    """Helper class for building Stim circuits.
 
     Handles qubit indexing (complex -> int conversion).
     Handles measurement tracking (naming results and referring to them by name).
@@ -101,7 +101,7 @@ class Builder:
         elif data.is_single_qubit_gate:
             for target in targets:
                 if target not in self.q2i:
-                    raise ValueError(f"{gate=} is a single-qubit gate, but {target=} isn't in indexed.")
+                    raise ValueError(f"{gate=} is a single-qubit gate, but {target=} isn't indexed.")
             targets = sorted(targets, key=self.q2i.__getitem__)
 
             self.circuit.append(gate, [self.q2i[q] for q in targets], arg)
