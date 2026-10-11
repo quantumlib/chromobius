@@ -40,7 +40,7 @@ on:
         type: boolean
         default: false
 
-permissions: read-all
+permissions: {}
 
 concurrency:
   cancel-in-progress: true
@@ -49,6 +49,8 @@ concurrency:
 jobs:
   build_dist:
     runs-on: ${{matrix.os}}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -90,10 +92,11 @@ jobs:
       CIBW_PRERELEASE_PYTHONS: 1
       CIBW_BUILD_VERBOSITY: ${{inputs.debug && 1 || ''}}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          cache: pip
           python-version: '3.11'
       - run: python -m pip install cibuildwheel~=3.2.0 setuptools twine
       - run: python tools/overwrite_dev_versions_with_date.py
@@ -101,39 +104,50 @@ jobs:
       - run: python -m cibuildwheel --output-dir dist
       - run: twine check ./dist/*
         shell: bash
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "dist-chromobius-${{matrix.os}}-${{matrix.dist}}-${{matrix.arch}}"
           path: dist/*
   build_sdist:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          cache: pip
           python-version: '3.11'
       - run: python -m pip install setuptools pybind11~=2.11.1 ninja
       - run: python tools/overwrite_dev_versions_with_date.py
       - run: python setup.py sdist
         # Before going further, test that the result is installable.
       - run: pip install dist/*.tar.gz || exit 1
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist-chromobius-sdist
           path: dist/*.tar.gz
   run_main:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - run: cmake .
     - run: make chromobius -j
     - run: out/chromobius --help
   build_bazel:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
+      with:
+        persist-credentials: false
+    - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -143,8 +157,12 @@ jobs:
     - run: bazel test :chromobius_test
   build_clang:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang
     - run: |
         cd ..
@@ -158,15 +176,23 @@ jobs:
     - run: out/chromobius --help
   perf:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - run: cmake .
     - run: make chromobius_perf -j
     - run: out/chromobius_perf
   test:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - run: |
         cd ..
         git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
@@ -179,8 +205,12 @@ jobs:
     - run: out/chromobius_test
   test_o3:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - run: |
         cd ..
         git -c advice.detachedHead=false clone https://github.com/google/googletest.git -b release-1.12.1
@@ -193,13 +223,16 @@ jobs:
     - run: out/chromobius_test_o3
   test_generated_docs_are_fresh:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          cache: pip
           python-version: '3.11'
-      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
         with:
           disk-cache: ${{ github.workflow }}
           repository-cache: true
@@ -211,8 +244,12 @@ jobs:
       - run: python doc/chromobius.pyi
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: tools/regen_file_lists.sh /tmp
       - run: diff /tmp/perf_files file_lists/perf_files
       - run: diff /tmp/pybind_files file_lists/pybind_files
@@ -220,13 +257,16 @@ jobs:
       - run: diff /tmp/test_files file_lists/test_files
   test_pybind:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          cache: pip
           python-version: '3.11'
-      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # v1
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -263,17 +303,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: setup.py
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          cache: pip
           python-version: '3.11'
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: dist-chromobius
           # For efficiency, test just one wheel for each platform.
           pattern: '*cp311*'
           merge-multiple: true
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           repository-url: ${{env.testpypi_endpoint_url}}
           packages-dir: dist-chromobius/
@@ -308,13 +348,13 @@ jobs:
       name: PyPI
       url: https://pypi.org/project/chromobius
     steps:
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: dist-chromobius
           pattern: dist-chromobius-*
           merge-multiple: true
       - run: pwd && ls -lR dist-chromobius
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist-chromobius/
           verify-metadata: ${{inputs.debug}}
