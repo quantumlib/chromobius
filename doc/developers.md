@@ -212,7 +212,7 @@ Stable releases are performed manually by following these steps:
 *   Collect Python wheels from GitHub
     - [ ] Wait for CI to finish validating and producing artifacts for the tag
     - [ ] Download all the wheels created as artifacts by the CI workflow
-    - [ ] Do manual sanity checks, e.g., by installing one of the wheels and running tests
+    - [ ] Do manual checks, e.g., by installing one of the wheels and running tests
 *   Bump to next dev version on main branch
     - [ ] `git checkout main -b SOMEBRANCHNAME`
     - [ ] Search `.py` files and replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.(Y+1).dev0'`
