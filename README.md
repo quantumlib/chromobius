@@ -1,21 +1,33 @@
 # Chromobius: color code decoder
 
-Chromobius is an implementation of a ["mobius decoder"](https://arxiv.org/abs/2108.11395), which approximates the color code decoding problem as a minimum weight matching problem.
+Chromobius is an implementation of a ["Möbius decoder"](https://arxiv.org/abs/2108.11395), which approximates the color code decoding problem as a minimum weight matching problem.
 Chromobius uses [PyMatching](https://github.com/oscarhiggott/PyMatching/) to solve the minimum weight matching problem.
 
 See the paper ["New circuits and an open source decoder for the color code"](https://arxiv.org/abs/2312.08813) for more details on how Chromobius works.
 
 ## How to use Chromobius
 
-See the [**getting started notebook**](doc/getting_started.ipynb).
+Install the Python package from PyPI:
 
-Also see the [Python API reference](doc/chromobius_api_reference.md).
+```bash
+pip install chromobius
+```
 
-Programmers who want to edit and build Chromobius can check the [developer documentation](doc/developers.md).
+Once you've installed it, then:
+
+* Work through the [**getting started
+  notebook**](https://github.com/quantumlib/chromobius/blob/main/doc/getting_started.ipynb)
+  for an introductory tutorial on how to use Chromobius.
+* Consult the [Python API
+  reference](https://github.com/quantumlib/chromobius/blob/main/doc/chromobius_api_reference.md)
+  for detailed information about the classes and methods available.
+
+Programmers who want to edit and build Chromobius can check the [developer documentation](https://github.com/quantumlib/chromobius/blob/main/doc/developers.md).
+The `pip` package only installs the Python module; the standalone `chromobius` command-line tool used in some of the examples below must be built from source as described in the developer documentation.
 
 ## Example Snippets
 
-### Decoding a shot with Chromobius
+### Decoding shots with Chromobius
 
 From Python:
 
@@ -67,8 +79,9 @@ chromobius predict \
     --out_format "01"
 
 # Count the number of shots with a prediction mistake.
+# (Appending "" forces awk to compare the fields as strings, not numbers.)
 paste obs_actual.txt obs_predicted.txt \
-    | grep -Pv "^([01]*)\\s*\\1$" \
+    | awk '$1 "" != $2 ""' \
     | wc -l
 ```
 
