@@ -42,7 +42,7 @@ def make_color_code_layout(
             'smooth': No spurs. The normal color code.
             'midout': Include the spurs needed for the midout circuit to run cleanly.
             'midout_readout_line_constraint': Extend the midout spurs so that there is
-                a subgrid of qubits that can all be simultaneously measured, This is
+                a subgrid of qubits that can all be simultaneously measured. This is
                 relevant if hardware has the constraint that qubits share a readout
                 line and measuring one qubit on the line hurts the coherence of the
                 others.
@@ -295,7 +295,7 @@ def make_color_code_layout_488(
             'smooth': No spurs. The normal color code.
             'midout': Include the spurs needed for the midout circuit to run cleanly.
             'midout_readout_line_constraint': Extend the midout spurs so that there is
-                a subgrid of qubits that can all be simultaneously measured, This is
+                a subgrid of qubits that can all be simultaneously measured. This is
                 relevant if hardware has the constraint that qubits share a readout
                 line and measuring one qubit on the line hurts the coherence of the
                 others.

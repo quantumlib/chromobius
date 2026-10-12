@@ -27,7 +27,7 @@ class AtLayer:
 
 
 class MeasurementTracker:
-    """Tracks measurements and groups of measurements, for producing stim record targets."""
+    """Tracks measurements and groups of measurements, for producing Stim record targets."""
 
     def __init__(self):
         self.recorded: dict[Any, list[int] | None] = {}

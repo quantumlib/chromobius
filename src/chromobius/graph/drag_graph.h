@@ -67,7 +67,7 @@ struct ChargedEdge {
 ///
 /// When dragging charge around, the charge is always kept near the current
 /// target node T. For charge of the same color as T, the charge is exactly a
-/// detection event at T. Charges for colors different from T, are kept on R
+/// detection event at T. Charges for colors different from T are kept on R
 /// where R is a node near T that matches the charge's color (R is called
 /// the `representative` of that charge color for T). In some cases, when there
 /// is no node of a color near T, charge of that color must be split into the

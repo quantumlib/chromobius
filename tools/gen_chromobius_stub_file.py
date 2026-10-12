@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Produces a .pyi file for chromobius, describing the contained classes and functions.
+Produces a .pyi file for Chromobius, describing the contained classes and functions.
 """
 
 import chromobius
@@ -31,7 +31,7 @@ def main():
         version = "v" + version
     print(f'''
 """Chromobius {version}: an implementation of the mobius color code decoder."""
-# (This a stubs file describing the classes and methods in stim.)
+# (This is a stubs file describing the classes and methods in Chromobius.)
 from __future__ import annotations
 from typing import overload, TYPE_CHECKING, Any, Iterable
 if TYPE_CHECKING:

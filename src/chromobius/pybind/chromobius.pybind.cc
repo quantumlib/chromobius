@@ -129,7 +129,7 @@ PYBIND11_MODULE(chromobius, m) {
         m,
         "CompiledDecoder",
         stim::clean_doc_string(R"DOC(
-            A chromobius decoder ready to predict observable flips from detection events.
+            A Chromobius decoder ready to predict observable flips from detection events.
 
             Example:
                 >>> import stim
@@ -171,8 +171,8 @@ PYBIND11_MODULE(chromobius, m) {
                     using `np.packbits(array, bitorder='little')`. But ideally you
                     should attempt to never have unpacked data in the first place,
                     since it's 8x larger which can be a large performance loss. For
-                    example, stim's sampler methods all have a `bit_packed=True` argument
-                    that cause them to return bit packed data.
+                    example, Stim's sampler methods all have a `bit_packed=True` argument
+                    that causes them to return bit packed data.
 
             Returns:
                 A bit packed numpy array of observable flip data. The array will have
@@ -243,7 +243,7 @@ PYBIND11_MODULE(chromobius, m) {
             @signature def predict_weighted_obs_flips_from_dets_bit_packed(dets: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             Predicts observable flips and weights from detection events.
 
-            The returned weight comes directly from the underlying call to pymatching, not
+            The returned weight comes directly from the underlying call to PyMatching, not
             accounting for the lifting process.
 
             Args:
@@ -257,8 +257,8 @@ PYBIND11_MODULE(chromobius, m) {
                     using `np.packbits(array, bitorder='little')`. But ideally you
                     should attempt to never have unpacked data in the first place,
                     since it's 8x larger which can be a large performance loss. For
-                    example, stim's sampler methods all have a `bit_packed=True` argument
-                    that cause them to return bit packed data.
+                    example, Stim's sampler methods all have a `bit_packed=True` argument
+                    that causes them to return bit packed data.
 
             Returns:
                 A tuple (obs, weights).
@@ -271,8 +271,8 @@ PYBIND11_MODULE(chromobius, m) {
                     weights.shape = ()
                     weights.dtype = np.float32
                 If dets is a 2D array, then the result has:
-                    shape = (dets.shape[0], math.ceil(num_obs / 8),)
-                    dtype = np.uint8
+                    obs.shape = (dets.shape[0], math.ceil(num_obs / 8),)
+                    obs.dtype = np.uint8
                     weights.shape = (dets.shape[0],)
                     weights.dtype = np.float32
 
@@ -326,10 +326,10 @@ PYBIND11_MODULE(chromobius, m) {
         pybind11::arg("dem"),
         stim::clean_doc_string(R"DOC(
             @signature def compile_decoder_for_dem(dem: stim.DetectorErrorModel) -> chromobius.CompiledDecoder:
-            Compiles a decoder for a stim detector error model.
+            Compiles a decoder for a Stim detector error model.
 
             Args:
-                dem: A stim detector error model. The detector error model must satisfy:
+                dem: A Stim detector error model. The detector error model must satisfy:
                     1. Basis+Color annotations. Every detector that appears in an error
                         must specify coordinate data including a fourth coordinate. The 4th
                         coordinate indicates the basis and color of the detector with the
@@ -385,10 +385,10 @@ PYBIND11_MODULE(chromobius, m) {
         pybind11::arg("dem"),
         stim::clean_doc_string(R"DOC(
             @signature def from_dem(dem: stim.DetectorErrorModel) -> chromobius.CompiledDecoder:
-            Compiles a decoder for a stim detector error model.
+            Compiles a decoder for a Stim detector error model.
 
             Args:
-                dem: A stim detector error model. The detector error model must satisfy:
+                dem: A Stim detector error model. The detector error model must satisfy:
                     1. Basis+Color annotations. Every detector that appears in an error
                         must specify coordinate data including a fourth coordinate. The 4th
                         coordinate indicates the basis and color of the detector with the

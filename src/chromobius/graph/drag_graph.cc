@@ -20,7 +20,7 @@
 
 using namespace chromobius;
 
-/// Per-node state during a breadth first search,
+/// Per-node state during a breadth first search.
 struct BfsSearcher {
     uint64_t next_seen_tag;
     std::vector<uint64_t> node_seen_tags;
@@ -41,11 +41,11 @@ struct BfsSearcher {
     ///    tag_counter: Used to avoid having to clear the tagged buffer between
     ///        searches. This value will be incremented to create unique values,
     ///        which can then be recognized when searching in order to notice when
-    ///        the current search has a reached a node without getting confused by
+    ///        the current search has reached a node without getting confused by
     ///        junk left from previous searches.
     ///    tagged_buffer: Used to store intermediate search state. Before the very
     ///        first search this should be zero'd, but it doesn't need to be zero'd
-    ///        from search to search as long the tag counter isn't reset.
+    ///        from search to search as long as the tag counter isn't reset.
     ///
     /// Returns:
     ///    The observable flip mask of the path.

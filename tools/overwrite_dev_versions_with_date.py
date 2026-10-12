@@ -20,7 +20,7 @@
 #########################################################
 # Example usage (from repo root):
 #
-# ./dev/overwrite_dev_versions_with_date.sh
+# ./tools/overwrite_dev_versions_with_date.py
 #########################################################
 
 import os
