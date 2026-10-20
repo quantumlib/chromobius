@@ -69,7 +69,7 @@ void chromobius::extract_obs_and_dets_from_error_instruction(
                 ss << "The detector error model is too large. It has a detector with "
                       "index ";
                 ss << u;
-                ss << " but the max supported by chromobius is ";
+                ss << " but the max supported by Chromobius is ";
                 ss << std::numeric_limits<node_offset_int>::max();
                 throw std::invalid_argument(ss.str());
             }

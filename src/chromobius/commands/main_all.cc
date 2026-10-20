@@ -31,7 +31,7 @@ int chromobius::main(int argc, const char **argv) {
     }
     const char *help = R"HELP(
 
-Available chromobius commands:
+Available Chromobius commands:
 
     # Print usage information.
     chromobius help
@@ -46,7 +46,7 @@ Available chromobius commands:
         [--out_format 01|b8|...]               # format to use when writing predictions
 
     # Print accuracy and timing statistics collected while decoding.
-    chromobius benchmark
+    chromobius benchmark \
         [--dem FILEPATH] \                     # where to read detector error model from
         [--in] \                               # where to read detection event data (defaults to stdin)
         [--in_format 01|b8|...] \              # format of input detection event data
@@ -79,9 +79,9 @@ Available chromobius commands:
 
     std::stringstream ss;
     if (command[0] == '\0') {
-        ss << "Specify a chromobius command to run.\n";
+        ss << "Specify a Chromobius command to run.\n";
     } else {
-        ss << "Unrecognized chromobius command '" << command << "'.\n";
+        ss << "Unrecognized Chromobius command '" << command << "'.\n";
     }
     ss << help;
     throw std::invalid_argument(ss.str());

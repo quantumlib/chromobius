@@ -38,10 +38,10 @@ struct ChargeDrain {
 };
 
 struct DecoderConfigOptions {
-    /// Controls whether or not errors that required the introduction of a
-    /// remnant atomic error in order to decompose should be discarded or not.
+    /// Controls whether errors that required the introduction of a
+    /// remnant atomic error in order to decompose should be discarded.
     /// Defaults to true because that seems to give the best performance in
-    /// the most cases.
+    /// most cases.
     bool drop_mobius_errors_involving_remnant_errors = true;
 
     /// When an error is encountered that can't be understood in terms of
@@ -54,7 +54,7 @@ struct DecoderConfigOptions {
     /// printing out information.
     bool include_coords_in_mobius_dem = false;
 
-    /// Decides which matcher to use. If not set to anything, chromobius will
+    /// Decides which matcher to use. If not set to anything, Chromobius will
     /// default to using PyMatching.
     std::shared_ptr<MatcherInterface> matcher;
 
@@ -74,7 +74,7 @@ struct Decoder {
     DragGraph drag_graph;
     bool write_mobius_match_to_std_err = false;
 
-    /// The configured matcher (e.g. from pymatching) used to decode the mobius problem.
+    /// The configured matcher (e.g. from PyMatching) used to decode the mobius problem.
     std::unique_ptr<MatcherInterface> matcher;
 
     /// Ephemeral workspace for putting detection event data to give to the matcher.
@@ -123,12 +123,12 @@ struct Decoder {
     /// matcher.
     ///
     /// This method requires that either the cycle has neutral charge, or that
-    /// there are subgraph-crossing edges to dump the charge into
+    /// there are subgraph-crossing edges to dump the charge into.
     ///
     /// Args:
     ///     packed_detection_event_data_to_clear: The detection events being
     ///     explained.
-    ///         As part of running, the method will all detection events within
+    ///         As part of running, the method will clear all detection events within
     ///         the cycle.
     ///     cycle: The cycle of nodes to process. The specific format here
     ///     alternates

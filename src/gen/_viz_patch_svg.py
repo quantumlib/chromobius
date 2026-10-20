@@ -532,7 +532,7 @@ def patch_svg_viewer(
     cols: int | None = None,
     tile_color_func: Callable[['gen.Tile'], str] | None = None
 ) -> str:
-    """Returns a picture of the stabilizers measured by various plan."""
+    """Returns a picture of the stabilizers measured by various plans."""
     expected_points = frozenset(expected_points)
 
     extra_used_coords = frozenset(extra_used_coords)

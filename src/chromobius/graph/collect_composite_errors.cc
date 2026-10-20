@@ -328,7 +328,7 @@ static void decompose_dets_into_atoms(
         ss << "    (1) The source circuit has detectors with invalid color/basis annotations.\n";
         ss << "    (2) The source circuit is producing errors too complex to decompose (e.g. more than 6 symptoms in "
               "one basis).\n";
-        ss << "    (3) chromobius is missing logic for a corner case present in the source circuit; a corner case that "
+        ss << "    (3) Chromobius is missing logic for a corner case present in the source circuit; a corner case that "
               "didn't appear in the test circuits used during development.\n";
         throw std::invalid_argument(ss.str());
     }

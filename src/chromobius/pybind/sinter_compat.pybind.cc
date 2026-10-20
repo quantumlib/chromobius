@@ -204,7 +204,7 @@ void chromobius::pybind_sinter_compat(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("dem"),
         stim::clean_doc_string(R"DOC(
-            Creates a chromobius decoder preconfigured for the given detector error model.
+            Creates a Chromobius decoder preconfigured for the given detector error model.
         )DOC")
             .data());
 
@@ -227,7 +227,7 @@ void chromobius::pybind_sinter_compat(pybind11::module &m) {
         },
         stim::clean_doc_string(R"DOC(
             @signature def sinter_decoders() -> dict[str, sinter.Decoder]:
-            A dictionary describing chromobius to sinter.
+            A dictionary describing Chromobius to sinter.
 
             Giving the result of this function to the `custom_decoders` argument of
             `sinter.collect` will tell sinter about the decoder 'chromobius'. On the
