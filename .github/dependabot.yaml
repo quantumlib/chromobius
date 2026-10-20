@@ -20,6 +20,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     labels:
       - "dependencies"
       - "devops"
@@ -28,6 +30,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     versioning-strategy: "increase-if-necessary"
     labels:
       - "dependencies"
