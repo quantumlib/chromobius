@@ -33,15 +33,15 @@ def make_mxyz_phenom_color_code(
 
      (As opposed to alternating between X and Z, as is more common.)
 
-     Uses a phenomomenological noise model.
+     Uses a phenomenological noise model.
 
      Args:
          base_width: Base width of the triangular patch of the color code.
          rounds: Number of times each shape is measured. An XYZ cycle is
             three rounds. This differs from rounds in the usual phenom
-            circuit which measure both X and Z in one round.
+            circuit which measures both X and Z in one round.
         noise: Noise to apply. If this is a float, then the float is both
-            the between-ronud depolarization strength and the
+            the between-round depolarization strength and the
             measurement flip probability. If this is a gen.NoiseRule then
             its `after` is the between-round noise and its `flip_result` is
             the measurement noise.
@@ -127,7 +127,7 @@ def make_mxyz_color_code_from_stim_gen(
     noise: gen.NoiseModel | None,
     convert_to_cz: bool,
 ) -> stim.Circuit:
-    """Tweaks stim's memory_xyz color code circuits.
+    """Tweaks Stim's memory_xyz color code circuits.
 
     Overwrites the noise model.
 

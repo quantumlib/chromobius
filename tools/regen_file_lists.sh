@@ -37,11 +37,27 @@ find src | grep "\\.pybind\\.\\(cc\\|h\\)$" | LC_ALL=C sort > "${FOLDER}/pybind_
 
 # Regenerate 'chromobius.h' to include all relevant headers.
 {
+    echo "/*";
+    echo " * Copyright 2023 Google LLC";
+    echo " *";
+    echo ' * Licensed under the Apache License, Version 2.0 (the "License");';
+    echo " * you may not use this file except in compliance with the License.";
+    echo " * You may obtain a copy of the License at";
+    echo " *";
+    echo " *     http://www.apache.org/licenses/LICENSE-2.0";
+    echo " *";
+    echo " * Unless required by applicable law or agreed to in writing, software";
+    echo ' * distributed under the License is distributed on an "AS IS" BASIS,';
+    echo " * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.";
+    echo " * See the License for the specific language governing permissions and";
+    echo " * limitations under the License.";
+    echo " */";
+    echo "";
     echo "#ifndef _CHROMOBIUS_H";
     echo "#define _CHROMOBIUS_H";
-    echo "/// WARNING: THE chromobius C++ API MAKES NO COMPATIBILITY GUARANTEES.";
+    echo "/// WARNING: THE Chromobius C++ API MAKES NO COMPATIBILITY GUARANTEES.";
     echo "/// It may change arbitrarily and catastrophically from minor version to minor version.";
-    echo "/// If you need a stable API, use chromobius's Python API.";
+    echo "/// If you need a stable API, use Chromobius's Python API.";
     find src | grep "\\.h$" | grep -v "\\.\(test\|perf\|pybind\)\\.h$" | grep -v "src/chromobius\\.h" | LC_ALL=C sort | sed 's/src\/\(.*\)/#include "\1"/g';
     echo "#endif";
 } > src/chromobius.h

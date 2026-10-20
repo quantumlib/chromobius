@@ -24,10 +24,10 @@ import numpy as np
 def compile_decoder_for_dem(
     dem: stim.DetectorErrorModel,
 ) -> chromobius.CompiledDecoder:
-    """Compiles a decoder for a stim detector error model.
+    """Compiles a decoder for a Stim detector error model.
 
     Args:
-        dem: A stim detector error model. The detector error model must satisfy:
+        dem: A Stim detector error model. The detector error model must satisfy:
             1. Basis+Color annotations. Every detector that appears in an error
                 must specify coordinate data including a fourth coordinate. The 4th
                 coordinate indicates the basis and color of the detector with the
@@ -83,7 +83,7 @@ def compile_decoder_for_dem(
 
 # (at top-level in the chromobius module)
 def sinter_decoders() -> dict[str, sinter.Decoder]:
-    """A dictionary describing chromobius to sinter.
+    """A dictionary describing Chromobius to sinter.
 
     Giving the result of this function to the `custom_decoders` argument of
     `sinter.collect` will tell sinter about the decoder 'chromobius'. On the
@@ -101,7 +101,7 @@ def sinter_decoders() -> dict[str, sinter.Decoder]:
 
 # (at top-level in the chromobius module)
 class CompiledDecoder:
-    """A chromobius decoder ready to predict observable flips from detection events.
+    """A Chromobius decoder ready to predict observable flips from detection events.
 
     Example:
         >>> import stim
@@ -131,10 +131,10 @@ class CompiledDecoder:
 def from_dem(
     dem: stim.DetectorErrorModel,
 ) -> chromobius.CompiledDecoder:
-    """Compiles a decoder for a stim detector error model.
+    """Compiles a decoder for a Stim detector error model.
 
     Args:
-        dem: A stim detector error model. The detector error model must satisfy:
+        dem: A Stim detector error model. The detector error model must satisfy:
             1. Basis+Color annotations. Every detector that appears in an error
                 must specify coordinate data including a fourth coordinate. The 4th
                 coordinate indicates the basis and color of the detector with the
@@ -206,8 +206,8 @@ def predict_obs_flips_from_dets_bit_packed(
             using `np.packbits(array, bitorder='little')`. But ideally you
             should attempt to never have unpacked data in the first place,
             since it's 8x larger which can be a large performance loss. For
-            example, stim's sampler methods all have a `bit_packed=True` argument
-            that cause them to return bit packed data.
+            example, Stim's sampler methods all have a `bit_packed=True` argument
+            that causes them to return bit packed data.
 
     Returns:
         A bit packed numpy array of observable flip data. The array will have
@@ -279,7 +279,7 @@ def predict_weighted_obs_flips_from_dets_bit_packed(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Predicts observable flips and weights from detection events.
 
-    The returned weight comes directly from the underlying call to pymatching, not
+    The returned weight comes directly from the underlying call to PyMatching, not
     accounting for the lifting process.
 
     Args:
@@ -293,8 +293,8 @@ def predict_weighted_obs_flips_from_dets_bit_packed(
             using `np.packbits(array, bitorder='little')`. But ideally you
             should attempt to never have unpacked data in the first place,
             since it's 8x larger which can be a large performance loss. For
-            example, stim's sampler methods all have a `bit_packed=True` argument
-            that cause them to return bit packed data.
+            example, Stim's sampler methods all have a `bit_packed=True` argument
+            that causes them to return bit packed data.
 
     Returns:
         A tuple (obs, weights).
@@ -307,8 +307,8 @@ def predict_weighted_obs_flips_from_dets_bit_packed(
             weights.shape = ()
             weights.dtype = np.float32
         If dets is a 2D array, then the result has:
-            shape = (dets.shape[0], math.ceil(num_obs / 8),)
-            dtype = np.uint8
+            obs.shape = (dets.shape[0], math.ceil(num_obs / 8),)
+            obs.dtype = np.uint8
             weights.shape = (dets.shape[0],)
             weights.dtype = np.float32
 

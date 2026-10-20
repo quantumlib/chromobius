@@ -1,3 +1,17 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Iterable, Callable, Any, TYPE_CHECKING
 from typing import Sequence
 
@@ -27,7 +41,7 @@ SYMMETRIC_GATES = {
 
 
 class Builder:
-    """Helper class for building stim circuits.
+    """Helper class for building Stim circuits.
 
     Handles qubit indexing (complex -> int conversion).
     Handles measurement tracking (naming results and referring to them by name).
@@ -101,7 +115,7 @@ class Builder:
         elif data.is_single_qubit_gate:
             for target in targets:
                 if target not in self.q2i:
-                    raise ValueError(f"{gate=} is a single-qubit gate, but {target=} isn't in indexed.")
+                    raise ValueError(f"{gate=} is a single-qubit gate, but {target=} isn't indexed.")
             targets = sorted(targets, key=self.q2i.__getitem__)
 
             self.circuit.append(gate, [self.q2i[q] for q in targets], arg)

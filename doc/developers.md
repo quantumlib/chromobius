@@ -135,13 +135,13 @@ pip install cibuildwheel
 # See https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip for CIBW_BUILD values
 CIBW_BUILD=cp311-manylinux_x86_64 cibuildwheel --platform linux
 # output is in `wheelhouse/` with a path that depends on platform/target
-# e.g. it might be `out/chromobius-0.0.dev0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl`
+# e.g. it might be `wheelhouse/chromobius-0.0.dev0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl`
 ```
 
 ### <a class="anchor" id="build-python-pip"></a>with pip:
 
 ```bash
-# Must be run from the chromobius git repository root.
+# Must be run from the Chromobius git repository root.
 # Note this will build the package AND install it into your Python environment.
 pip install .
 # output is in `python_build_chromobius/` under a platform dependent directory and filename
@@ -212,7 +212,7 @@ Stable releases are performed manually by following these steps:
 *   Collect Python wheels from GitHub
     - [ ] Wait for CI to finish validating and producing artifacts for the tag
     - [ ] Download all the wheels created as artifacts by the CI workflow
-    - [ ] Do manual sanity checks, e.g., by installing one of the wheels and running tests
+    - [ ] Do manual checks, e.g., by installing one of the wheels and running tests
 *   Bump to next dev version on main branch
     - [ ] `git checkout main -b SOMEBRANCHNAME`
     - [ ] Search `.py` files and replace `__version__ = 'X.Y.dev0'` with `__version__ = 'X.(Y+1).dev0'`
@@ -222,7 +222,7 @@ Stable releases are performed manually by following these steps:
     - [ ] For the title, use two-word theming of most important changes
     - [ ] In the body, list the user-visible fixes, additions, and other changes
     - [ ] Attach the wheels to the release
-*   Do these irreversible and public viewable steps last!
+*   Do these irreversible and publicly viewable steps last!
     - [ ] Upload wheels/sdists to PyPI
     - [ ] Publish the GitHub release notes
     - [ ] Announce the release

@@ -1,3 +1,17 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import collections
 import math
 from typing import Iterable, Union, TYPE_CHECKING, Sequence, Callable, \
@@ -518,7 +532,7 @@ def patch_svg_viewer(
     cols: int | None = None,
     tile_color_func: Callable[['gen.Tile'], str] | None = None
 ) -> str:
-    """Returns a picture of the stabilizers measured by various plan."""
+    """Returns a picture of the stabilizers measured by various plans."""
     expected_points = frozenset(expected_points)
 
     extra_used_coords = frozenset(extra_used_coords)

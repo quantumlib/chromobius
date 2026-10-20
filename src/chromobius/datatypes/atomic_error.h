@@ -41,7 +41,7 @@ inline std::array<uint32_t, 3> sort3(node_offset_int a, node_offset_int b, node_
 /// Atomic errors are the building blocks all other errors are decomposed into.
 ///
 /// There are four kinds of atomic error:
-///     Neutral Triplet: Three detection events, each with different color.
+///     Neutral Triplet: Three detection events, each with a different color.
 ///         Example: A bulk error in a code capacity color code.
 ///     Neutral Pair: Two detection events that have the same color.
 ///         Example: A measurement error in a phenom color code.
